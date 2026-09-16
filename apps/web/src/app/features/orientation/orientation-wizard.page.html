@@ -1,0 +1,76 @@
+@if (loading()) {
+<div class="loading"><mat-spinner diameter="36" /></div>
+} @else if (session(); as current) {
+<app-page-header [title]="current.studentName" subtitle="20-minute orientation">
+  <a mat-button [routerLink]="['/students', current.studentId]">Back to profile</a>
+</app-page-header>
+
+<app-orientation-timer
+  [session]="current"
+  [elapsedMs]="elapsedMs()"
+  (started)="start()"
+  (paused)="pause()"
+  (resumed)="resume()"
+/>
+
+<section class="progress-block">
+  <p>{{ answeredCount() }} / {{ current.questions.length }} questions · {{ progress() }}%</p>
+  <mat-progress-bar mode="determinate" [value]="progress()" />
+</section>
+
+<nav class="stages">
+  @for (stage of stages; track stage) {
+  <button
+    type="button"
+    class="stage"
+    [class.active]="current.currentStage === stage"
+    [disabled]="readonly()"
+    (click)="goToStage(stage)"
+  >
+    <span>{{ stageMeta[stage].window }}</span>
+    {{ stageMeta[stage].label }}
+  </button>
+  }
+</nav>
+
+@if (current.result) {
+<app-assessment-result-card [result]="current.result" />
+}
+
+<section class="workspace">
+  <div class="questions">
+    <h2>{{ stageLabel(current.currentStage) }}</h2>
+    @for (question of currentQuestions(); track question.id) {
+    <app-orientation-question
+      [question]="question"
+      [answer]="answerFor(question.id)"
+      [readonly]="readonly()"
+      (changed)="setAnswer($event)"
+    />
+    }
+  </div>
+
+  <aside>
+    <mat-form-field appearance="outline" class="notes">
+      <mat-label>Session notes</mat-label>
+      <textarea matInput rows="10" [formControl]="notesControl" [readonly]="readonly()"></textarea>
+    </mat-form-field>
+  </aside>
+</section>
+
+<footer class="actions">
+  <button mat-button type="button" [disabled]="stageIndex() === 0" (click)="previous()">
+    Previous
+  </button>
+  <button mat-button type="button" [disabled]="stageIndex() === stages.length - 1" (click)="next()">
+    Next
+  </button>
+  <span class="spacer"></span>
+  @if (!readonly()) {
+  <button mat-stroked-button type="button" [disabled]="saving()" (click)="save()">Save</button>
+  <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="complete()">
+    Complete
+  </button>
+  }
+</footer>
+}

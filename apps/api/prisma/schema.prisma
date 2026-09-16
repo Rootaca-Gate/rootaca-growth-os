@@ -1,0 +1,697 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MENTOR
+  COUNSELOR
+}
+
+enum StudentStatus {
+  INTAKE
+  ACTIVE
+  PAUSED
+  COMPLETED
+  WITHDRAWN
+}
+
+enum EnglishLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  FLUENT
+}
+
+enum ProgrammingExperience {
+  NONE
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum StudentLevel {
+  FOUNDATION
+  JUNIOR
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum PathCode {
+  WEB
+  MOBILE
+  DATA
+  GAME
+  GENERAL
+}
+
+enum LevelCode {
+  EXPLORER
+  BEGINNER
+  FOUNDATION
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum SkillCode {
+  PROGRAMMING_FUNDAMENTALS
+  PROBLEM_SOLVING
+  TECHNICAL_KNOWLEDGE
+  PRACTICAL_SKILLS
+  COMMUNICATION
+  DEBUGGING
+  GIT_GITHUB
+  PROJECT_DEVELOPMENT
+  COMPUTER_SCIENCE_BASICS
+  INDEPENDENCE
+}
+
+enum OrientationSessionStatus {
+  DRAFT
+  IN_PROGRESS
+  PAUSED
+  COMPLETED
+}
+
+enum OrientationStage {
+  STUDENT_PROFILE
+  TECHNICAL_CHECK
+  PROBLEM_SOLVING
+  INTEREST_PATH
+  SUMMARY
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  RATING
+  MENTOR_EVALUATION
+  PRACTICAL_EVALUATION
+  FREE_TEXT
+}
+
+enum AssessmentCategoryCode {
+  PROGRAMMING_FUNDAMENTALS
+  PROBLEM_SOLVING
+  TECHNICAL_KNOWLEDGE
+  PRACTICAL_SKILLS
+  COMMUNICATION_LEARNING
+}
+
+model User {
+  id            String         @id @default(uuid()) @db.Uuid
+  email         String         @unique
+  passwordHash  String
+  displayName   String
+  role          Role
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  refreshTokens RefreshToken[]
+  orientationSessions OrientationSession[] @relation("OrientationFacilitator")
+  levelOverrides      StudentPlacement[]   @relation("LevelOverrideBy")
+  pathOverrides       StudentPlacement[]   @relation("PathOverrideBy")
+  progressReviews     ProgressReview[]     @relation("ProgressReviewer")
+
+  @@index([role])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  tokenHash String    @unique
+  userId    String    @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Student {
+  id                    String                 @id @default(uuid()) @db.Uuid
+  fullName              String
+  dateOfBirth           DateTime               @db.Date
+  schoolGrade           String
+  phone                 String
+  parentContact         String
+  programmingExperience ProgrammingExperience
+  programmingLanguages  String[]
+  interests             String[]
+  learningGoal          String
+  availableHoursPerWeek Int
+  englishLevel          EnglishLevel
+  status                StudentStatus          @default(INTAKE)
+  level                 StudentLevel
+  path                  PathCode
+  currentLevelId        String?                @db.Uuid
+  currentLevel          Level?                 @relation("StudentCurrentLevel", fields: [currentLevelId], references: [id], onDelete: SetNull)
+  currentPathId         String?                @db.Uuid
+  currentPath           LearningPath?          @relation("StudentCurrentPath", fields: [currentPathId], references: [id], onDelete: SetNull)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  orientationSessions   OrientationSession[]
+  skills                StudentSkill[]
+  placements            StudentPlacement[]
+  roadmap               Roadmap?
+  kpis                  StudentKpi[]
+  projects              StudentProject[]
+  progressReviews       ProgressReview[]
+
+  @@index([status])
+  @@index([level])
+  @@index([path])
+  @@index([fullName])
+  @@index([currentLevelId])
+  @@index([currentPathId])
+}
+
+model AssessmentCategory {
+  id            String                  @id @default(uuid()) @db.Uuid
+  code          AssessmentCategoryCode  @unique
+  name          String
+  weightPercent Int
+  sortOrder     Int
+  questions     AssessmentQuestion[]
+}
+
+model AssessmentQuestion {
+  id         String              @id @default(uuid()) @db.Uuid
+  categoryId String              @db.Uuid
+  category   AssessmentCategory  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  stage      OrientationStage
+  type       QuestionType
+  prompt     String
+  helperText String?
+  skillKey   String?
+  scored     Boolean             @default(true)
+  maxScore   Int                 @default(10)
+  scaleMax   Int                 @default(5)
+  sortOrder  Int
+  options    AssessmentOption[]
+  answers    AssessmentAnswer[]
+
+  @@index([stage])
+  @@index([categoryId])
+}
+
+model AssessmentOption {
+  id         String              @id @default(uuid()) @db.Uuid
+  questionId String              @db.Uuid
+  question   AssessmentQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  label      String
+  scoreValue Int
+  sortOrder  Int
+  answers    AssessmentAnswer[]
+
+  @@index([questionId])
+}
+
+model OrientationSession {
+  id            String                     @id @default(uuid()) @db.Uuid
+  studentId     String                     @db.Uuid
+  student       Student                    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdById   String                     @db.Uuid
+  createdBy     User                       @relation("OrientationFacilitator", fields: [createdById], references: [id], onDelete: Restrict)
+  status        OrientationSessionStatus   @default(DRAFT)
+  currentStage  OrientationStage           @default(STUDENT_PROFILE)
+  notes         String                     @default("")
+  startedAt     DateTime?
+  pausedAt      DateTime?
+  completedAt   DateTime?
+  lastResumedAt DateTime?
+  elapsedMs     Int                        @default(0)
+  createdAt     DateTime                   @default(now())
+  updatedAt     DateTime                   @updatedAt
+  answers       AssessmentAnswer[]
+  result        AssessmentResult?
+
+  @@index([studentId])
+  @@index([status])
+  @@index([createdById])
+}
+
+model AssessmentAnswer {
+  id            String              @id @default(uuid()) @db.Uuid
+  sessionId     String              @db.Uuid
+  session       OrientationSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  questionId    String              @db.Uuid
+  question      AssessmentQuestion  @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  optionId      String?             @db.Uuid
+  option        AssessmentOption?   @relation(fields: [optionId], references: [id], onDelete: SetNull)
+  numericValue  Float?
+  textValue     String?
+  score         Float?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@unique([sessionId, questionId])
+  @@index([questionId])
+}
+
+model AssessmentResult {
+  id              String              @id @default(uuid()) @db.Uuid
+  sessionId       String              @unique @db.Uuid
+  session         OrientationSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  overallScore    Float
+  categoryScores  Json
+  skillScores     Json
+  summary         String
+  completedAt     DateTime            @default(now())
+  placement       StudentPlacement?
+}
+
+model Level {
+  id          String              @id @default(uuid()) @db.Uuid
+  code        LevelCode           @unique
+  name        String
+  description String
+  sortOrder   Int
+  rules       LevelRule[]
+  students    Student[]           @relation("StudentCurrentLevel")
+  systemPlacements StudentPlacement[] @relation("SystemLevel")
+  finalPlacements  StudentPlacement[] @relation("FinalLevel")
+  roadmapTemplates RoadmapTemplate[]
+  roadmaps         Roadmap[]
+}
+
+model LevelRule {
+  id        String @id @default(uuid()) @db.Uuid
+  levelId   String @db.Uuid
+  level     Level  @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  minScore  Float
+  maxScore  Float
+  source    String @default("OVERALL_SCORE")
+
+  @@index([levelId])
+  @@index([minScore, maxScore])
+}
+
+model Skill {
+  id          String         @id @default(uuid()) @db.Uuid
+  code        SkillCode      @unique
+  name        String
+  description String
+  sortOrder   Int
+  studentSkills StudentSkill[]
+  pathSkills    PathSkill[]
+  roadmapItems          RoadmapItem[]
+  templateItems         RoadmapTemplateItem[]
+}
+
+model StudentSkill {
+  id                   String            @id @default(uuid()) @db.Uuid
+  studentId            String            @db.Uuid
+  student              Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  skillId              String            @db.Uuid
+  skill                Skill             @relation(fields: [skillId], references: [id], onDelete: Restrict)
+  score                Float
+  assessmentResultId   String?           @db.Uuid
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  @@unique([studentId, skillId])
+  @@index([skillId])
+}
+
+model LearningPath {
+  id          String     @id @default(uuid()) @db.Uuid
+  code        PathCode   @unique
+  name        String
+  description String
+  sortOrder   Int
+  skills      PathSkill[]
+  students    Student[]  @relation("StudentCurrentPath")
+  systemPlacements      StudentPlacement[] @relation("SystemPath")
+  finalPlacements       StudentPlacement[] @relation("FinalPath")
+  alternativePlacements StudentPlacement[] @relation("AlternativePath")
+  roadmapTemplates      RoadmapTemplate[]
+  roadmaps              Roadmap[]
+}
+
+model PathSkill {
+  id            String       @id @default(uuid()) @db.Uuid
+  pathId        String       @db.Uuid
+  path          LearningPath @relation(fields: [pathId], references: [id], onDelete: Cascade)
+  skillId       String       @db.Uuid
+  skill         Skill        @relation(fields: [skillId], references: [id], onDelete: Restrict)
+  weightPercent Int
+
+  @@unique([pathId, skillId])
+  @@index([skillId])
+}
+
+model StudentPlacement {
+  id                   String            @id @default(uuid()) @db.Uuid
+  studentId            String            @db.Uuid
+  student              Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  assessmentResultId   String            @unique @db.Uuid
+  assessmentResult     AssessmentResult  @relation(fields: [assessmentResultId], references: [id], onDelete: Cascade)
+  systemLevelId        String            @db.Uuid
+  systemLevel          Level             @relation("SystemLevel", fields: [systemLevelId], references: [id], onDelete: Restrict)
+  finalLevelId         String            @db.Uuid
+  finalLevel           Level             @relation("FinalLevel", fields: [finalLevelId], references: [id], onDelete: Restrict)
+  systemPathId         String            @db.Uuid
+  systemPath           LearningPath      @relation("SystemPath", fields: [systemPathId], references: [id], onDelete: Restrict)
+  finalPathId          String            @db.Uuid
+  finalPath            LearningPath      @relation("FinalPath", fields: [finalPathId], references: [id], onDelete: Restrict)
+  alternativePathId    String            @db.Uuid
+  alternativePath      LearningPath      @relation("AlternativePath", fields: [alternativePathId], references: [id], onDelete: Restrict)
+  recommendationReasons Json
+  alternativeReasons    Json
+  levelChangedById     String?           @db.Uuid
+  levelChangedBy       User?             @relation("LevelOverrideBy", fields: [levelChangedById], references: [id], onDelete: SetNull)
+  pathChangedById      String?           @db.Uuid
+  pathChangedBy        User?             @relation("PathOverrideBy", fields: [pathChangedById], references: [id], onDelete: SetNull)
+  levelOverrideReason  String?
+  pathOverrideReason   String?
+  levelChangedAt       DateTime?
+  pathChangedAt        DateTime?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  @@index([studentId])
+  @@index([finalLevelId])
+  @@index([finalPathId])
+}
+
+enum RoadmapItemStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  BLOCKED
+}
+
+model RoadmapTemplate {
+  id          String                 @id @default(uuid()) @db.Uuid
+  pathId      String                 @db.Uuid
+  path        LearningPath           @relation(fields: [pathId], references: [id], onDelete: Restrict)
+  levelId     String                 @db.Uuid
+  level       Level                  @relation(fields: [levelId], references: [id], onDelete: Restrict)
+  name        String
+  description String
+  phases      RoadmapTemplatePhase[]
+  roadmaps    Roadmap[]
+
+  @@unique([pathId, levelId])
+  @@index([levelId])
+}
+
+model RoadmapTemplatePhase {
+  id          String               @id @default(uuid()) @db.Uuid
+  templateId  String               @db.Uuid
+  template    RoadmapTemplate      @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  sortOrder   Int
+  items       RoadmapTemplateItem[]
+
+  @@index([templateId])
+}
+
+model RoadmapTemplateItem {
+  id           String               @id @default(uuid()) @db.Uuid
+  phaseId      String               @db.Uuid
+  phase        RoadmapTemplatePhase @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  title        String
+  description  String
+  skillId      String               @db.Uuid
+  skill        Skill                @relation(fields: [skillId], references: [id], onDelete: Restrict)
+  durationDays Int
+  sortOrder    Int
+
+  @@index([phaseId])
+  @@index([skillId])
+}
+
+model Roadmap {
+  id          String           @id @default(uuid()) @db.Uuid
+  studentId   String           @unique @db.Uuid
+  student     Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  templateId  String?          @db.Uuid
+  template    RoadmapTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  pathId      String           @db.Uuid
+  path        LearningPath     @relation(fields: [pathId], references: [id], onDelete: Restrict)
+  levelId     String           @db.Uuid
+  level       Level            @relation(fields: [levelId], references: [id], onDelete: Restrict)
+  generatedAt DateTime         @default(now())
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  phases      RoadmapPhase[]
+
+  @@index([pathId])
+  @@index([levelId])
+  @@index([templateId])
+}
+
+model RoadmapPhase {
+  id          String        @id @default(uuid()) @db.Uuid
+  roadmapId   String        @db.Uuid
+  roadmap     Roadmap       @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  sortOrder   Int
+  items       RoadmapItem[]
+
+  @@index([roadmapId])
+}
+
+model RoadmapItem {
+  id                   String             @id @default(uuid()) @db.Uuid
+  phaseId              String             @db.Uuid
+  phase                RoadmapPhase       @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  title                String
+  description          String
+  skillId              String?            @db.Uuid
+  skill                Skill?             @relation(fields: [skillId], references: [id], onDelete: Restrict)
+  durationDays         Int
+  startDate            DateTime?          @db.Date
+  dueDate              DateTime?          @db.Date
+  status               RoadmapItemStatus  @default(NOT_STARTED)
+  completionPercentage Int                @default(0)
+  projectId            String?            @db.Uuid
+  notes                String             @default("")
+  sortOrder            Int
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([phaseId])
+  @@index([skillId])
+  @@index([status])
+}
+
+enum KpiCategory {
+  CODING
+  PROJECTS
+  PRACTICE
+  PROBLEM_SOLVING
+  INDEPENDENCE
+}
+
+enum KpiFrequency {
+  WEEKLY
+  MONTHLY
+}
+
+enum KpiStatus {
+  ON_TRACK
+  AT_RISK
+  BEHIND
+  COMPLETED
+}
+
+enum KpiRecordSource {
+  MANUAL
+  SYSTEM
+}
+
+model Kpi {
+  id          String        @id @default(uuid()) @db.Uuid
+  code        String        @unique
+  name        String
+  description String
+  category    KpiCategory
+  target      Float
+  unit        String
+  frequency   KpiFrequency
+  weight      Int
+  active      Boolean       @default(true)
+  sortOrder   Int
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  studentKpis StudentKpi[]
+
+  @@index([active])
+  @@index([category])
+}
+
+model StudentKpi {
+  id              String     @id @default(uuid()) @db.Uuid
+  studentId       String     @db.Uuid
+  student         Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  kpiId           String     @db.Uuid
+  kpi             Kpi        @relation(fields: [kpiId], references: [id], onDelete: Restrict)
+  target          Float
+  actual          Float      @default(0)
+  progressPercent Int        @default(0)
+  status          KpiStatus  @default(BEHIND)
+  active          Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  records         KpiRecord[]
+
+  @@unique([studentId, kpiId])
+  @@index([kpiId])
+  @@index([status])
+}
+
+model KpiRecord {
+  id              String           @id @default(uuid()) @db.Uuid
+  studentKpiId    String           @db.Uuid
+  studentKpi      StudentKpi       @relation(fields: [studentKpiId], references: [id], onDelete: Cascade)
+  frequency       KpiFrequency
+  periodStart     DateTime         @db.Date
+  periodEnd       DateTime         @db.Date
+  target          Float
+  actual          Float            @default(0)
+  progressPercent Int              @default(0)
+  status          KpiStatus        @default(BEHIND)
+  notes           String           @default("")
+  source          KpiRecordSource  @default(SYSTEM)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([studentKpiId, frequency, periodStart])
+  @@index([frequency, periodStart])
+  @@index([status])
+}
+
+enum ProjectPurpose {
+  EDUCATIONAL
+}
+
+enum StudentProjectStatus {
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  ON_HOLD
+}
+
+enum MilestoneKind {
+  PLANNING
+  UI_UX
+  FRONTEND
+  BACKEND
+  DATABASE
+  TESTING
+  DEPLOYMENT
+  PRESENTATION
+}
+
+enum MilestoneStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  BLOCKED
+}
+
+model Project {
+  id           String         @id @default(uuid()) @db.Uuid
+  code         String         @unique
+  name         String
+  description  String
+  learningGoal String
+  purpose      ProjectPurpose @default(EDUCATIONAL)
+  path         PathCode
+  level        LevelCode
+  durationDays Int
+  active       Boolean        @default(true)
+  sortOrder    Int
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  assignments  StudentProject[]
+
+  @@index([active])
+  @@index([path])
+  @@index([level])
+}
+
+model StudentProject {
+  id              String               @id @default(uuid()) @db.Uuid
+  studentId       String               @db.Uuid
+  student         Student              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  projectId       String               @db.Uuid
+  project         Project              @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  status          StudentProjectStatus @default(ASSIGNED)
+  progressPercent Int                  @default(0)
+  assignedAt      DateTime             @default(now())
+  dueDate         DateTime?            @db.Date
+  notes           String               @default("")
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  milestones      ProjectMilestone[]
+
+  @@unique([studentId, projectId])
+  @@index([projectId])
+  @@index([status])
+}
+
+model ProjectMilestone {
+  id                 String           @id @default(uuid()) @db.Uuid
+  studentProjectId   String           @db.Uuid
+  studentProject     StudentProject   @relation(fields: [studentProjectId], references: [id], onDelete: Cascade)
+  kind               MilestoneKind
+  title              String
+  description        String
+  sortOrder          Int
+  completionPercent  Int              @default(0)
+  status             MilestoneStatus  @default(NOT_STARTED)
+  dueDate            DateTime?        @db.Date
+  mentorFeedback     String           @default("")
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@unique([studentProjectId, kind])
+  @@index([kind])
+  @@index([status])
+}
+
+enum ReviewKind {
+  INITIAL_ASSESSMENT
+  MONTHLY_REVIEW
+}
+
+model ProgressReview {
+  id                    String     @id @default(uuid()) @db.Uuid
+  studentId             String     @db.Uuid
+  student               Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  kind                  ReviewKind
+  reviewedAt            DateTime   @db.Date
+  periodStart           DateTime   @db.Date
+  periodEnd             DateTime   @db.Date
+  reviewerId            String     @db.Uuid
+  reviewer              User       @relation("ProgressReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
+  technicalSkills       Int
+  problemSolving        Int
+  projects              Int
+  independence          Int
+  communication         Int
+  overallScore          Int
+  kpiOverallPercent     Int        @default(0)
+  projectOverallPercent Int        @default(0)
+  notes                 String     @default("")
+  strengths             String     @default("")
+  nextFocus             String     @default("")
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  @@unique([studentId, kind, periodStart])
+  @@index([studentId, reviewedAt])
+  @@index([reviewerId])
+  @@index([kind])
+}

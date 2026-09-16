@@ -1,0 +1,70 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+}
+
+.login-page {
+  position: relative;
+  box-sizing: border-box;
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(
+      circle at top,
+      color-mix(in srgb, var(--mat-sys-primary) 18%, transparent),
+      transparent 46%
+    ),
+    var(--mat-sys-surface);
+}
+
+.lang-toggle {
+  position: absolute;
+  inset-block-start: 16px;
+  inset-inline-end: 16px;
+}
+
+.login-card {
+  width: min(100%, 420px);
+  padding: 32px 28px 28px;
+}
+
+.brand-logo {
+  display: block;
+  width: min(100%, 240px);
+  height: auto;
+  margin-inline: auto;
+  margin-bottom: 16px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.subtitle {
+  margin: 8px 0 24px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.full-width {
+  width: 100%;
+}
+
+.form-error {
+  margin: 0 0 16px;
+  color: var(--mat-sys-error);
+}
+
+.submit {
+  height: 48px;
+  margin-top: 8px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}

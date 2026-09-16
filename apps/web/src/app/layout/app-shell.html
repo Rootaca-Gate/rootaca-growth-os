@@ -1,0 +1,29 @@
+<mat-toolbar color="primary">
+  <span class="brand">ROOTACA Growth OS</span>
+  <a
+    mat-button
+    routerLink="/"
+    routerLinkActive="active-link"
+    [routerLinkActiveOptions]="{ exact: true }"
+  >
+    Dashboard
+  </a>
+  <a mat-button routerLink="/students" routerLinkActive="active-link">Students</a>
+  <a mat-button routerLink="/levels" routerLinkActive="active-link">Levels</a>
+  <a mat-button routerLink="/skills" routerLinkActive="active-link">Skills</a>
+  <a mat-button routerLink="/learning-paths" routerLinkActive="active-link">Paths</a>
+  <a mat-button routerLink="/kpis" routerLinkActive="active-link">KPIs</a>
+  <a mat-button routerLink="/projects" routerLinkActive="active-link">Projects</a>
+  <span class="spacer"></span>
+  @if (auth.currentUser(); as user) {
+  <span class="user-meta">{{ user.displayName }} · {{ user.role }}</span>
+  }
+  <button mat-button type="button" (click)="toggleDirection()">
+    {{ direction() === 'rtl' ? 'English' : 'العربية' }}
+  </button>
+  <button mat-button type="button" (click)="logout()">Logout</button>
+</mat-toolbar>
+
+<main>
+  <router-outlet />
+</main>

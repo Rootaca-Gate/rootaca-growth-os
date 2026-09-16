@@ -1,0 +1,104 @@
+<app-page-header
+  title="Dashboard"
+  subtitle="Live counts from students, orientation, skills, KPIs, projects, and reviews"
+>
+  <a mat-stroked-button routerLink="/students">Students</a>
+  <a mat-stroked-button routerLink="/projects">Projects</a>
+  <a mat-stroked-button routerLink="/kpis">KPIs</a>
+</app-page-header>
+
+@if (loading()) {
+<div class="loading">
+  <mat-spinner diameter="36" />
+</div>
+} @else if (error(); as message) {
+<app-empty-state title="Dashboard unavailable" [message]="message">
+  <button mat-flat-button color="primary" type="button" (click)="load()">Retry</button>
+</app-empty-state>
+} @else if (dashboard(); as current) {
+<section class="cards" aria-label="Dashboard cards">
+  @for (card of cards; track card.key) {
+  <article>
+    <p>{{ card.hint }}</p>
+    <h2>{{ card.label }}</h2>
+    <strong>{{ cardValue(current.cards, card.key) }}</strong>
+  </article>
+  }
+</section>
+
+<section class="charts" aria-label="Dashboard charts">
+  <app-dashboard-bar-chart title="Students by Level" empty="No students yet" [bars]="levelBars()" />
+  <app-dashboard-bar-chart title="Students by Path" empty="No students yet" [bars]="pathBars()" />
+  <app-dashboard-bar-chart
+    title="Average Skill Scores"
+    empty="No skill scores yet"
+    [bars]="skillBars()"
+    [max]="100"
+  />
+  <app-dashboard-bar-chart
+    title="KPI Status"
+    empty="No student KPIs yet"
+    [bars]="kpiBars()"
+    [max]="kpiStatusMax()"
+  />
+  <app-dashboard-line-chart
+    class="monthly"
+    title="Monthly Progress"
+    empty="No monthly reviews yet"
+    [points]="monthlyPoints()"
+  />
+</section>
+
+<section class="attention" aria-label="Attention">
+  @for (panel of attention; track panel.key) {
+  <article>
+    <h3>{{ panel.title }}</h3>
+    @if (current.attention[panel.key].length === 0) {
+    <p class="empty">{{ panel.empty }}</p>
+    } @else {
+    <ul>
+      @for (item of current.attention[panel.key]; track item.studentId) {
+      <li>
+        <a [routerLink]="item.href">{{ item.studentName }}</a>
+        <span>{{ item.detail }}</span>
+      </li>
+      }
+    </ul>
+    }
+  </article>
+  }
+</section>
+
+<section class="sessions" aria-label="Sessions">
+  <article>
+    <h3>Recent Orientation Sessions</h3>
+    @if (current.recentSessions.length === 0) {
+    <p class="empty">No orientation sessions yet</p>
+    } @else {
+    <ul>
+      @for (item of current.recentSessions; track item.id) {
+      <li>
+        <a [routerLink]="item.href">{{ item.studentName }}</a>
+        <span>{{ item.statusLabel }} · {{ item.stageLabel }}</span>
+      </li>
+      }
+    </ul>
+    }
+  </article>
+  <article>
+    <h3>Upcoming sessions</h3>
+    @if (current.upcomingSessions.length === 0) {
+    <p class="empty">No draft sessions waiting</p>
+    } @else {
+    <ul>
+      @for (item of current.upcomingSessions; track item.id) {
+      <li>
+        <a [routerLink]="item.href">{{ item.studentName }}</a>
+        <span>{{ item.statusLabel }} · {{ item.stageLabel }}</span>
+      </li>
+      }
+    </ul>
+    }
+  </article>
+</section>
+}

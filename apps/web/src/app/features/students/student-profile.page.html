@@ -1,0 +1,61 @@
+@if (loading()) {
+<div class="loading"><mat-spinner diameter="36" /></div>
+} @else if (student(); as current) {
+<app-page-header [title]="current.fullName" subtitle="Student profile">
+  <mat-form-field appearance="outline" class="status-field">
+    <mat-label>Status</mat-label>
+    <mat-select [formControl]="statusControl" (selectionChange)="changeStatus($event.value)">
+      @for (status of statuses; track status) {
+      <mat-option [value]="status">{{ statusLabels[status] }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <a mat-stroked-button [routerLink]="['/students', current.id, 'roadmap']">Roadmap</a>
+  <a mat-stroked-button [routerLink]="['/students', current.id, 'kpis']">KPIs</a>
+  <a mat-stroked-button [routerLink]="['/students', current.id, 'projects']">Projects</a>
+  <a mat-stroked-button [routerLink]="['/students', current.id, 'progress']">Progress</a>
+  <a mat-stroked-button [routerLink]="['/students', current.id, 'report']">Report</a>
+  <a mat-stroked-button [routerLink]="['/students', current.id, 'edit']">Edit</a>
+  <a mat-button routerLink="/students">Back to list</a>
+</app-page-header>
+
+<mat-card appearance="outlined">
+  <mat-tab-group animationDuration="0">
+    <mat-tab label="Overview">
+      <app-student-overview [student]="current" />
+      <app-student-roadmap-progress [studentId]="current.id" />
+      <app-student-kpi-progress [studentId]="current.id" />
+      <app-student-project-progress [studentId]="current.id" />
+      <app-student-progress-card [studentId]="current.id" />
+    </mat-tab>
+    <mat-tab label="Assessment">
+      <app-student-assessment-panel [studentId]="current.id" [sessions]="sessions()" />
+    </mat-tab>
+    <mat-tab label="Skills">
+      <app-student-skills-panel [studentId]="current.id" />
+    </mat-tab>
+    <mat-tab label="Roadmap">
+      <app-student-roadmap-progress [studentId]="current.id" />
+      <app-student-roadmap-panel [studentId]="current.id" />
+    </mat-tab>
+    <mat-tab label="KPIs">
+      <app-student-kpi-dashboard [studentId]="current.id" />
+    </mat-tab>
+    <mat-tab label="Projects">
+      <app-student-project-board [studentId]="current.id" />
+    </mat-tab>
+    <mat-tab label="Sessions">
+      <app-coming-soon-panel title="Sessions" />
+    </mat-tab>
+    <mat-tab label="Notes">
+      <app-coming-soon-panel title="Notes" />
+    </mat-tab>
+    <mat-tab label="Reports">
+      <app-student-report-preview [studentId]="current.id" [showOpenLink]="true" />
+    </mat-tab>
+    <mat-tab label="Progress">
+      <app-student-progress-dashboard [studentId]="current.id" />
+    </mat-tab>
+  </mat-tab-group>
+</mat-card>
+}

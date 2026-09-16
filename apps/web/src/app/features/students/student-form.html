@@ -1,0 +1,107 @@
+<form class="student-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <div class="grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Full name</mat-label>
+      <input matInput formControlName="fullName" />
+      @if (form.controls.fullName.invalid && form.controls.fullName.touched) {
+      <mat-error>Enter the student name</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Date of birth</mat-label>
+      <input matInput [matDatepicker]="picker" formControlName="dateOfBirth" />
+      <mat-datepicker-toggle matIconSuffix [for]="picker" />
+      <mat-datepicker #picker />
+      @if (form.controls.dateOfBirth.invalid && form.controls.dateOfBirth.touched) {
+      <mat-error>Date of birth is required</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>School grade</mat-label>
+      <input matInput formControlName="schoolGrade" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Phone</mat-label>
+      <input matInput formControlName="phone" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Parent contact</mat-label>
+      <input matInput formControlName="parentContact" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Hours / week</mat-label>
+      <input matInput type="number" formControlName="availableHoursPerWeek" min="1" max="40" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Programming experience</mat-label>
+      <mat-select formControlName="programmingExperience">
+        @for (option of experienceOptions; track option) {
+        <mat-option [value]="option">{{ experienceLabels[option] }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>English level</mat-label>
+      <mat-select formControlName="englishLevel">
+        @for (option of englishOptions; track option) {
+        <mat-option [value]="option">{{ englishLabels[option] }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Level</mat-label>
+      <mat-select formControlName="level">
+        @for (option of levelOptions; track option) {
+        <mat-option [value]="option">{{ levelLabels[option] }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Path</mat-label>
+      <mat-select formControlName="path">
+        @for (option of pathOptions; track option) {
+        <mat-option [value]="option">{{ pathLabels[option] }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="span-2">
+      <mat-label>Programming languages</mat-label>
+      <mat-select formControlName="programmingLanguages" multiple>
+        @for (option of languageOptions; track option) {
+        <mat-option [value]="option">{{ option }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="span-2">
+      <mat-label>Interests</mat-label>
+      <mat-select formControlName="interests" multiple>
+        @for (option of interestOptions; track option) {
+        <mat-option [value]="option">{{ option }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="span-2">
+      <mat-label>Learning goal</mat-label>
+      <textarea matInput rows="4" formControlName="learningGoal"></textarea>
+    </mat-form-field>
+  </div>
+
+  <div class="actions">
+    <button mat-button type="button" (click)="cancelled.emit()">Cancel</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+      {{ saveLabel() }}
+    </button>
+  </div>
+</form>

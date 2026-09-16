@@ -1,0 +1,18 @@
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.status-field {
+  width: 180px;
+}
+
+mat-card {
+  padding: 8px 16px 24px;
+}
+
+app-student-roadmap-progress {
+  display: block;
+  margin: 8px 0 16px;
+}

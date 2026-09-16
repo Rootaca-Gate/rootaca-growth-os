@@ -1,0 +1,37 @@
+{
+  "name": "rootaca-growth-os",
+  "version": "0.0.1",
+  "private": true,
+  "description": "ROOTACA Growth OS — production-ready growth operating system",
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev:api": "npm run start:dev -w @rootaca/api",
+    "dev:web": "npm run start -w @rootaca/web",
+    "build": "npm run build -w @rootaca/api && npm run build -w @rootaca/web",
+    "build:api": "npm run build -w @rootaca/api",
+    "build:web": "npm run build -w @rootaca/web",
+    "test": "npm run test:api && npm run test:web",
+    "test:api": "npm run test -w @rootaca/api && npm run test:e2e -w @rootaca/api",
+    "test:web": "npm run test -w @rootaca/web",
+    "lint": "npm run lint -w @rootaca/api && npm run lint -w @rootaca/web",
+    "format": "prettier --write \"apps/**/*.{ts,js,json,html,scss,md}\" \"*.{json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"apps/**/*.{ts,js,json,html,scss,md}\" \"*.{json,md,yml,yaml}\"",
+    "prisma:generate": "npm run prisma:generate -w @rootaca/api",
+    "prisma:validate": "npm run prisma:validate -w @rootaca/api",
+    "prisma:migrate": "npm run prisma:migrate -w @rootaca/api",
+    "prisma:seed": "npm run prisma:seed -w @rootaca/api",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "deploy:web": "npm run build -w @rootaca/web && firebase deploy --only hosting --project rootaca-admin --non-interactive",
+    "postinstall": "npm run prisma:generate"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}

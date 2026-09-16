@@ -1,0 +1,9 @@
+process.env.NODE_ENV = 'test';
+process.env.PORT = '3000';
+process.env.API_PREFIX = 'api';
+process.env.CORS_ORIGIN = 'http://localhost:4200';
+process.env.DATABASE_URL = 'postgresql://rootaca:rootaca@localhost:5432/rootaca?schema=public';
+process.env.JWT_SECRET = 'test-jwt-secret-do-not-use-in-production';
+process.env.JWT_EXPIRES_IN = '15m';
+process.env.JWT_REFRESH_EXPIRES_IN = '7d';
+process.env.LOG_LEVEL = 'silent';

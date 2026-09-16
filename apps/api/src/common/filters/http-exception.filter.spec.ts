@@ -40,7 +40,7 @@ describe('AllExceptionsFilter', () => {
     );
   });
 
-  it('hides unexpected error details', () => {
+  it('returns the unexpected error message', () => {
     const { host, response } = createHost();
 
     filter.catch(new Error('database exploded'), host);
@@ -49,7 +49,7 @@ describe('AllExceptionsFilter', () => {
     expect(response.json).toHaveBeenCalledWith(
       expect.objectContaining({
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: 'Internal server error',
+        message: 'database exploded',
       }),
     );
   });

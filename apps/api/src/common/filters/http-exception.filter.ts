@@ -26,7 +26,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const { statusCode, message } = this.normalize(exception);
 
     if (statusCode >= HttpStatus.INTERNAL_SERVER_ERROR) {
-      this.logger.error(exception);
+      this.logger.error(
+        exception instanceof Error ? exception.stack ?? exception.message : exception,
+      );
     } else {
       this.logger.warn(message);
     }
@@ -62,7 +64,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     return {
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: 'Internal server error',
+      message: exception instanceof Error ? exception.message : 'Internal server error',
     };
   }
 

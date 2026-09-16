@@ -11,7 +11,7 @@ export function configureApp(app: INestApplication): void {
   app.setGlobalPrefix(globalPrefix);
   app.enableShutdownHooks();
   app.enableCors({
-    origin: config.get('CORS_ORIGIN', { infer: true }),
+    origin: parseCorsOrigins(config.get('CORS_ORIGIN', { infer: true })),
     credentials: true,
   });
 
@@ -50,4 +50,12 @@ export function configureApp(app: INestApplication): void {
       persistAuthorization: true,
     },
   });
+}
+
+function parseCorsOrigins(value: string): string | string[] {
+  const origins = value
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  return origins.length <= 1 ? (origins[0] ?? value) : origins;
 }

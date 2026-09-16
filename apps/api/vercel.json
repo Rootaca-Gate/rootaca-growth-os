@@ -1,15 +1,9 @@
 {
-  "version": 2,
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/api"
-    }
-  ],
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/index.ts": {
+    "src/main.ts": {
       "maxDuration": 10,
-      "includeFiles": "{prisma/**,src/reports/fonts/**}"
+      "includeFiles": "{prisma/**,src/reports/fonts/**,node_modules/.prisma/client/**}"
     }
   }
 }

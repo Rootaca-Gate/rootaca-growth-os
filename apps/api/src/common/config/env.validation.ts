@@ -26,10 +26,15 @@ export class EnvironmentVariables {
   API_PREFIX = 'api';
 
   @IsString()
-  CORS_ORIGIN = 'http://localhost:4200';
+  CORS_ORIGIN =
+    'http://localhost:4200,https://rootaca-admin.web.app,https://rootaca-admin.firebaseapp.com';
 
   @IsString()
   DATABASE_URL!: string;
+
+  @IsOptional()
+  @IsString()
+  DIRECT_URL?: string;
 
   @IsString()
   JWT_SECRET!: string;

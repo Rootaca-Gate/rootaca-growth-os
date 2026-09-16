@@ -9,7 +9,9 @@ export function configureApp(app: INestApplication): void {
   const globalPrefix = config.get('API_PREFIX', { infer: true });
 
   app.setGlobalPrefix(globalPrefix);
-  app.enableShutdownHooks();
+  if (!process.env.VERCEL) {
+    app.enableShutdownHooks();
+  }
   app.enableCors({
     origin: parseCorsOrigins(config.get('CORS_ORIGIN', { infer: true })),
     credentials: true,
@@ -27,6 +29,10 @@ export function configureApp(app: INestApplication): void {
   );
 
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  if (process.env.VERCEL) {
+    return;
+  }
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('ROOTACA Growth OS API')

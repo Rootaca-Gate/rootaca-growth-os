@@ -1,13 +1,25 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { PrismaNeonHTTP } from '@prisma/adapter-neon';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
+function createAdapter(): PrismaNeonHTTP | PrismaPg {
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error('DATABASE_URL is not set');
+  }
+
+  if (process.env.VERCEL || url.includes('neon.tech')) {
+    return new PrismaNeonHTTP(url, {});
+  }
+
+  return new PrismaPg({ connectionString: url });
+}
+
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  async onModuleInit(): Promise<void> {
-    if (process.env.VERCEL) {
-      return;
-    }
-    await this.$connect();
+export class PrismaService extends PrismaClient implements OnModuleDestroy {
+  constructor() {
+    super({ adapter: createAdapter() });
   }
 
   async onModuleDestroy(): Promise<void> {

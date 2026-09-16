@@ -30,7 +30,7 @@ import { PrismaModule } from './prisma/prisma.module';
       inject: [ConfigService],
       useFactory: (config: ConfigService<EnvironmentVariables, true>) => {
         const nodeEnv = config.get('NODE_ENV', { infer: true });
-        const isProduction = nodeEnv === 'production';
+        const isProduction = nodeEnv === 'production' || Boolean(process.env.VERCEL);
         const isTest = nodeEnv === 'test';
 
         return {

@@ -1,6 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { isAllowedCorsOrigin, mergeCorsOrigins } from './common/config/cors-origins';
 import { EnvironmentVariables } from './common/config/env.validation';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
@@ -12,9 +13,15 @@ export function configureApp(app: INestApplication): void {
   if (!process.env.VERCEL) {
     app.enableShutdownHooks();
   }
+  const allowedOrigins = mergeCorsOrigins(config.get('CORS_ORIGIN', { infer: true }));
   app.enableCors({
-    origin: parseCorsOrigins(config.get('CORS_ORIGIN', { infer: true })),
+    origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => {
+      callback(null, isAllowedCorsOrigin(origin, allowedOrigins));
+    },
     credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Authorization', 'Content-Type', 'Accept', 'Origin'],
+    optionsSuccessStatus: 204,
   });
 
   app.useGlobalPipes(
@@ -56,12 +63,4 @@ export function configureApp(app: INestApplication): void {
       persistAuthorization: true,
     },
   });
-}
-
-function parseCorsOrigins(value: string): string | string[] {
-  const origins = value
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
-  return origins.length <= 1 ? (origins[0] ?? value) : origins;
 }

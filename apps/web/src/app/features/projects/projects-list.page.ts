@@ -9,9 +9,13 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth.service';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { EmptyState } from '../../shared/empty-state';
+import { ErrorState } from '../../shared/error-state';
 import { PageHeader } from '../../shared/page-header';
-import { LEVEL_LABELS, PATH_LABELS, PROJECT_LEVELS, PROJECT_PATHS } from './project.labels';
+import { httpErrorMessage } from '../../shared/http-error';
+import { PROJECT_LEVELS, PROJECT_PATHS } from './project.labels';
 import { ProjectApi } from './project.api';
 import { EducationalProject, LevelCode, PathCode } from './project.models';
 
@@ -27,40 +31,44 @@ import { EducationalProject, LevelCode, PathCode } from './project.models';
     MatProgressSpinnerModule,
     PageHeader,
     EmptyState,
+    ErrorState,
+    TPipe,
   ],
   template: `
     <app-page-header
-      title="Educational projects"
-      subtitle="Classroom learning work for students. These are not client case studies."
+      [title]="'projects.title' | t"
+      [subtitle]="'projects.subtitle' | t"
     >
       @if (canEdit() && !editing()) {
-        <button mat-stroked-button type="button" (click)="startCreate()">Add project</button>
+        <button mat-flat-button color="primary" type="button" (click)="startCreate()">{{ 'projects.create' | t }}</button>
       }
     </app-page-header>
 
     @if (loading()) {
       <div class="loading"><mat-spinner diameter="36" /></div>
+    } @else if (error(); as message) {
+      <app-error-state [title]="'projects.loadError' | t" [message]="message" (retry)="reload()" />
     } @else if (projects().length === 0 && !editing()) {
-      <app-empty-state title="No educational projects" message="Seed the catalog or add a classroom project." />
+      <app-empty-state [title]="'projects.empty' | t" [message]="'projects.emptyHint' | t" />
     } @else {
       <div class="grid">
         @for (item of projects(); track item.id) {
           <article [attr.data-active]="item.active">
-            <p class="kicker">{{ pathLabel(item.path) }} · {{ levelLabel(item.level) }} · classroom</p>
+            <p class="kicker">{{ i18n.pathLabel(item.path) }} · {{ i18n.levelLabel(item.level) }} · {{ 'projects.classroom' | t }}</p>
             <h2>{{ item.name }}</h2>
             <p>{{ item.description }}</p>
             <p class="meta">
-              {{ item.durationDays }} days · {{ item.assignmentCount }} assigned
+              {{ 'projects.durationAssigned' | t:{ days: item.durationDays, count: item.assignmentCount } }}
               @if (!item.active) {
-                · Inactive
+                · {{ 'common.inactive' | t }}
               }
             </p>
             <div class="actions">
-              <a mat-stroked-button [routerLink]="['/projects', item.id]">Open</a>
+              <a mat-stroked-button [routerLink]="['/projects', item.id]">{{ 'common.open' | t }}</a>
               @if (canEdit()) {
-                <button mat-button type="button" (click)="startEdit(item)">Edit</button>
+                <button mat-button type="button" (click)="startEdit(item)">{{ 'common.edit' | t }}</button>
                 @if (item.active) {
-                  <button mat-button type="button" (click)="deactivate(item.id)">Deactivate</button>
+                  <button mat-button type="button" (click)="deactivate(item.id)">{{ 'common.deactivate' | t }}</button>
                 }
               }
             </div>
@@ -71,45 +79,45 @@ import { EducationalProject, LevelCode, PathCode } from './project.models';
 
     @if (canEdit() && editing()) {
       <form [formGroup]="form" (ngSubmit)="save()">
-        <h2>{{ editingId() ? 'Edit educational project' : 'Add educational project' }}</h2>
-        <p class="hint">Describe classroom practice only. Do not frame this as client work.</p>
+        <h2>{{ editingId() ? ('projects.edit' | t) : ('projects.add' | t) }}</h2>
+        <p class="hint">{{ 'projects.hint' | t }}</p>
         <mat-form-field appearance="outline">
-          <mat-label>Name</mat-label>
+          <mat-label>{{ 'projects.name' | t }}</mat-label>
           <input matInput formControlName="name" />
         </mat-form-field>
         <mat-form-field appearance="outline">
-          <mat-label>Description</mat-label>
+          <mat-label>{{ 'projects.description' | t }}</mat-label>
           <textarea matInput rows="3" formControlName="description"></textarea>
         </mat-form-field>
         <mat-form-field appearance="outline">
-          <mat-label>Learning goal</mat-label>
+          <mat-label>{{ 'projects.learningGoal' | t }}</mat-label>
           <textarea matInput rows="2" formControlName="learningGoal"></textarea>
         </mat-form-field>
         <mat-form-field appearance="outline">
-          <mat-label>Path</mat-label>
+          <mat-label>{{ 'common.path' | t }}</mat-label>
           <mat-select formControlName="path">
             @for (path of paths; track path) {
-              <mat-option [value]="path">{{ pathLabel(path) }}</mat-option>
+              <mat-option [value]="path">{{ i18n.pathLabel(path) }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
         <mat-form-field appearance="outline">
-          <mat-label>Level</mat-label>
+          <mat-label>{{ 'common.level' | t }}</mat-label>
           <mat-select formControlName="level">
             @for (level of levels; track level) {
-              <mat-option [value]="level">{{ levelLabel(level) }}</mat-option>
+              <mat-option [value]="level">{{ i18n.levelLabel(level) }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
         <mat-form-field appearance="outline">
-          <mat-label>Duration (days)</mat-label>
+          <mat-label>{{ 'projects.durationDays' | t }}</mat-label>
           <input matInput type="number" formControlName="durationDays" />
         </mat-form-field>
         <div class="actions">
           <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid || saving()">
-            Save project
+            {{ 'projects.save' | t }}
           </button>
-          <button mat-button type="button" (click)="editing.set(false)">Cancel</button>
+          <button mat-button type="button" (click)="editing.set(false)">{{ 'common.cancel' | t }}</button>
         </div>
       </form>
     }
@@ -174,8 +182,10 @@ export class ProjectsListPage {
   private readonly api = inject(ProjectApi);
   private readonly snackBar = inject(MatSnackBar);
   private readonly auth = inject(AuthService);
+  readonly i18n = inject(DirectionService);
 
   readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
   readonly saving = signal(false);
   readonly editing = signal(false);
   readonly editingId = signal<string | null>(null);
@@ -204,11 +214,11 @@ export class ProjectsListPage {
   }
 
   pathLabel(path: PathCode): string {
-    return PATH_LABELS[path];
+    return this.i18n.pathLabel(path);
   }
 
   levelLabel(level: LevelCode): string {
-    return LEVEL_LABELS[level];
+    return this.i18n.levelLabel(level);
   }
 
   startCreate(): void {
@@ -250,12 +260,12 @@ export class ProjectsListPage {
       next: () => {
         this.saving.set(false);
         this.editing.set(false);
-        this.snackBar.open('Educational project saved', 'OK', { duration: 2000 });
+        this.snackBar.open(this.i18n.t('projects.saved'), this.i18n.t('common.ok'), { duration: 2000 });
         this.reload();
       },
       error: (error: unknown) => {
         this.saving.set(false);
-        this.snackBar.open(this.toMessage(error), 'OK', { duration: 4000 });
+        this.snackBar.open(this.toMessage(error), this.i18n.t('common.ok'), { duration: 4000 });
       },
     });
   }
@@ -263,20 +273,25 @@ export class ProjectsListPage {
   deactivate(id: string): void {
     this.api.deactivate(id).subscribe({
       next: () => {
-        this.snackBar.open('Project deactivated', 'OK', { duration: 2000 });
+        this.snackBar.open(this.i18n.t('projects.deactivated'), this.i18n.t('common.ok'), { duration: 2000 });
         this.reload();
       },
-      error: (error: unknown) => this.snackBar.open(this.toMessage(error), 'OK', { duration: 4000 }),
+      error: (error: unknown) => this.snackBar.open(this.toMessage(error), this.i18n.t('common.ok'), { duration: 4000 }),
     });
   }
 
-  private reload(): void {
+  reload(): void {
+    this.loading.set(true);
+    this.error.set(null);
     this.api.list().subscribe({
       next: (items) => {
         this.projects.set(items);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: (error: unknown) => {
+        this.error.set(httpErrorMessage(error, this.i18n.t('errors.connection')));
+        this.loading.set(false);
+      },
     });
   }
 
@@ -284,6 +299,6 @@ export class ProjectsListPage {
     if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string') {
       return error.error.message;
     }
-    return 'Unable to update educational projects.';
+    return this.i18n.t('projects.updateFailed');
   }
 }

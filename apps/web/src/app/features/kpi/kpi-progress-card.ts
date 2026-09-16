@@ -1,28 +1,33 @@
-import { Component, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { KPI_STATUS_LABELS } from './kpi.labels';
-import { KpiStatus, StudentKpiDashboard } from './kpi.models';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
+import { StudentKpiDashboard } from './kpi.models';
 
 @Component({
   selector: 'app-kpi-progress-card',
-  imports: [RouterLink, MatButtonModule, MatProgressBarModule],
+  imports: [RouterLink, MatButtonModule, MatProgressBarModule, TPipe],
   template: `
     @if (dashboard(); as current) {
       <section class="card">
         <header>
           <div>
-            <p class="kicker">KPI progress</p>
+            <p class="kicker">{{ 'kpis.progressKicker' | t }}</p>
             <h2>{{ current.overallPercent }}%</h2>
             <p>
-              {{ statusLabel(current.overallStatus) }} · {{ current.onTrackCount }} on track ·
-              {{ current.atRiskCount }} at risk · {{ current.behindCount }} behind
+              {{ 'kpis.countsLine' | t:{
+                status: i18n.statusLabel(current.overallStatus),
+                onTrack: current.onTrackCount,
+                atRisk: current.atRiskCount,
+                behind: current.behindCount
+              } }}
             </p>
           </div>
           @if (linkToFull()) {
             <a mat-stroked-button [routerLink]="['/students', current.studentId, 'kpis']">
-              Open KPIs
+              {{ 'students.openKpis' | t }}
             </a>
           }
         </header>
@@ -32,7 +37,7 @@ import { KpiStatus, StudentKpiDashboard } from './kpi.models';
             <li>
               <div class="meta">
                 <strong>{{ item.kpi.name }}</strong>
-                <span>{{ item.progressPercent }}% · {{ statusLabel(item.status) }}</span>
+                <span>{{ item.progressPercent }}% · {{ i18n.statusLabel(item.status) }}</span>
               </div>
               <mat-progress-bar mode="determinate" [value]="item.progressPercent" />
             </li>
@@ -96,10 +101,7 @@ import { KpiStatus, StudentKpiDashboard } from './kpi.models';
   `,
 })
 export class KpiProgressCard {
+  readonly i18n = inject(DirectionService);
   readonly dashboard = input.required<StudentKpiDashboard>();
   readonly linkToFull = input(false);
-
-  statusLabel(status: KpiStatus): string {
-    return KPI_STATUS_LABELS[status];
-  }
 }

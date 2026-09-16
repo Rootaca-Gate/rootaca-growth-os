@@ -1,5 +1,26 @@
 @use '@angular/material' as mat;
 
+:root {
+  --ra-bg: #f4f6f3;
+  --ra-surface: #ffffff;
+  --ra-sidebar: #10231b;
+  --ra-sidebar-text: #d7e5dd;
+  --ra-sidebar-muted: #8aa396;
+  --ra-sidebar-active: #1f6b4a;
+  --ra-border: #e2e8e3;
+  --ra-text: #14231c;
+  --ra-muted: #5d6f66;
+  --ra-accent: #1b6b4a;
+  --ra-accent-soft: #e8f4ee;
+  --ra-danger: #b42318;
+  --ra-warning: #b54708;
+  --ra-info: #175cd3;
+  --ra-radius: 16px;
+  --ra-shadow: 0 1px 2px rgb(16 35 27 / 6%);
+  --ra-header: 72px;
+  --ra-sidebar-width: 268px;
+}
+
 html {
   @include mat.theme(
     (
@@ -8,7 +29,7 @@ html {
         tertiary: mat.$azure-palette,
       ),
       typography: Roboto,
-      density: 0,
+      density: -1,
     )
   );
 }
@@ -20,7 +41,81 @@ body {
 
 body {
   margin: 0;
-  font-family: Roboto, 'Helvetica Neue', sans-serif;
-  background: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
+  font-family: 'Source Sans 3', Roboto, 'Helvetica Neue', sans-serif;
+  background: var(--ra-bg);
+  color: var(--ra-text);
+}
+
+html[dir='rtl'] body {
+  font-family: 'IBM Plex Sans Arabic', 'Source Sans 3', Roboto, 'Helvetica Neue', sans-serif;
+}
+
+html[dir='rtl'] .ra-kicker {
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+a {
+  color: var(--ra-accent);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ra-accent) 70%, white);
+  outline-offset: 2px;
+}
+
+.ra-card {
+  background: var(--ra-surface);
+  border: 1px solid var(--ra-border);
+  border-radius: var(--ra-radius);
+  box-shadow: var(--ra-shadow);
+}
+
+.ra-kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ra-muted);
+}
+
+.ra-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-block-end: 20px;
+}
+
+.ra-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--ra-border);
+  border-radius: var(--ra-radius);
+  background: var(--ra-surface);
+}
+
+.ra-loading {
+  display: grid;
+  gap: 10px;
+}
+
+.ra-skeleton {
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #eef2ef, #f7f9f7, #eef2ef);
+  background-size: 200% 100%;
+  animation: ra-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes ra-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
 }

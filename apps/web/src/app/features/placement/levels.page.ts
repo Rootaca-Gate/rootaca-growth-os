@@ -1,23 +1,32 @@
 import { Component, inject, signal } from '@angular/core';
+import { forkJoin } from 'rxjs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { EmptyState } from '../../shared/empty-state';
+import { ErrorState } from '../../shared/error-state';
 import { PageHeader } from '../../shared/page-header';
+import { httpErrorMessage } from '../../shared/http-error';
+import { DashboardApi } from '../dashboard/dashboard.api';
+import { DashboardChartBucket } from '../dashboard/dashboard.models';
 import { PlacementApi } from './placement.api';
 import { Level } from './placement.models';
 
 @Component({
   selector: 'app-levels-page',
-  imports: [MatProgressSpinnerModule, PageHeader, EmptyState],
+  imports: [MatProgressSpinnerModule, PageHeader, EmptyState, ErrorState, TPipe],
   template: `
     <app-page-header
-      title="Levels"
-      subtitle="Score bands are stored as LevelRule rows and used after each assessment"
+      [title]="'catalogs.levelsTitle' | t"
+      [subtitle]="'catalogs.levelsSubtitle' | t"
     />
 
     @if (loading()) {
       <div class="loading"><mat-spinner diameter="36" /></div>
+    } @else if (error(); as message) {
+      <app-error-state [title]="'catalogs.levelsError' | t" [message]="message" (retry)="load()" />
     } @else if (levels().length === 0) {
-      <app-empty-state title="No levels" message="Seed the placement catalog to load default bands." />
+      <app-empty-state [title]="'catalogs.noLevels' | t" [message]="'catalogs.noLevelsHint' | t" />
     } @else {
       <div class="grid">
         @for (level of levels(); track level.id) {
@@ -25,6 +34,7 @@ import { Level } from './placement.models';
             <p class="kicker">{{ band(level) }}</p>
             <h2>{{ level.name }}</h2>
             <p>{{ level.description }}</p>
+            <p class="meta">{{ 'catalogs.studentsCount' | t:{ count: studentCount(level) } }}</p>
           </article>
         }
       </div>
@@ -68,25 +78,54 @@ import { Level } from './placement.models';
       line-height: 1.55;
       color: var(--mat-sys-on-surface-variant);
     }
+
+    .meta {
+      margin-top: 14px;
+      font-weight: 600;
+      color: var(--ra-text);
+    }
   `,
 })
 export class LevelsPage {
   private readonly api = inject(PlacementApi);
+  private readonly dashboardApi = inject(DashboardApi);
+  readonly i18n = inject(DirectionService);
   readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
   readonly levels = signal<Level[]>([]);
+  readonly counts = signal<DashboardChartBucket[]>([]);
 
   constructor() {
-    this.api.listLevels().subscribe({
-      next: (levels) => {
+    this.load();
+  }
+
+  load(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    forkJoin({
+      levels: this.api.listLevels(),
+      dashboard: this.dashboardApi.getDashboard(),
+    }).subscribe({
+      next: ({ levels, dashboard }) => {
         this.levels.set(levels);
+        this.counts.set(dashboard.charts.studentsByLevel);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: (error: unknown) => {
+        this.error.set(httpErrorMessage(error, this.i18n.t('errors.connection')));
+        this.loading.set(false);
+      },
     });
   }
 
   band(level: Level): string {
     const rule = level.rules?.[0];
     return rule ? `${rule.minScore}–${rule.maxScore}` : level.code;
+  }
+
+  studentCount(level: Level): number {
+    return this.counts()
+      .filter((bucket) => bucket.key === level.code || bucket.key === `INTAKE_${level.code}`)
+      .reduce((sum, bucket) => sum + bucket.count, 0);
   }
 }

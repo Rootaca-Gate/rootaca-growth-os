@@ -4,6 +4,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { PageHeader } from '../../shared/page-header';
 import { StudentForm } from './student-form';
 import { Student, StudentWritePayload } from './student.models';
@@ -11,11 +13,11 @@ import { StudentsApi } from './students.api';
 
 @Component({
   selector: 'app-student-edit-page',
-  imports: [MatCardModule, MatProgressSpinnerModule, PageHeader, StudentForm],
+  imports: [MatCardModule, MatProgressSpinnerModule, PageHeader, StudentForm, TPipe],
   template: `
     <app-page-header
-      title="Edit student"
-      subtitle="Update profile fields without changing status"
+      [title]="'students.editTitle' | t"
+      [subtitle]="'students.editSubtitle' | t"
     />
     @if (loading()) {
       <div class="loading"><mat-spinner diameter="36" /></div>
@@ -24,7 +26,7 @@ import { StudentsApi } from './students.api';
         <mat-card-content>
           <app-student-form
             [student]="current"
-            saveLabel="Save changes"
+            [saveLabel]="'students.saveChanges' | t"
             [submitting]="submitting()"
             (saved)="save($event)"
             (cancelled)="back()"
@@ -46,6 +48,7 @@ export class StudentEditPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
+  readonly i18n = inject(DirectionService);
 
   readonly loading = signal(true);
   readonly submitting = signal(false);
@@ -64,7 +67,9 @@ export class StudentEditPage {
         this.loading.set(false);
       },
       error: () => {
-        this.snackBar.open('Student not found', 'OK', { duration: 3000 });
+        this.snackBar.open(this.i18n.t('students.notFound'), this.i18n.t('common.ok'), {
+          duration: 3000,
+        });
         this.back();
       },
     });
@@ -79,12 +84,14 @@ export class StudentEditPage {
     this.submitting.set(true);
     this.studentsApi.update(current.id, payload).subscribe({
       next: (student) => {
-        this.snackBar.open('Student updated', 'OK', { duration: 2500 });
+        this.snackBar.open(this.i18n.t('students.updatedOk'), this.i18n.t('common.ok'), {
+          duration: 2500,
+        });
         void this.router.navigate(['/students', student.id]);
       },
       error: (error: unknown) => {
         this.submitting.set(false);
-        this.snackBar.open(this.toErrorMessage(error), 'OK', { duration: 4000 });
+        this.snackBar.open(this.toErrorMessage(error), this.i18n.t('common.ok'), { duration: 4000 });
       },
     });
   }
@@ -98,6 +105,6 @@ export class StudentEditPage {
     if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string') {
       return error.error.message;
     }
-    return 'Unable to update student.';
+    return this.i18n.t('students.updateFailed');
   }
 }

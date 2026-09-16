@@ -8,14 +8,11 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth.service';
-import { EmptyState } from '../../shared/empty-state';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
+import { ErrorState } from '../../shared/error-state';
 import { KpiApi } from './kpi.api';
-import {
-  KPI_CATEGORY_LABELS,
-  KPI_FREQUENCY_LABELS,
-  KPI_STATUS_LABELS,
-} from './kpi.labels';
-import { KpiStatus, StudentKpiDashboard as StudentKpiDashboardModel, StudentKpiItem } from './kpi.models';
+import { StudentKpiDashboard as StudentKpiDashboardModel, StudentKpiItem } from './kpi.models';
 
 @Component({
   selector: 'app-student-kpi-dashboard',
@@ -26,27 +23,28 @@ import { KpiStatus, StudentKpiDashboard as StudentKpiDashboardModel, StudentKpiI
     MatInputModule,
     MatProgressBarModule,
     MatProgressSpinnerModule,
-    EmptyState,
+    ErrorState,
+    TPipe,
   ],
   template: `
     <div class="wrap">
       @if (loading()) {
         <div class="loading"><mat-spinner diameter="28" /></div>
       } @else if (error(); as message) {
-        <app-empty-state title="No KPIs yet" [message]="message" />
+        <app-error-state [title]="'kpis.loadError' | t" [message]="message" />
       } @else if (dashboard(); as current) {
         <section class="summary">
           <header>
             <div>
-              <p class="kicker">KPI dashboard</p>
+              <p class="kicker">{{ 'kpis.dashboard' | t }}</p>
               <h2>{{ current.overallPercent }}%</h2>
-              <p>{{ statusLabel(current.overallStatus) }} · weighted across active KPIs</p>
+              <p>{{ 'kpis.weighted' | t:{ status: i18n.statusLabel(current.overallStatus) } }}</p>
             </div>
             <ul class="counts">
-              <li>On track {{ current.onTrackCount }}</li>
-              <li>At risk {{ current.atRiskCount }}</li>
-              <li>Behind {{ current.behindCount }}</li>
-              <li>Completed {{ current.completedCount }}</li>
+              <li>{{ 'kpis.onTrackCount' | t:{ count: current.onTrackCount } }}</li>
+              <li>{{ 'kpis.atRiskCount' | t:{ count: current.atRiskCount } }}</li>
+              <li>{{ 'kpis.behindCount' | t:{ count: current.behindCount } }}</li>
+              <li>{{ 'kpis.completedCount' | t:{ count: current.completedCount } }}</li>
             </ul>
           </header>
           <mat-progress-bar mode="determinate" [value]="current.overallPercent" />
@@ -56,69 +54,69 @@ import { KpiStatus, StudentKpiDashboard as StudentKpiDashboardModel, StudentKpiI
           @for (item of current.items; track item.id) {
             <article [attr.data-status]="item.status">
               <p class="kicker">
-                {{ categoryLabel(item.kpi.category) }} · {{ frequencyLabel(item.kpi.frequency) }}
+                {{ i18n.kpiCategoryLabel(item.kpi.category) }} · {{ i18n.frequencyLabel(item.kpi.frequency) }}
               </p>
               <h3>{{ item.kpi.name }}</h3>
               <p>{{ item.kpi.description }}</p>
               <dl>
                 <div>
-                  <dt>Target</dt>
+                  <dt>{{ 'kpis.target' | t }}</dt>
                   <dd>{{ item.target }} {{ item.kpi.unit }}</dd>
                 </div>
                 <div>
-                  <dt>Actual</dt>
+                  <dt>{{ 'kpis.actual' | t }}</dt>
                   <dd>{{ item.actual }} {{ item.kpi.unit }}</dd>
                 </div>
                 <div>
-                  <dt>Progress</dt>
+                  <dt>{{ 'kpis.progress' | t }}</dt>
                   <dd>{{ item.progressPercent }}%</dd>
                 </div>
                 <div>
-                  <dt>Status</dt>
-                  <dd>{{ statusLabel(item.status) }}</dd>
+                  <dt>{{ 'common.status' | t }}</dt>
+                  <dd>{{ i18n.statusLabel(item.status) }}</dd>
                 </div>
               </dl>
               <mat-progress-bar mode="determinate" [value]="item.progressPercent" />
               <p class="period">
                 {{ item.current.periodStart }} → {{ item.current.periodEnd }}
                 @if (item.weekly && item.monthly) {
-                  · week {{ item.weekly.progressPercent }}% · month {{ item.monthly.progressPercent }}%
+                  · {{ 'kpis.weekMonth' | t:{ week: item.weekly.progressPercent, month: item.monthly.progressPercent } }}
                 }
               </p>
               @if (canEdit() && editingId() === item.id) {
                 <form [formGroup]="recordForm" (ngSubmit)="save(item)">
                   <mat-form-field appearance="outline">
-                    <mat-label>Actual</mat-label>
+                    <mat-label>{{ 'kpis.actual' | t }}</mat-label>
                     <input matInput type="number" formControlName="actual" />
                   </mat-form-field>
                   <mat-form-field appearance="outline">
-                    <mat-label>Target</mat-label>
+                    <mat-label>{{ 'kpis.target' | t }}</mat-label>
                     <input matInput type="number" formControlName="target" />
                   </mat-form-field>
                   <mat-form-field appearance="outline">
-                    <mat-label>Notes</mat-label>
+                    <mat-label>{{ 'common.notes' | t }}</mat-label>
                     <textarea matInput rows="2" formControlName="notes"></textarea>
                   </mat-form-field>
                   <div class="actions">
                     <button mat-flat-button color="primary" type="submit" [disabled]="saving()">
-                      Save record
+                      {{ 'kpis.saveRecord' | t }}
                     </button>
-                    <button mat-button type="button" (click)="editingId.set(null)">Cancel</button>
+                    <button mat-button type="button" (click)="editingId.set(null)">{{ 'common.cancel' | t }}</button>
                   </div>
                 </form>
               } @else if (canEdit()) {
-                <button mat-stroked-button type="button" (click)="edit(item)">Update actual</button>
+                <button mat-stroked-button type="button" (click)="edit(item)">{{ 'kpis.updateActual' | t }}</button>
               }
               @if (item.history.length) {
                 <div class="history">
-                  <h4>History</h4>
+                  <h4>{{ 'kpis.history' | t }}</h4>
                   <ul>
                     @for (record of item.history; track record.id) {
                       <li>
-                        <strong>{{ frequencyLabel(record.frequency) }} {{ record.periodStart }}</strong>
+                        <strong>{{ i18n.frequencyLabel(record.frequency) }} {{ record.periodStart }}</strong>
                         <span>
                           {{ record.actual }}/{{ record.target }} {{ item.kpi.unit }} ·
-                          {{ record.progressPercent }}% · {{ statusLabel(record.status) }}
+                          {{ record.progressPercent }}% · {{ i18n.statusLabel(record.status) }}
                         </span>
                       </li>
                     }
@@ -245,6 +243,7 @@ export class StudentKpiDashboard {
   private readonly api = inject(KpiApi);
   private readonly snackBar = inject(MatSnackBar);
   private readonly auth = inject(AuthService);
+  readonly i18n = inject(DirectionService);
 
   readonly studentId = input.required<string>();
   readonly loading = signal(true);
@@ -282,18 +281,6 @@ export class StudentKpiDashboard {
     });
   }
 
-  statusLabel(status: KpiStatus): string {
-    return KPI_STATUS_LABELS[status];
-  }
-
-  categoryLabel(category: StudentKpiItem['kpi']['category']): string {
-    return KPI_CATEGORY_LABELS[category];
-  }
-
-  frequencyLabel(frequency: StudentKpiItem['kpi']['frequency']): string {
-    return KPI_FREQUENCY_LABELS[frequency];
-  }
-
   edit(item: StudentKpiItem): void {
     this.editingId.set(item.id);
     this.recordForm.reset({
@@ -317,11 +304,11 @@ export class StudentKpiDashboard {
           this.dashboard.set(dashboard);
           this.saving.set(false);
           this.editingId.set(null);
-          this.snackBar.open('KPI record saved', 'OK', { duration: 2000 });
+          this.snackBar.open(this.i18n.t('kpis.recordSaved'), this.i18n.t('common.ok'), { duration: 2000 });
         },
         error: (error: unknown) => {
           this.saving.set(false);
-          this.snackBar.open(this.toMessage(error), 'OK', { duration: 4000 });
+          this.snackBar.open(this.toMessage(error), this.i18n.t('common.ok'), { duration: 4000 });
         },
       });
   }
@@ -329,12 +316,12 @@ export class StudentKpiDashboard {
   private toMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 403) {
-        return 'Only mentors and admins can update KPI actuals.';
+        return this.i18n.t('kpis.noAccess');
       }
       if (typeof error.error?.message === 'string') {
         return error.error.message;
       }
     }
-    return 'Unable to load KPIs.';
+    return this.i18n.t('kpis.unable');
   }
 }

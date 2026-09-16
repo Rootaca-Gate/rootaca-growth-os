@@ -1,18 +1,26 @@
-.loading {
-  display: flex;
-  justify-content: center;
-  padding: 48px 0;
+.next,
+.block,
+.overall {
+  padding: 20px 22px;
+  margin-block-end: 16px;
+}
+
+.overall strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.75rem;
+  letter-spacing: -0.03em;
+}
+
+.next h2,
+.block h2 {
+  margin: 8px 0;
+}
+
+.hint {
+  color: var(--ra-muted);
 }
 
 .status-field {
-  width: 180px;
-}
-
-mat-card {
-  padding: 8px 16px 24px;
-}
-
-app-student-roadmap-progress {
-  display: block;
-  margin: 8px 0 16px;
+  max-width: 240px;
 }

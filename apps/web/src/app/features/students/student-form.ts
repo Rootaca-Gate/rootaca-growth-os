@@ -1,19 +1,17 @@
-import { Component, effect, inject, input, output } from '@angular/core';
+import { Component, effect, inject, input, output, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import {
-  ENGLISH_LABELS,
   ENGLISH_LEVELS,
-  EXPERIENCE_LABELS,
   INTEREST_OPTIONS,
   LANGUAGE_OPTIONS,
   LEARNING_PATHS,
-  LEVEL_LABELS,
-  PATH_LABELS,
   PROGRAMMING_EXPERIENCE,
   STUDENT_LEVELS,
 } from './student.labels';
@@ -35,18 +33,22 @@ import {
     MatSelectModule,
     MatButtonModule,
     MatDatepickerModule,
+    TPipe,
   ],
   templateUrl: './student-form.html',
   styleUrl: './student-form.scss',
 })
 export class StudentForm {
   private readonly formBuilder = inject(FormBuilder);
+  readonly i18n = inject(DirectionService);
 
   readonly student = input<Student | null>(null);
   readonly submitting = input(false);
   readonly saveLabel = input('Save student');
+  readonly wizard = input(false);
   readonly saved = output<StudentWritePayload>();
   readonly cancelled = output<void>();
+  readonly step = signal(1);
 
   readonly languageOptions = LANGUAGE_OPTIONS;
   readonly interestOptions = INTEREST_OPTIONS;
@@ -54,10 +56,6 @@ export class StudentForm {
   readonly englishOptions = ENGLISH_LEVELS;
   readonly levelOptions = STUDENT_LEVELS;
   readonly pathOptions = LEARNING_PATHS;
-  readonly experienceLabels = EXPERIENCE_LABELS;
-  readonly englishLabels = ENGLISH_LABELS;
-  readonly levelLabels = LEVEL_LABELS;
-  readonly pathLabels = PATH_LABELS;
 
   readonly form = this.formBuilder.nonNullable.group({
     fullName: ['', [Validators.required, Validators.minLength(2)]],
@@ -134,6 +132,44 @@ export class StudentForm {
       level: value.level,
       path: value.path,
     });
+  }
+
+  continue(): void {
+    if (!this.stepValid(this.step())) {
+      this.markStepTouched(this.step());
+      return;
+    }
+    this.step.update((current) => Math.min(3, current + 1));
+  }
+
+  back(): void {
+    this.step.update((current) => Math.max(1, current - 1));
+  }
+
+  private stepValid(step: number): boolean {
+    return this.stepControls(step).every((name) => this.form.controls[name].valid);
+  }
+
+  private markStepTouched(step: number): void {
+    for (const name of this.stepControls(step)) {
+      this.form.controls[name].markAsTouched();
+    }
+  }
+
+  private stepControls(step: number): Array<keyof typeof this.form.controls> {
+    if (step === 1) {
+      return ['fullName', 'dateOfBirth', 'schoolGrade', 'phone', 'parentContact'];
+    }
+    if (step === 2) {
+      return [
+        'availableHoursPerWeek',
+        'programmingExperience',
+        'englishLevel',
+        'programmingLanguages',
+        'interests',
+      ];
+    }
+    return ['level', 'path', 'learningGoal'];
   }
 
   private parseDate(value: string): Date {

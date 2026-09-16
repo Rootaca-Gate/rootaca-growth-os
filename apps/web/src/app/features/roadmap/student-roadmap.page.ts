@@ -10,13 +10,15 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth.service';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { EmptyState } from '../../shared/empty-state';
 import { PageHeader } from '../../shared/page-header';
 import { PlacementApi } from '../placement/placement.api';
 import { Skill } from '../placement/placement.models';
 import { RoadmapProgressCard } from './roadmap-progress-card';
 import { RoadmapApi } from './roadmap.api';
-import { ROADMAP_STATUS_LABELS, ROADMAP_STATUSES } from './roadmap.labels';
+import { ROADMAP_STATUSES } from './roadmap.labels';
 import { RoadmapItem, RoadmapItemStatus, RoadmapPhase, StudentRoadmap } from './roadmap.models';
 
 @Component({
@@ -33,26 +35,27 @@ import { RoadmapItem, RoadmapItemStatus, RoadmapPhase, StudentRoadmap } from './
     PageHeader,
     EmptyState,
     RoadmapProgressCard,
+    TPipe,
   ],
   template: `
     @if (loading()) {
       <div class="loading"><mat-spinner diameter="36" /></div>
     } @else if (error(); as message) {
-      <app-page-header title="Roadmap" subtitle="Personalized learning plan">
-        <a mat-button [routerLink]="['/students', studentId]">Back to profile</a>
+      <app-page-header [title]="'students.roadmap' | t" [subtitle]="'hubs.roadmapSubtitle' | t">
+        <a mat-button [routerLink]="['/students', studentId]">{{ 'orientation.backToProfile' | t }}</a>
       </app-page-header>
-      <app-empty-state title="No roadmap yet" [message]="message" />
+      <app-empty-state [title]="'hubs.noRoadmap' | t" [message]="message" />
     } @else if (roadmap(); as current) {
       <app-page-header
-        [title]="current.pathName + ' roadmap'"
-        [subtitle]="current.levelName + ' template, then tailored by mentors'"
+        [title]="'hubs.roadmapNamed' | t:{ path: current.pathName }"
+        [subtitle]="'hubs.roadmapTemplate' | t:{ level: current.levelName }"
       >
         @if (canEdit()) {
           <button mat-stroked-button type="button" [disabled]="saving()" (click)="regenerate()">
-            Regenerate from template
+            {{ 'hubs.regenerate' | t }}
           </button>
         }
-        <a mat-button [routerLink]="['/students', current.studentId]">Back to profile</a>
+        <a mat-button [routerLink]="['/students', current.studentId]">{{ 'orientation.backToProfile' | t }}</a>
       </app-page-header>
 
       <app-roadmap-progress-card [roadmap]="current" />
@@ -64,14 +67,14 @@ import { RoadmapItem, RoadmapItemStatus, RoadmapPhase, StudentRoadmap } from './
             <article>
               <header>
                 <div>
-                  <p class="kicker">Phase {{ phase.sortOrder }}</p>
+                  <p class="kicker">{{ 'hubs.phaseLabel' | t:{ n: phase.sortOrder } }}</p>
                   <h2>{{ phase.title }}</h2>
                   <p>{{ phase.description }}</p>
                 </div>
                 @if (canEdit()) {
                   <div class="actions">
                     <button mat-button type="button" [disabled]="phaseIndex === 0" (click)="movePhase(phaseIndex, -1)">
-                      Up
+                      {{ 'common.up' | t }}
                     </button>
                     <button
                       mat-button
@@ -79,9 +82,9 @@ import { RoadmapItem, RoadmapItemStatus, RoadmapPhase, StudentRoadmap } from './
                       [disabled]="phaseIndex === current.phases.length - 1"
                       (click)="movePhase(phaseIndex, 1)"
                     >
-                      Down
+                      {{ 'common.down' | t }}
                     </button>
-                    <button mat-button type="button" (click)="removePhase(phase.id)">Remove</button>
+                    <button mat-button type="button" (click)="removePhase(phase.id)">{{ 'common.remove' | t }}</button>
                   </div>
                 }
               </header>
@@ -94,24 +97,24 @@ import { RoadmapItem, RoadmapItemStatus, RoadmapPhase, StudentRoadmap } from './
                       <div>
                         <strong>{{ item.title }}</strong>
                         <span>
-                          {{ statusLabel(item.status) }} · {{ item.completionPercentage }}% ·
-                          {{ item.durationDays }} days
+                          {{ i18n.statusLabel(item.status) }} · {{ item.completionPercentage }}% ·
+                          {{ 'hubs.daysCount' | t:{ count: item.durationDays } }}
                           @if (item.startDate) {
                             · {{ item.startDate }} → {{ item.dueDate }}
                           }
                         </span>
                         <p>{{ item.description }}</p>
                         @if (item.skill) {
-                          <p class="skill">Skill · {{ item.skill.name }}</p>
+                          <p class="skill">{{ 'hubs.skill' | t }} · {{ item.skill.name }}</p>
                         }
                         @if (item.notes) {
-                          <p class="skill">Notes · {{ item.notes }}</p>
+                          <p class="skill">{{ 'common.notes' | t }} · {{ item.notes }}</p>
                         }
                       </div>
                       @if (canEdit()) {
                         <div class="actions">
                           <button mat-button type="button" [disabled]="itemIndex === 0" (click)="moveItem(phase, itemIndex, -1)">
-                            Up
+                            {{ 'common.up' | t }}
                           </button>
                           <button
                             mat-button
@@ -119,10 +122,10 @@ import { RoadmapItem, RoadmapItemStatus, RoadmapPhase, StudentRoadmap } from './
                             [disabled]="itemIndex === phase.items.length - 1"
                             (click)="moveItem(phase, itemIndex, 1)"
                           >
-                            Down
+                            {{ 'common.down' | t }}
                           </button>
-                          <button mat-button type="button" (click)="editItem(item)">Edit</button>
-                          <button mat-button type="button" (click)="removeItem(item.id)">Remove</button>
+                          <button mat-button type="button" (click)="editItem(item)">{{ 'common.edit' | t }}</button>
+                          <button mat-button type="button" (click)="removeItem(item.id)">{{ 'common.remove' | t }}</button>
                         </div>
                       }
                     </div>
@@ -130,59 +133,59 @@ import { RoadmapItem, RoadmapItemStatus, RoadmapPhase, StudentRoadmap } from './
                     @if (editingItemId() === item.id) {
                       <form [formGroup]="itemForm" (ngSubmit)="saveItem(item.id)">
                         <mat-form-field appearance="outline">
-                          <mat-label>Title</mat-label>
+                          <mat-label>{{ 'common.titleField' | t }}</mat-label>
                           <input matInput formControlName="title" />
                         </mat-form-field>
                         <mat-form-field appearance="outline">
-                          <mat-label>Description</mat-label>
+                          <mat-label>{{ 'common.description' | t }}</mat-label>
                           <textarea matInput rows="3" formControlName="description"></textarea>
                         </mat-form-field>
                         <mat-form-field appearance="outline">
-                          <mat-label>Skill</mat-label>
+                          <mat-label>{{ 'hubs.skill' | t }}</mat-label>
                           <mat-select formControlName="skillId">
-                            <mat-option value="">None</mat-option>
+                            <mat-option value="">{{ 'common.none' | t }}</mat-option>
                             @for (skill of skills(); track skill.id) {
                               <mat-option [value]="skill.id">{{ skill.name }}</mat-option>
                             }
                           </mat-select>
                         </mat-form-field>
                         <mat-form-field appearance="outline">
-                          <mat-label>Duration (days)</mat-label>
+                          <mat-label>{{ 'projects.durationDays' | t }}</mat-label>
                           <input matInput type="number" formControlName="durationDays" />
                         </mat-form-field>
                         <mat-form-field appearance="outline">
-                          <mat-label>Start date</mat-label>
+                          <mat-label>{{ 'hubs.startDate' | t }}</mat-label>
                           <input matInput formControlName="startDate" placeholder="YYYY-MM-DD" />
                         </mat-form-field>
                         <mat-form-field appearance="outline">
-                          <mat-label>Due date</mat-label>
+                          <mat-label>{{ 'projects.dueDate' | t }}</mat-label>
                           <input matInput formControlName="dueDate" placeholder="YYYY-MM-DD" />
                         </mat-form-field>
                         <mat-form-field appearance="outline">
-                          <mat-label>Status</mat-label>
+                          <mat-label>{{ 'common.status' | t }}</mat-label>
                           <mat-select formControlName="status">
                             @for (status of statuses; track status) {
-                              <mat-option [value]="status">{{ statusLabel(status) }}</mat-option>
+                              <mat-option [value]="status">{{ i18n.statusLabel(status) }}</mat-option>
                             }
                           </mat-select>
                         </mat-form-field>
                         <mat-form-field appearance="outline">
-                          <mat-label>Completion %</mat-label>
+                          <mat-label>{{ 'projects.completion' | t }}</mat-label>
                           <input matInput type="number" formControlName="completionPercentage" />
                         </mat-form-field>
                         <mat-form-field appearance="outline">
-                          <mat-label>Notes</mat-label>
+                          <mat-label>{{ 'common.notes' | t }}</mat-label>
                           <textarea matInput rows="2" formControlName="notes"></textarea>
                         </mat-form-field>
                         <mat-form-field appearance="outline">
-                          <mat-label>Project ID</mat-label>
+                          <mat-label>{{ 'hubs.projectId' | t }}</mat-label>
                           <input matInput formControlName="projectId" />
                         </mat-form-field>
                         <div class="actions">
                           <button mat-flat-button color="primary" type="submit" [disabled]="itemForm.invalid || saving()">
-                            Save item
+                            {{ 'hubs.saveItem' | t }}
                           </button>
-                          <button mat-button type="button" (click)="editingItemId.set(null)">Cancel</button>
+                          <button mat-button type="button" (click)="editingItemId.set(null)">{{ 'common.cancel' | t }}</button>
                         </div>
                       </form>
                     }
@@ -192,28 +195,28 @@ import { RoadmapItem, RoadmapItemStatus, RoadmapPhase, StudentRoadmap } from './
 
               @if (canEdit() && addingPhaseId() === phase.id) {
                 <form [formGroup]="itemForm" (ngSubmit)="createItem(phase.id)">
-                  <h3>Add item</h3>
+                  <h3>{{ 'hubs.addItem' | t }}</h3>
                   <mat-form-field appearance="outline">
-                    <mat-label>Title</mat-label>
+                    <mat-label>{{ 'common.titleField' | t }}</mat-label>
                     <input matInput formControlName="title" />
                   </mat-form-field>
                   <mat-form-field appearance="outline">
-                    <mat-label>Description</mat-label>
+                    <mat-label>{{ 'common.description' | t }}</mat-label>
                     <textarea matInput rows="3" formControlName="description"></textarea>
                   </mat-form-field>
                   <mat-form-field appearance="outline">
-                    <mat-label>Duration (days)</mat-label>
+                    <mat-label>{{ 'projects.durationDays' | t }}</mat-label>
                     <input matInput type="number" formControlName="durationDays" />
                   </mat-form-field>
                   <div class="actions">
                     <button mat-flat-button color="primary" type="submit" [disabled]="itemForm.invalid || saving()">
-                      Add item
+                      {{ 'hubs.addItem' | t }}
                     </button>
-                    <button mat-button type="button" (click)="addingPhaseId.set(null)">Cancel</button>
+                    <button mat-button type="button" (click)="addingPhaseId.set(null)">{{ 'common.cancel' | t }}</button>
                   </div>
                 </form>
               } @else if (canEdit()) {
-                <button mat-stroked-button type="button" (click)="startAddItem(phase.id)">Add item</button>
+                <button mat-stroked-button type="button" (click)="startAddItem(phase.id)">{{ 'hubs.addItem' | t }}</button>
               }
             </article>
           </li>
@@ -222,16 +225,16 @@ import { RoadmapItem, RoadmapItemStatus, RoadmapPhase, StudentRoadmap } from './
 
       @if (canEdit()) {
         <form class="add-phase" [formGroup]="phaseForm" (ngSubmit)="createPhase()">
-          <h2>Add phase</h2>
+          <h2>{{ 'hubs.addPhase' | t }}</h2>
           <mat-form-field appearance="outline">
-            <mat-label>Title</mat-label>
+            <mat-label>{{ 'common.titleField' | t }}</mat-label>
             <input matInput formControlName="title" />
           </mat-form-field>
           <mat-form-field appearance="outline">
-            <mat-label>Description</mat-label>
+            <mat-label>{{ 'common.description' | t }}</mat-label>
             <textarea matInput rows="2" formControlName="description"></textarea>
           </mat-form-field>
-          <button mat-stroked-button type="submit" [disabled]="phaseForm.invalid || saving()">Add phase</button>
+          <button mat-stroked-button type="submit" [disabled]="phaseForm.invalid || saving()">{{ 'hubs.addPhase' | t }}</button>
         </form>
       }
     }
@@ -336,6 +339,7 @@ export class StudentRoadmapPage {
   private readonly route = inject(ActivatedRoute);
   private readonly snackBar = inject(MatSnackBar);
   private readonly auth = inject(AuthService);
+  readonly i18n = inject(DirectionService);
 
   readonly studentId = this.route.snapshot.paramMap.get('id') ?? '';
   readonly loading = signal(true);
@@ -386,23 +390,23 @@ export class StudentRoadmapPage {
   }
 
   statusLabel(status: RoadmapItemStatus): string {
-    return ROADMAP_STATUS_LABELS[status];
+    return this.i18n.statusLabel(status);
   }
 
   regenerate(): void {
-    this.run(this.api.generate(this.studentId), 'Roadmap regenerated from the current template');
+    this.run(this.api.generate(this.studentId), this.i18n.t('hubs.regenerated'));
   }
 
   createPhase(): void {
     if (this.phaseForm.invalid) {
       return;
     }
-    this.run(this.api.addPhase(this.studentId, this.phaseForm.getRawValue()), 'Phase added');
+    this.run(this.api.addPhase(this.studentId, this.phaseForm.getRawValue()), this.i18n.t('hubs.phaseAdded'));
     this.phaseForm.reset({ title: '', description: '' });
   }
 
   removePhase(phaseId: string): void {
-    this.run(this.api.removePhase(this.studentId, phaseId), 'Phase removed');
+    this.run(this.api.removePhase(this.studentId, phaseId), this.i18n.t('hubs.phaseRemoved'));
   }
 
   movePhase(index: number, direction: number): void {
@@ -418,7 +422,7 @@ export class StudentRoadmapPage {
     }
     ids[index] = neighbor;
     ids[target] = current;
-    this.run(this.api.reorderPhases(this.studentId, ids), 'Phases reordered');
+    this.run(this.api.reorderPhases(this.studentId, ids), this.i18n.t('hubs.phasesReordered'));
   }
 
   startAddItem(phaseId: string): void {
@@ -466,7 +470,7 @@ export class StudentRoadmapPage {
         description: value.description,
         durationDays: Number(value.durationDays),
       }),
-      'Item added',
+      this.i18n.t('hubs.itemAdded'),
     );
     this.addingPhaseId.set(null);
   }
@@ -489,13 +493,13 @@ export class StudentRoadmapPage {
         notes: value.notes,
         projectId: value.projectId || null,
       }),
-      'Item updated',
+      this.i18n.t('hubs.itemUpdated'),
     );
     this.editingItemId.set(null);
   }
 
   removeItem(itemId: string): void {
-    this.run(this.api.removeItem(this.studentId, itemId), 'Item removed');
+    this.run(this.api.removeItem(this.studentId, itemId), this.i18n.t('hubs.itemRemoved'));
   }
 
   moveItem(phase: RoadmapPhase, index: number, direction: number): void {
@@ -511,7 +515,7 @@ export class StudentRoadmapPage {
     }
     ids[index] = neighbor;
     ids[target] = current;
-    this.run(this.api.reorderItems(this.studentId, phase.id, ids), 'Items reordered');
+    this.run(this.api.reorderItems(this.studentId, phase.id, ids), this.i18n.t('hubs.itemsReordered'));
   }
 
   private reload(): void {
@@ -536,11 +540,11 @@ export class StudentRoadmapPage {
       next: (roadmap) => {
         this.roadmap.set(roadmap);
         this.saving.set(false);
-        this.snackBar.open(message, 'OK', { duration: 2000 });
+        this.snackBar.open(message, this.i18n.t('common.ok'), { duration: 2000 });
       },
       error: (error: unknown) => {
         this.saving.set(false);
-        this.snackBar.open(this.toMessage(error), 'OK', { duration: 4000 });
+        this.snackBar.open(this.toMessage(error), this.i18n.t('common.ok'), { duration: 4000 });
       },
     });
   }
@@ -548,15 +552,15 @@ export class StudentRoadmapPage {
   private toMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 404) {
-        return 'Complete orientation and select a path to generate this roadmap.';
+        return this.i18n.t('hubs.completeForRoadmap');
       }
       if (error.status === 403) {
-        return 'Only mentors and admins can edit the roadmap.';
+        return this.i18n.t('hubs.onlyMentorsRoadmap');
       }
       if (typeof error.error?.message === 'string') {
         return error.error.message;
       }
     }
-    return 'Unable to update the roadmap.';
+    return this.i18n.t('hubs.unableRoadmap');
   }
 }

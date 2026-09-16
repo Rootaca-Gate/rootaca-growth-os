@@ -18,8 +18,11 @@ import {
   SESSION_STATUS_LABELS,
   STAGE_LABELS,
   activityCutoff,
+  activityLabel,
   averageLatestProgress,
+  averageSkillScore,
   capItems,
+  daysSince,
   groupNamedCounts,
   isInactive,
   isTodaysSession,
@@ -28,7 +31,10 @@ import {
   monthlyProgress,
   roadmapBehindCounts,
   todayBounds,
+  weekCutoff,
   type AttentionItem,
+  type DashboardActivityItem,
+  type DashboardStudentRow,
   type ScoreBucket,
 } from './dashboard.math';
 import { DashboardResponseDto, DashboardSessionItemDto } from './dto/dashboard-response.dto';
@@ -84,13 +90,20 @@ export class DashboardService {
 
     const kpiBelowTarget: AttentionItem[] = [];
     const assessmentPending: AttentionItem[] = [];
+    const orientationNotCompleted: AttentionItem[] = [];
+    const assessmentInProgress: AttentionItem[] = [];
     const noRecentActivity: AttentionItem[] = [];
     const roadmapBehindSchedule: AttentionItem[] = [];
+    const roadmapOverdue: AttentionItem[] = [];
+    const studentRows: DashboardStudentRow[] = [];
+    const activity: DashboardActivityItem[] = [];
     const skillTotals = new Map<
       string,
       { label: string; total: number; count: number; sortOrder: number }
     >();
     const kpiCounts = new Map<KpiStatus, number>();
+    const allSkillScores: number[] = [];
+    const weekStart = weekCutoff(now);
     const reviews = students.flatMap((student) =>
       student.progressReviews.map((review) => ({
         studentId: student.id,
@@ -102,17 +115,37 @@ export class DashboardService {
     let todaysSessions = 0;
     let pendingAssessments = 0;
     let projectsCompleted = 0;
+    let newThisWeek = 0;
 
     for (const student of students) {
-      const hasCompletedAssessment = student.orientationSessions.some(
+      if (student.createdAt.getTime() >= weekStart.getTime()) {
+        newThisWeek += 1;
+      }
+
+      const hasCompletedOrientation = student.orientationSessions.some(
         (session) => session.status === OrientationSessionStatus.COMPLETED,
       );
-      if (!hasCompletedAssessment) {
+      const hasAssessmentInProgress = student.orientationSessions.some(
+        (session) =>
+          session.status === OrientationSessionStatus.IN_PROGRESS ||
+          session.status === OrientationSessionStatus.PAUSED,
+      );
+      if (!hasCompletedOrientation) {
         pendingAssessments += 1;
-        assessmentPending.push({
+        const item = {
           studentId: student.id,
           studentName: student.fullName,
-          detail: 'No completed orientation',
+          detail: 'Orientation not completed',
+          href: `/students/${student.id}`,
+        };
+        assessmentPending.push(item);
+        orientationNotCompleted.push(item);
+      }
+      if (hasAssessmentInProgress) {
+        assessmentInProgress.push({
+          studentId: student.id,
+          studentName: student.fullName,
+          detail: 'Assessment in progress',
           href: `/students/${student.id}`,
         });
       }
@@ -120,6 +153,15 @@ export class DashboardService {
       for (const session of student.orientationSessions) {
         if (isTodaysSession(session, todayStart, tomorrow)) {
           todaysSessions += 1;
+        }
+        if (session.status === OrientationSessionStatus.COMPLETED && session.completedAt) {
+          activity.push({
+            studentId: student.id,
+            studentName: student.fullName,
+            occurredAt: session.completedAt.toISOString(),
+            title: `${student.fullName} completed orientation`,
+            href: `/students/${student.id}/orientation/${session.id}`,
+          });
         }
       }
 
@@ -137,15 +179,32 @@ export class DashboardService {
 
       for (const kpi of student.kpis) {
         kpiCounts.set(kpi.status, (kpiCounts.get(kpi.status) ?? 0) + 1);
+        activity.push({
+          studentId: student.id,
+          studentName: student.fullName,
+          occurredAt: kpi.updatedAt.toISOString(),
+          title: `${student.fullName} KPI updated`,
+          href: `/students/${student.id}/kpis`,
+        });
       }
 
       for (const project of student.projects) {
         if (project.status === StudentProjectStatus.COMPLETED) {
           projectsCompleted += 1;
         }
+        activity.push({
+          studentId: student.id,
+          studentName: student.fullName,
+          occurredAt: project.updatedAt.toISOString(),
+          title: `${student.fullName} was assigned a project`,
+          href: `/students/${student.id}/projects`,
+        });
       }
 
+      const studentSkillScores: number[] = [];
       for (const skill of student.skills) {
+        studentSkillScores.push(skill.score);
+        allSkillScores.push(skill.score);
         const current = skillTotals.get(skill.skill.code) ?? {
           label: skill.skill.name,
           total: 0,
@@ -174,6 +233,14 @@ export class DashboardService {
           href: `/students/${student.id}/roadmap`,
         });
       }
+      if (behind.overdue > 0) {
+        roadmapOverdue.push({
+          studentId: student.id,
+          studentName: student.fullName,
+          detail: `${behind.overdue} overdue`,
+          href: `/students/${student.id}/roadmap`,
+        });
+      }
 
       const lastActivity = lastActivityAt([
         ...student.orientationSessions.map((session) => session.updatedAt),
@@ -183,14 +250,50 @@ export class DashboardService {
         ...student.kpis.map((kpi) => kpi.updatedAt),
         ...student.projects.map((project) => project.updatedAt),
       ]);
+      const inactiveDays = daysSince(lastActivity, now);
       if (isInactive(lastActivity, cutoff)) {
         noRecentActivity.push({
           studentId: student.id,
           studentName: student.fullName,
-          detail: lastActivity ? 'No activity in 14 days' : 'No recorded activity',
+          detail:
+            inactiveDays === null ? 'No recent activity' : `No activity for ${inactiveDays} days`,
           href: `/students/${student.id}`,
+          inactiveDays,
         });
       }
+
+      const latestReview = student.progressReviews.reduce<(typeof student.progressReviews)[number] | null>(
+        (latest, review) => {
+          if (!latest || review.reviewedAt.getTime() > latest.reviewedAt.getTime()) {
+            return review;
+          }
+          return latest;
+        },
+        null,
+      );
+      for (const review of student.progressReviews) {
+        activity.push({
+          studentId: student.id,
+          studentName: student.fullName,
+          occurredAt: review.reviewedAt.toISOString(),
+          title: `${student.fullName} progress reviewed`,
+          href: `/students/${student.id}/progress`,
+        });
+      }
+
+      studentRows.push({
+        studentId: student.id,
+        studentName: student.fullName,
+        level: student.currentLevel?.name ?? INTAKE_LEVEL_LABELS[student.level],
+        path: student.currentPath?.name ?? PATH_LABELS[student.path],
+        progress: latestReview?.overallScore ?? null,
+        skillScore: averageSkillScore(studentSkillScores),
+        kpiBelowCount: belowTarget.length,
+        lastActivityAt: lastActivity?.toISOString() ?? null,
+        lastActivityLabel: activityLabel(lastActivity, now),
+        status: student.status,
+        href: `/students/${student.id}`,
+      });
     }
 
     const recentSessions = capItems(
@@ -209,6 +312,14 @@ export class DashboardService {
       SESSION_LIMIT,
     );
 
+    const todaysSessionsList = capItems(
+      sessions
+        .filter(({ session }) => isTodaysSession(session, todayStart, tomorrow))
+        .sort((left, right) => right.session.updatedAt.getTime() - left.session.updatedAt.getTime())
+        .map(({ student, session }) => toSessionItem(session, student.fullName)),
+      SESSION_LIMIT,
+    );
+
     return {
       generatedAt: now.toISOString(),
       cards: {
@@ -219,6 +330,8 @@ export class DashboardService {
         pendingAssessments,
         averageProgress: averageLatestProgress(reviews),
         projectsCompleted,
+        newThisWeek,
+        averageSkillScore: averageSkillScore(allSkillScores),
       },
       charts: {
         studentsByLevel: groupNamedCounts(levelBuckets(students)),
@@ -232,9 +345,20 @@ export class DashboardService {
         assessmentPending: rankedAttention(assessmentPending),
         noRecentActivity: rankedAttention(noRecentActivity),
         roadmapBehindSchedule: rankedAttention(roadmapBehindSchedule),
+        orientationNotCompleted: rankedAttention(orientationNotCompleted),
+        assessmentInProgress: rankedAttention(assessmentInProgress),
+        roadmapOverdue: rankedAttention(roadmapOverdue),
       },
       recentSessions,
       upcomingSessions,
+      todaysSessionsList,
+      students: studentRows,
+      recentActivity: capItems(
+        [...activity].sort(
+          (left, right) => new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime(),
+        ),
+        12,
+      ),
     };
   }
 }

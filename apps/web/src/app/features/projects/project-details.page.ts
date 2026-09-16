@@ -10,11 +10,12 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth.service';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { EmptyState } from '../../shared/empty-state';
 import { PageHeader } from '../../shared/page-header';
 import { StudentsApi } from '../students/students.api';
 import { Student } from '../students/student.models';
-import { LEVEL_LABELS, PATH_LABELS, STUDENT_PROJECT_STATUS_LABELS } from './project.labels';
 import { ProjectApi } from './project.api';
 import { LevelCode, PathCode, ProjectDetails, StudentProjectStatus } from './project.models';
 
@@ -31,32 +32,33 @@ import { LevelCode, PathCode, ProjectDetails, StudentProjectStatus } from './pro
     MatProgressSpinnerModule,
     PageHeader,
     EmptyState,
+    TPipe,
   ],
   template: `
     @if (loading()) {
       <div class="loading"><mat-spinner diameter="36" /></div>
     } @else if (error(); as message) {
-      <app-page-header title="Educational project" subtitle="Classroom learning work">
-        <a mat-button routerLink="/projects">Back to catalog</a>
+      <app-page-header [title]="'projects.title' | t" [subtitle]="'projects.classroomWork' | t">
+        <a mat-button routerLink="/projects">{{ 'projects.back' | t }}</a>
       </app-page-header>
-      <app-empty-state title="Project not found" [message]="message" />
+      <app-empty-state [title]="'projects.notFound' | t" [message]="message" />
     } @else if (project(); as current) {
-      <app-page-header [title]="current.name" subtitle="Classroom project · not a client case study">
-        <a mat-button routerLink="/projects">Back to catalog</a>
+      <app-page-header [title]="current.name" [subtitle]="'projects.detailsSubtitle' | t">
+        <a mat-button routerLink="/projects">{{ 'projects.back' | t }}</a>
       </app-page-header>
 
       <section class="hero">
-        <p class="kicker">{{ pathLabel(current.path) }} · {{ levelLabel(current.level) }} · educational</p>
+        <p class="kicker">{{ i18n.pathLabel(current.path) }} · {{ i18n.levelLabel(current.level) }} · {{ 'projects.educational' | t }}</p>
         <p>{{ current.description }}</p>
-        <p><strong>Learning goal.</strong> {{ current.learningGoal }}</p>
-        <p class="meta">{{ current.durationDays }} days · {{ current.assignmentCount }} students assigned</p>
+        <p><strong>{{ 'projects.learningGoalLabel' | t }}</strong> {{ current.learningGoal }}</p>
+        <p class="meta">{{ 'projects.durationAssigned' | t:{ days: current.durationDays, count: current.assignmentCount } }}</p>
       </section>
 
       @if (canAssign()) {
         <form [formGroup]="assignForm" (ngSubmit)="assign()">
-          <h2>Assign to a student</h2>
+          <h2>{{ 'projects.assign' | t }}</h2>
           <mat-form-field appearance="outline">
-            <mat-label>Student</mat-label>
+            <mat-label>{{ 'common.student' | t }}</mat-label>
             <mat-select formControlName="studentId">
               @for (student of students(); track student.id) {
                 <mat-option [value]="student.id">{{ student.fullName }}</mat-option>
@@ -64,32 +66,39 @@ import { LevelCode, PathCode, ProjectDetails, StudentProjectStatus } from './pro
             </mat-select>
           </mat-form-field>
           <mat-form-field appearance="outline">
-            <mat-label>Due date</mat-label>
+            <mat-label>{{ 'projects.dueDate' | t }}</mat-label>
             <input matInput type="date" formControlName="dueDate" />
           </mat-form-field>
           <mat-form-field appearance="outline">
-            <mat-label>Notes</mat-label>
+            <mat-label>{{ 'common.notes' | t }}</mat-label>
             <textarea matInput rows="2" formControlName="notes"></textarea>
           </mat-form-field>
           <button mat-flat-button color="primary" type="submit" [disabled]="assignForm.invalid || saving()">
-            Assign project
+            {{ 'projects.assignButton' | t }}
           </button>
         </form>
       }
 
-      <h2>Student progress</h2>
+      <h2>{{ 'projects.assignments' | t }}</h2>
       @if (current.assignments.length === 0) {
-        <app-empty-state title="No assignments yet" message="Mentors can assign this classroom project to a student." />
+        <app-empty-state [title]="'projects.noAssignments' | t" [message]="'projects.noAssignmentsHint' | t" />
       } @else {
         <ul class="assignments">
           @for (item of current.assignments; track item.id) {
             <li>
               <div>
                 <strong>{{ item.studentName }}</strong>
-                <span>{{ statusLabel(item.status) }} · {{ item.progressPercent }}%</span>
+                <span>{{ i18n.statusLabel(item.status) }} · {{ item.progressPercent }}%</span>
+                <span>{{ 'projects.assignedOn' | t:{ date: item.assignedAt.slice(0, 10) } }}</span>
+                @if (item.dueDate) {
+                  <span>{{ 'projects.dueOn' | t:{ date: item.dueDate.slice(0, 10) } }}</span>
+                }
+                @if (item.notes) {
+                  <span>{{ item.notes }}</span>
+                }
               </div>
               <mat-progress-bar mode="determinate" [value]="item.progressPercent" />
-              <a mat-button [routerLink]="['/students', item.studentId, 'projects']">Open progress</a>
+              <a mat-button [routerLink]="['/students', item.studentId, 'projects']">{{ 'projects.openProgress' | t }}</a>
             </li>
           }
         </ul>
@@ -147,6 +156,7 @@ export class ProjectDetailsPage {
   private readonly snackBar = inject(MatSnackBar);
   private readonly auth = inject(AuthService);
   private readonly projectId = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
+  readonly i18n = inject(DirectionService);
 
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -172,15 +182,15 @@ export class ProjectDetailsPage {
   }
 
   pathLabel(path: PathCode): string {
-    return PATH_LABELS[path];
+    return this.i18n.pathLabel(path);
   }
 
   levelLabel(level: LevelCode): string {
-    return LEVEL_LABELS[level];
+    return this.i18n.levelLabel(level);
   }
 
   statusLabel(status: StudentProjectStatus): string {
-    return STUDENT_PROJECT_STATUS_LABELS[status];
+    return this.i18n.statusLabel(status);
   }
 
   assign(): void {
@@ -199,12 +209,12 @@ export class ProjectDetailsPage {
         next: () => {
           this.saving.set(false);
           this.assignForm.reset({ studentId: '', dueDate: '', notes: '' });
-          this.snackBar.open('Educational project assigned', 'OK', { duration: 2000 });
+          this.snackBar.open(this.i18n.t('projects.assignedOk'), this.i18n.t('common.ok'), { duration: 2000 });
           this.reload();
         },
         error: (error: unknown) => {
           this.saving.set(false);
-          this.snackBar.open(this.toMessage(error), 'OK', { duration: 4000 });
+          this.snackBar.open(this.toMessage(error), this.i18n.t('common.ok'), { duration: 4000 });
         },
       });
   }
@@ -228,6 +238,6 @@ export class ProjectDetailsPage {
     if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string') {
       return error.error.message;
     }
-    return 'Unable to load this educational project.';
+    return this.i18n.t('projects.unable');
   }
 }

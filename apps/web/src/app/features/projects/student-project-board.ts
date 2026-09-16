@@ -10,12 +10,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth.service';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { EmptyState } from '../../shared/empty-state';
-import {
-  MILESTONE_STATUS_LABELS,
-  MILESTONE_STATUSES,
-  STUDENT_PROJECT_STATUS_LABELS,
-} from './project.labels';
+import { MILESTONE_STATUSES } from './project.labels';
 import { ProjectApi } from './project.api';
 import {
   MilestoneStatus,
@@ -36,25 +34,26 @@ import {
     MatProgressBarModule,
     MatProgressSpinnerModule,
     EmptyState,
+    TPipe,
   ],
   template: `
     <div class="wrap">
       @if (loading()) {
         <div class="loading"><mat-spinner diameter="28" /></div>
       } @else if (error(); as message) {
-        <app-empty-state title="No educational projects" [message]="message" />
+        <app-empty-state [title]="'projects.empty' | t" [message]="message" />
       } @else if (summary(); as current) {
         <section class="summary">
           <header>
             <div>
-              <p class="kicker">Project progress</p>
+              <p class="kicker">{{ 'projects.progressTitle' | t }}</p>
               <h2>{{ current.overallPercent }}%</h2>
-              <p>Classroom projects · not client case studies</p>
+              <p>{{ 'projects.classroomNotClient' | t }}</p>
             </div>
             <ul>
-              <li>Assigned {{ current.assignedCount }}</li>
-              <li>In progress {{ current.inProgressCount }}</li>
-              <li>Completed {{ current.completedCount }}</li>
+              <li>{{ 'projects.assignedCount' | t:{ count: current.assignedCount } }}</li>
+              <li>{{ 'projects.inProgressCount' | t:{ count: current.inProgressCount } }}</li>
+              <li>{{ 'projects.completedCount' | t:{ count: current.completedCount } }}</li>
             </ul>
           </header>
           <mat-progress-bar mode="determinate" [value]="current.overallPercent" />
@@ -62,8 +61,8 @@ import {
 
         @if (current.items.length === 0) {
           <app-empty-state
-            title="No projects assigned"
-            message="Assign a classroom project from the educational catalog."
+            [title]="'projects.noAssigned' | t"
+            [message]="'projects.assignHint' | t"
           />
         }
 
@@ -71,19 +70,19 @@ import {
           <article>
             <header>
               <div>
-                <p class="kicker">{{ statusLabel(item.status) }}</p>
+                <p class="kicker">{{ i18n.statusLabel(item.status) }}</p>
                 <h3>{{ item.project.name }}</h3>
                 <p>{{ item.project.learningGoal }}</p>
               </div>
-              <a mat-stroked-button [routerLink]="['/projects', item.project.id]">Project</a>
+              <a mat-stroked-button [routerLink]="['/projects', item.project.id]">{{ 'projects.projectLink' | t }}</a>
             </header>
             <dl>
               <div>
-                <dt>Overall</dt>
+                <dt>{{ 'common.overall' | t }}</dt>
                 <dd>{{ item.progressPercent }}%</dd>
               </div>
               <div>
-                <dt>Due</dt>
+                <dt>{{ 'common.due' | t }}</dt>
                 <dd>{{ item.dueDate || '—' }}</dd>
               </div>
             </dl>
@@ -94,43 +93,43 @@ import {
                 <li [attr.data-status]="milestone.status">
                   <div class="meta">
                     <strong>{{ milestone.title }}</strong>
-                    <span>{{ milestone.completionPercent }}% · {{ milestoneStatus(milestone.status) }}</span>
+                    <span>{{ milestone.completionPercent }}% · {{ i18n.statusLabel(milestone.status) }}</span>
                   </div>
                   <p>{{ milestone.description }}</p>
                   <mat-progress-bar mode="determinate" [value]="milestone.completionPercent" />
-                  <p class="due">Due {{ milestone.dueDate || '—' }}</p>
+                  <p class="due">{{ 'projects.dueOn' | t:{ date: milestone.dueDate || '—' } }}</p>
                   @if (milestone.mentorFeedback) {
-                    <p class="feedback">Mentor: {{ milestone.mentorFeedback }}</p>
+                    <p class="feedback">{{ 'projects.mentorFeedback' | t }}: {{ milestone.mentorFeedback }}</p>
                   }
                   @if (canEdit() && editingId() === milestone.id) {
                     <form [formGroup]="form" (ngSubmit)="save(item, milestone)">
                       <mat-form-field appearance="outline">
-                        <mat-label>Completion %</mat-label>
+                        <mat-label>{{ 'projects.completion' | t }}</mat-label>
                         <input matInput type="number" formControlName="completionPercent" />
                       </mat-form-field>
                       <mat-form-field appearance="outline">
-                        <mat-label>Status</mat-label>
+                        <mat-label>{{ 'common.status' | t }}</mat-label>
                         <mat-select formControlName="status">
                           @for (status of statuses; track status) {
-                            <mat-option [value]="status">{{ milestoneStatus(status) }}</mat-option>
+                            <mat-option [value]="status">{{ i18n.statusLabel(status) }}</mat-option>
                           }
                         </mat-select>
                       </mat-form-field>
                       <mat-form-field appearance="outline">
-                        <mat-label>Due date</mat-label>
+                        <mat-label>{{ 'projects.dueDate' | t }}</mat-label>
                         <input matInput type="date" formControlName="dueDate" />
                       </mat-form-field>
                       <mat-form-field appearance="outline">
-                        <mat-label>Mentor feedback</mat-label>
+                        <mat-label>{{ 'projects.mentorFeedback' | t }}</mat-label>
                         <textarea matInput rows="2" formControlName="mentorFeedback"></textarea>
                       </mat-form-field>
                       <div class="actions">
-                        <button mat-flat-button color="primary" type="submit" [disabled]="saving()">Save</button>
-                        <button mat-button type="button" (click)="editingId.set(null)">Cancel</button>
+                        <button mat-flat-button color="primary" type="submit" [disabled]="saving()">{{ 'common.save' | t }}</button>
+                        <button mat-button type="button" (click)="editingId.set(null)">{{ 'common.cancel' | t }}</button>
                       </div>
                     </form>
                   } @else if (canEdit()) {
-                    <button mat-stroked-button type="button" (click)="edit(milestone)">Update milestone</button>
+                    <button mat-stroked-button type="button" (click)="edit(milestone)">{{ 'projects.updateMilestone' | t }}</button>
                   }
                 </li>
               }
@@ -242,6 +241,7 @@ export class StudentProjectBoard {
   private readonly api = inject(ProjectApi);
   private readonly snackBar = inject(MatSnackBar);
   private readonly auth = inject(AuthService);
+  readonly i18n = inject(DirectionService);
 
   readonly studentId = input.required<string>();
   readonly loading = signal(true);
@@ -282,11 +282,11 @@ export class StudentProjectBoard {
   }
 
   statusLabel(status: StudentProject['status']): string {
-    return STUDENT_PROJECT_STATUS_LABELS[status];
+    return this.i18n.statusLabel(status);
   }
 
   milestoneStatus(status: MilestoneStatus): string {
-    return MILESTONE_STATUS_LABELS[status];
+    return this.i18n.statusLabel(status);
   }
 
   edit(milestone: ProjectMilestone): void {
@@ -325,12 +325,12 @@ export class StudentProjectBoard {
           }
           this.saving.set(false);
           this.editingId.set(null);
-          this.snackBar.open('Milestone updated', 'OK', { duration: 2000 });
+          this.snackBar.open(this.i18n.t('projects.milestoneUpdated'), this.i18n.t('common.ok'), { duration: 2000 });
           this.reload();
         },
         error: (error: unknown) => {
           this.saving.set(false);
-          this.snackBar.open(this.toMessage(error), 'OK', { duration: 4000 });
+          this.snackBar.open(this.toMessage(error), this.i18n.t('common.ok'), { duration: 4000 });
         },
       });
   }
@@ -344,12 +344,12 @@ export class StudentProjectBoard {
   private toMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 403) {
-        return 'Only mentors and admins can update project milestones.';
+        return this.i18n.t('projects.noAccess');
       }
       if (typeof error.error?.message === 'string') {
         return error.error.message;
       }
     }
-    return 'Unable to load educational projects.';
+    return this.i18n.t('projects.unableStudent');
   }
 }

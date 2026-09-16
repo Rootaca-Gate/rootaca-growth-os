@@ -23,6 +23,7 @@ export type DashboardAttentionItem = {
   studentName: string;
   detail: string;
   href: string;
+  inactiveDays?: number | null;
 };
 
 export type DashboardSessionItem = {
@@ -40,6 +41,28 @@ export type DashboardSessionItem = {
   href: string;
 };
 
+export type DashboardStudentRow = {
+  studentId: string;
+  studentName: string;
+  level: string;
+  path: string;
+  progress: number | null;
+  skillScore: number | null;
+  kpiBelowCount: number;
+  lastActivityAt: string | null;
+  lastActivityLabel: string;
+  status: string;
+  href: string;
+};
+
+export type DashboardActivityItem = {
+  studentId: string;
+  studentName: string;
+  occurredAt: string;
+  title: string;
+  href: string;
+};
+
 export type DashboardCards = {
   totalStudents: number;
   activeStudents: number;
@@ -47,6 +70,8 @@ export type DashboardCards = {
   pendingAssessments: number;
   averageProgress: number | null;
   projectsCompleted: number;
+  newThisWeek: number;
+  averageSkillScore: number | null;
 };
 
 export type DashboardResponse = {
@@ -64,7 +89,13 @@ export type DashboardResponse = {
     assessmentPending: DashboardAttentionItem[];
     noRecentActivity: DashboardAttentionItem[];
     roadmapBehindSchedule: DashboardAttentionItem[];
+    orientationNotCompleted: DashboardAttentionItem[];
+    assessmentInProgress: DashboardAttentionItem[];
+    roadmapOverdue: DashboardAttentionItem[];
   };
   recentSessions: DashboardSessionItem[];
   upcomingSessions: DashboardSessionItem[];
+  todaysSessionsList: DashboardSessionItem[];
+  students: DashboardStudentRow[];
+  recentActivity: DashboardActivityItem[];
 };

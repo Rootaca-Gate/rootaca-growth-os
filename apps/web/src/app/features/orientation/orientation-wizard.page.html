@@ -1,8 +1,8 @@
 @if (loading()) {
 <div class="loading"><mat-spinner diameter="36" /></div>
 } @else if (session(); as current) {
-<app-page-header [title]="current.studentName" subtitle="20-minute orientation">
-  <a mat-button [routerLink]="['/students', current.studentId]">Back to profile</a>
+<app-page-header [title]="current.studentName" [subtitle]="'orientation.twentyMin' | t">
+  <a mat-button [routerLink]="['/students', current.studentId]">{{ 'orientation.backToProfile' | t }}</a>
 </app-page-header>
 
 <app-orientation-timer
@@ -14,7 +14,7 @@
 />
 
 <section class="progress-block">
-  <p>{{ answeredCount() }} / {{ current.questions.length }} questions · {{ progress() }}%</p>
+  <p>{{ 'orientation.questionsProgress' | t:{ answered: answeredCount(), total: current.questions.length, percent: progress() } }}</p>
   <mat-progress-bar mode="determinate" [value]="progress()" />
 </section>
 
@@ -28,7 +28,7 @@
     (click)="goToStage(stage)"
   >
     <span>{{ stageMeta[stage].window }}</span>
-    {{ stageMeta[stage].label }}
+    {{ i18n.stageLabel(stage) }}
   </button>
   }
 </nav>
@@ -52,7 +52,7 @@
 
   <aside>
     <mat-form-field appearance="outline" class="notes">
-      <mat-label>Session notes</mat-label>
+      <mat-label>{{ 'orientation.sessionNotes' | t }}</mat-label>
       <textarea matInput rows="10" [formControl]="notesControl" [readonly]="readonly()"></textarea>
     </mat-form-field>
   </aside>
@@ -60,16 +60,16 @@
 
 <footer class="actions">
   <button mat-button type="button" [disabled]="stageIndex() === 0" (click)="previous()">
-    Previous
+    {{ 'common.previous' | t }}
   </button>
   <button mat-button type="button" [disabled]="stageIndex() === stages.length - 1" (click)="next()">
-    Next
+    {{ 'common.next' | t }}
   </button>
   <span class="spacer"></span>
   @if (!readonly()) {
-  <button mat-stroked-button type="button" [disabled]="saving()" (click)="save()">Save</button>
+  <button mat-stroked-button type="button" [disabled]="saving()" (click)="save()">{{ 'common.save' | t }}</button>
   <button mat-flat-button color="primary" type="button" [disabled]="saving()" (click)="complete()">
-    Complete
+    {{ 'common.complete' | t }}
   </button>
   }
 </footer>

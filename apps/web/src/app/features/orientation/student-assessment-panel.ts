@@ -2,20 +2,22 @@ import { Component, inject, input, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { EmptyState } from '../../shared/empty-state';
 import { OrientationApi } from './orientation.api';
-import { formatElapsed, SESSION_STATUS_LABELS, STAGE_META } from './orientation.labels';
+import { formatElapsed, STAGE_META } from './orientation.labels';
 import { OrientationSessionSummary } from './orientation.models';
 
 @Component({
   selector: 'app-student-assessment-panel',
-  imports: [MatButtonModule, EmptyState],
+  imports: [MatButtonModule, EmptyState, TPipe],
   template: `
     <section class="panel">
       <header>
         <div>
-          <h2>20-minute orientation</h2>
-          <p>Run the ROOTACA assessment. Completing it calculates level, skills, and a path recommendation.</p>
+          <h2>{{ 'orientation.twentyMin' | t }}</h2>
+          <p>{{ 'orientation.help' | t }}</p>
         </div>
         <button
           mat-flat-button
@@ -24,27 +26,27 @@ import { OrientationSessionSummary } from './orientation.models';
           [disabled]="starting()"
           (click)="start()"
         >
-          {{ openSession() ? 'Continue orientation' : 'Start orientation' }}
+          {{ openSession() ? ('students.continueOrientation' | t) : ('students.startOrientation' | t) }}
         </button>
       </header>
 
       @if (sessions().length === 0) {
         <app-empty-state
-          title="No orientation yet"
-          message="Start a 20-minute session to capture profile, technical, problem-solving, and path notes."
+          [title]="'orientation.noYet' | t"
+          [message]="'orientation.noHint' | t"
         />
       } @else {
         <ul>
           @for (session of sessions(); track session.id) {
             <li>
               <div>
-                <strong>{{ statusLabel(session.status) }}</strong>
+                <strong>{{ i18n.statusLabel(session.status) }}</strong>
                 <span>{{ stageLabel(session) }} · {{ formatElapsed(session.elapsedMs) }}</span>
                 @if (session.overallScore !== null && session.overallScore !== undefined) {
-                  <span>Overall {{ session.overallScore }}/100</span>
+                  <span>{{ 'orientation.overallOutOf' | t:{ score: session.overallScore } }}</span>
                 }
               </div>
-              <button mat-button type="button" (click)="open(session.id)">Open</button>
+              <button mat-button type="button" (click)="open(session.id)">{{ 'common.open' | t }}</button>
             </li>
           }
         </ul>
@@ -102,6 +104,7 @@ export class StudentAssessmentPanel {
   private readonly orientationApi = inject(OrientationApi);
   private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
+  readonly i18n = inject(DirectionService);
 
   readonly studentId = input.required<string>();
   readonly sessions = input.required<OrientationSessionSummary[]>();
@@ -113,12 +116,8 @@ export class StudentAssessmentPanel {
     return this.sessions().find((session) => session.status !== 'COMPLETED');
   }
 
-  statusLabel(status: OrientationSessionSummary['status']): string {
-    return SESSION_STATUS_LABELS[status];
-  }
-
   stageLabel(session: OrientationSessionSummary): string {
-    return `${STAGE_META[session.currentStage].window} ${STAGE_META[session.currentStage].label}`;
+    return `${STAGE_META[session.currentStage].window} ${this.i18n.stageLabel(session.currentStage)}`;
   }
 
   start(): void {
@@ -135,7 +134,9 @@ export class StudentAssessmentPanel {
       },
       error: () => {
         this.starting.set(false);
-        this.snackBar.open('Unable to start orientation', 'OK', { duration: 3000 });
+        this.snackBar.open(this.i18n.t('students.orientationFailed'), this.i18n.t('common.ok'), {
+          duration: 3000,
+        });
       },
     });
   }

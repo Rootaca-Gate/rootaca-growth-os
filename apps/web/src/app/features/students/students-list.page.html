@@ -1,119 +1,149 @@
-<app-page-header title="Students" subtitle="Search, filter, and manage student records">
-  <a mat-flat-button color="primary" routerLink="/students/new">Create student</a>
+<app-page-header
+  [title]="'students.title' | t"
+  [subtitle]="'students.subtitle' | t"
+>
+  <a mat-flat-button color="primary" routerLink="/students/new">{{ 'students.add' | t }}</a>
 </app-page-header>
 
-<section class="filters">
+@if (!inactiveOnly()) {
+<section class="ra-filters">
   <mat-form-field appearance="outline">
-    <mat-label>Search</mat-label>
-    <input matInput [formControl]="searchControl" placeholder="Name, phone, grade" />
+    <mat-label>{{ 'common.search' | t }}</mat-label>
+    <input matInput [formControl]="searchControl" [placeholder]="'students.searchPlaceholder' | t" />
   </mat-form-field>
-
   <mat-form-field appearance="outline">
-    <mat-label>Status</mat-label>
+    <mat-label>{{ 'common.status' | t }}</mat-label>
     <mat-select [formControl]="statusControl">
-      <mat-option value="">All statuses</mat-option>
+      <mat-option value="">{{ 'common.allStatuses' | t }}</mat-option>
       @for (status of statuses; track status) {
-      <mat-option [value]="status">{{ statusLabels[status] }}</mat-option>
+        <mat-option [value]="status">{{ i18n.statusLabel(status) }}</mat-option>
       }
     </mat-select>
   </mat-form-field>
-
   <mat-form-field appearance="outline">
-    <mat-label>Level</mat-label>
+    <mat-label>{{ 'common.level' | t }}</mat-label>
     <mat-select [formControl]="levelControl">
-      <mat-option value="">All levels</mat-option>
+      <mat-option value="">{{ 'common.allLevels' | t }}</mat-option>
       @for (level of levels; track level) {
-      <mat-option [value]="level">{{ levelLabels[level] }}</mat-option>
+        <mat-option [value]="level">{{ i18n.levelLabel(level) }}</mat-option>
       }
     </mat-select>
   </mat-form-field>
-
   <mat-form-field appearance="outline">
-    <mat-label>Path</mat-label>
+    <mat-label>{{ 'common.path' | t }}</mat-label>
     <mat-select [formControl]="pathControl">
-      <mat-option value="">All paths</mat-option>
+      <mat-option value="">{{ 'common.allPaths' | t }}</mat-option>
       @for (path of paths; track path) {
-      <mat-option [value]="path">{{ pathLabels[path] }}</mat-option>
+        <mat-option [value]="path">{{ i18n.pathLabel(path) }}</mat-option>
       }
     </mat-select>
   </mat-form-field>
-
   <mat-form-field appearance="outline">
-    <mat-label>Sort by</mat-label>
+    <mat-label>{{ 'common.sort' | t }}</mat-label>
     <mat-select [formControl]="sortByControl">
       @for (field of sortFields; track field) {
-      <mat-option [value]="field">{{ sortFieldLabels[field] }}</mat-option>
+        <mat-option [value]="field">{{ i18n.sortLabel(field) }}</mat-option>
       }
     </mat-select>
   </mat-form-field>
-
   <mat-form-field appearance="outline">
-    <mat-label>Order</mat-label>
+    <mat-label>{{ 'common.order' | t }}</mat-label>
     <mat-select [formControl]="sortOrderControl">
-      <mat-option value="desc">Descending</mat-option>
-      <mat-option value="asc">Ascending</mat-option>
+      <mat-option value="desc">{{ 'common.descending' | t }}</mat-option>
+      <mat-option value="asc">{{ 'common.ascending' | t }}</mat-option>
     </mat-select>
   </mat-form-field>
 </section>
+}
 
-@if (errorMessage(); as message) {
-<p class="error" role="alert">{{ message }}</p>
-} @if (loading()) {
-<div class="loading">
-  <mat-spinner diameter="36" />
-</div>
+@if (loading()) {
+  <p class="sr-only">{{ 'students.loading' | t }}</p>
+  <app-loading-skeleton [rows]="8" [label]="'students.loading' | t" />
+} @else if (errorMessage(); as message) {
+  <app-error-state [title]="'students.loadError' | t" [message]="message" (retry)="load()" />
+} @else if (inactiveOnly()) {
+  @if (inactiveStudents().length === 0) {
+    <app-empty-state [title]="'students.inactiveTitle' | t" [message]="'students.inactiveMessage' | t">
+      <a mat-stroked-button routerLink="/students">{{ 'students.allStudents' | t }}</a>
+    </app-empty-state>
+  } @else {
+    <ul class="inactive-list">
+      @for (item of inactiveStudents(); track item.studentId) {
+        <li class="ra-card">
+          <div>
+            <strong>{{ item.studentName }}</strong>
+            <p>{{ i18n.activityLabel(item.detail) }}</p>
+          </div>
+          <a mat-stroked-button [routerLink]="item.href">{{ 'students.viewStudent' | t }}</a>
+        </li>
+      }
+    </ul>
+  }
 } @else if (result().items.length === 0) {
-<app-empty-state title="No students found" message="Adjust filters or create a new student record.">
-  <a mat-flat-button color="primary" routerLink="/students/new">Create student</a>
-</app-empty-state>
+  <app-empty-state
+    [title]="'students.emptyTitle' | t"
+    [message]="'students.emptyMessage' | t"
+  >
+    <a mat-flat-button color="primary" routerLink="/students/new">{{ 'students.add' | t }}</a>
+  </app-empty-state>
 } @else {
-<div class="table-wrap">
-  <table mat-table [dataSource]="result().items">
-    <ng-container matColumnDef="fullName">
-      <th mat-header-cell *matHeaderCellDef>Name</th>
-      <td mat-cell *matCellDef="let row">
-        <a [routerLink]="['/students', row.id]">{{ row.fullName }}</a>
-      </td>
-    </ng-container>
-    <ng-container matColumnDef="schoolGrade">
-      <th mat-header-cell *matHeaderCellDef>Grade</th>
-      <td mat-cell *matCellDef="let row">{{ row.schoolGrade }}</td>
-    </ng-container>
-    <ng-container matColumnDef="path">
-      <th mat-header-cell *matHeaderCellDef>Path</th>
-      <td mat-cell *matCellDef="let row">{{ pathLabel(row.path) }}</td>
-    </ng-container>
-    <ng-container matColumnDef="level">
-      <th mat-header-cell *matHeaderCellDef>Level</th>
-      <td mat-cell *matCellDef="let row">{{ levelLabel(row.level) }}</td>
-    </ng-container>
-    <ng-container matColumnDef="status">
-      <th mat-header-cell *matHeaderCellDef>Status</th>
-      <td mat-cell *matCellDef="let row">
+  <div class="ra-table-wrap desktop">
+    <table>
+      <thead>
+        <tr>
+          <th>{{ 'common.student' | t }}</th>
+          <th>{{ 'common.level' | t }}</th>
+          <th>{{ 'common.path' | t }}</th>
+          <th>{{ 'students.grade' | t }}</th>
+          <th>{{ 'students.lastUpdated' | t }}</th>
+          <th>{{ 'common.status' | t }}</th>
+          <th>{{ 'common.actions' | t }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of result().items; track row.id) {
+          <tr>
+            <td>
+              <div class="person">
+                <app-student-avatar [name]="row.fullName" />
+                <a [routerLink]="['/students', row.id]">{{ row.fullName }}</a>
+              </div>
+            </td>
+            <td>{{ levelLabel(row.level) }}</td>
+            <td>{{ pathLabel(row.path) }}</td>
+            <td>{{ row.schoolGrade }}</td>
+            <td>{{ row.updatedAt.slice(0, 10) }}</td>
+            <td><app-status-chip [status]="row.status" /></td>
+            <td class="actions">
+              <a mat-button [routerLink]="['/students', row.id]">{{ 'common.view' | t }}</a>
+              <a mat-button [routerLink]="['/students', row.id, 'edit']">{{ 'common.edit' | t }}</a>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mobile">
+    @for (row of result().items; track row.id) {
+      <a class="student-card ra-card" [routerLink]="['/students', row.id]">
+        <div class="person">
+          <app-student-avatar [name]="row.fullName" />
+          <div>
+            <strong>{{ row.fullName }}</strong>
+            <p>{{ levelLabel(row.level) }} · {{ pathLabel(row.path) }}</p>
+          </div>
+        </div>
         <app-status-chip [status]="row.status" />
-      </td>
-    </ng-container>
-    <ng-container matColumnDef="hours">
-      <th mat-header-cell *matHeaderCellDef>Hours</th>
-      <td mat-cell *matCellDef="let row">{{ row.availableHoursPerWeek }}</td>
-    </ng-container>
-    <ng-container matColumnDef="actions">
-      <th mat-header-cell *matHeaderCellDef></th>
-      <td mat-cell *matCellDef="let row">
-        <a mat-button [routerLink]="['/students', row.id, 'edit']">Edit</a>
-      </td>
-    </ng-container>
+      </a>
+    }
+  </div>
 
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-  </table>
-</div>
-
-<mat-paginator
-  [length]="result().total"
-  [pageIndex]="result().page - 1"
-  [pageSize]="result().pageSize"
-  [pageSizeOptions]="[10, 20, 50]"
-  (page)="onPage($event)"
-/>
+  <mat-paginator
+    [length]="result().total"
+    [pageIndex]="result().page - 1"
+    [pageSize]="result().pageSize"
+    [pageSizeOptions]="[10, 20, 50]"
+    (page)="onPage($event)"
+  />
 }

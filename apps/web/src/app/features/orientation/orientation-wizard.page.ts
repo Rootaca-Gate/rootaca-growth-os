@@ -10,6 +10,8 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { interval } from 'rxjs';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { PageHeader } from '../../shared/page-header';
 import { AssessmentResultCard } from './assessment-result-card';
 import { OrientationQuestion } from './orientation-question';
@@ -38,6 +40,7 @@ import {
     OrientationTimer,
     OrientationQuestion,
     AssessmentResultCard,
+    TPipe,
   ],
   templateUrl: './orientation-wizard.page.html',
   styleUrl: './orientation-wizard.page.scss',
@@ -48,6 +51,7 @@ export class OrientationWizardPage {
   private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
+  readonly i18n = inject(DirectionService);
 
   readonly loading = signal(true);
   readonly saving = signal(false);
@@ -94,7 +98,7 @@ export class OrientationWizardPage {
       next: (session) => this.hydrate(session),
       error: (error: unknown) => {
         this.loading.set(false);
-        this.snackBar.open(this.toErrorMessage(error), 'OK', { duration: 4000 });
+        this.snackBar.open(this.toErrorMessage(error), this.i18n.t('common.ok'), { duration: 4000 });
         void this.router.navigate(['/students']);
       },
     });
@@ -105,7 +109,7 @@ export class OrientationWizardPage {
   }
 
   stageLabel(stage: OrientationStage): string {
-    return `${STAGE_META[stage].window} ${STAGE_META[stage].label}`;
+    return `${STAGE_META[stage].window} ${this.i18n.stageLabel(stage)}`;
   }
 
   answerFor(questionId: string): AssessmentAnswer | undefined {
@@ -139,15 +143,15 @@ export class OrientationWizardPage {
   }
 
   start(): void {
-    this.run((id) => this.orientationApi.start(id), 'Timer started');
+    this.run((id) => this.orientationApi.start(id), this.i18n.t('orientation.timerStarted'));
   }
 
   pause(): void {
-    this.run((id) => this.orientationApi.pause(id), 'Timer paused');
+    this.run((id) => this.orientationApi.pause(id), this.i18n.t('orientation.timerPaused'));
   }
 
   resume(): void {
-    this.run((id) => this.orientationApi.resume(id), 'Timer resumed');
+    this.run((id) => this.orientationApi.resume(id), this.i18n.t('orientation.timerResumed'));
   }
 
   save(): void {
@@ -167,11 +171,13 @@ export class OrientationWizardPage {
         next: (updated) => {
           this.hydrate(updated);
           this.saving.set(false);
-          this.snackBar.open('Session saved', 'OK', { duration: 2000 });
+          this.snackBar.open(this.i18n.t('orientation.sessionSaved'), this.i18n.t('common.ok'), {
+            duration: 2000,
+          });
         },
         error: (error: unknown) => {
           this.saving.set(false);
-          this.snackBar.open(this.toErrorMessage(error), 'OK', { duration: 4000 });
+          this.snackBar.open(this.toErrorMessage(error), this.i18n.t('common.ok'), { duration: 4000 });
         },
       });
   }
@@ -195,17 +201,19 @@ export class OrientationWizardPage {
             next: (updated) => {
               this.hydrate(updated);
               this.saving.set(false);
-              this.snackBar.open('Orientation completed', 'OK', { duration: 2500 });
+              this.snackBar.open(this.i18n.t('orientation.completedLabel'), this.i18n.t('common.ok'), {
+                duration: 2500,
+              });
             },
             error: (error: unknown) => {
               this.saving.set(false);
-              this.snackBar.open(this.toErrorMessage(error), 'OK', { duration: 4000 });
+              this.snackBar.open(this.toErrorMessage(error), this.i18n.t('common.ok'), { duration: 4000 });
             },
           });
         },
         error: (error: unknown) => {
           this.saving.set(false);
-          this.snackBar.open(this.toErrorMessage(error), 'OK', { duration: 4000 });
+          this.snackBar.open(this.toErrorMessage(error), this.i18n.t('common.ok'), { duration: 4000 });
         },
       });
   }
@@ -219,10 +227,10 @@ export class OrientationWizardPage {
     action(session.id).subscribe({
       next: (updated) => {
         this.hydrate(updated);
-        this.snackBar.open(message, 'OK', { duration: 1800 });
+        this.snackBar.open(message, this.i18n.t('common.ok'), { duration: 1800 });
       },
       error: (error: unknown) => {
-        this.snackBar.open(this.toErrorMessage(error), 'OK', { duration: 4000 });
+        this.snackBar.open(this.toErrorMessage(error), this.i18n.t('common.ok'), { duration: 4000 });
       },
     });
   }
@@ -284,6 +292,6 @@ export class OrientationWizardPage {
     if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string') {
       return error.error.message;
     }
-    return 'Unable to update the orientation session.';
+    return this.i18n.t('orientation.updateFailed');
   }
 }

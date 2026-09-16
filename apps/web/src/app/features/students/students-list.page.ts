@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { PageEvent, MatPaginatorModule } from '@angular/material/paginator';
@@ -6,20 +5,22 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatTableModule } from '@angular/material/table';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { debounceTime } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { EmptyState } from '../../shared/empty-state';
+import { ErrorState } from '../../shared/error-state';
+import { LoadingSkeleton } from '../../shared/loading-skeleton';
 import { PageHeader } from '../../shared/page-header';
 import { StatusChip } from '../../shared/status-chip';
+import { StudentAvatar } from '../../shared/student-avatar';
+import { httpErrorMessage } from '../../shared/http-error';
+import { DashboardApi } from '../dashboard/dashboard.api';
+import { DashboardAttentionItem } from '../dashboard/dashboard.models';
 import {
   LEARNING_PATHS,
-  LEVEL_LABELS,
-  PATH_LABELS,
-  SORT_FIELD_LABELS,
-  STATUS_LABELS,
   STUDENT_LEVELS,
   STUDENT_SORT_FIELDS,
   STUDENT_STATUSES,
@@ -37,36 +38,28 @@ import { StudentsApi } from './students.api';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatTableModule,
     MatPaginatorModule,
-    MatProgressSpinnerModule,
     PageHeader,
     EmptyState,
+    ErrorState,
+    LoadingSkeleton,
     StatusChip,
+    StudentAvatar,
+    TPipe,
   ],
   templateUrl: './students-list.page.html',
   styleUrl: './students-list.page.scss',
 })
 export class StudentsListPage {
   private readonly studentsApi = inject(StudentsApi);
+  private readonly dashboardApi = inject(DashboardApi);
+  private readonly route = inject(ActivatedRoute);
+  readonly i18n = inject(DirectionService);
 
-  readonly displayedColumns = [
-    'fullName',
-    'schoolGrade',
-    'path',
-    'level',
-    'status',
-    'hours',
-    'actions',
-  ];
   readonly statuses = STUDENT_STATUSES;
   readonly levels = STUDENT_LEVELS;
   readonly paths = LEARNING_PATHS;
   readonly sortFields = STUDENT_SORT_FIELDS;
-  readonly statusLabels = STATUS_LABELS;
-  readonly levelLabels = LEVEL_LABELS;
-  readonly pathLabels = PATH_LABELS;
-  readonly sortFieldLabels = SORT_FIELD_LABELS;
 
   readonly searchControl = new FormControl('', { nonNullable: true });
   readonly statusControl = new FormControl<StudentStatus | ''>('', { nonNullable: true });
@@ -77,6 +70,8 @@ export class StudentsListPage {
 
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  readonly inactiveOnly = signal(false);
+  readonly inactiveStudents = signal<DashboardAttentionItem[]>([]);
   readonly result = signal<PaginatedStudents>({
     items: [],
     total: 0,
@@ -86,6 +81,14 @@ export class StudentsListPage {
   });
 
   constructor() {
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      this.inactiveOnly.set(params.get('activity') === 'inactive');
+      if (this.inactiveOnly()) {
+        this.loadInactive();
+      } else {
+        this.load(1);
+      }
+    });
     this.searchControl.valueChanges.pipe(debounceTime(300), takeUntilDestroyed()).subscribe(() => {
       this.load(1);
     });
@@ -94,10 +97,13 @@ export class StudentsListPage {
     this.pathControl.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.load(1));
     this.sortByControl.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.load(1));
     this.sortOrderControl.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.load(1));
-    this.load(1);
   }
 
   load(page = this.result().page): void {
+    if (this.inactiveOnly()) {
+      this.loadInactive();
+      return;
+    }
     this.loading.set(true);
     this.errorMessage.set(null);
 
@@ -119,7 +125,9 @@ export class StudentsListPage {
         },
         error: (error: unknown) => {
           this.loading.set(false);
-          this.errorMessage.set(this.toErrorMessage(error));
+          this.errorMessage.set(
+            httpErrorMessage(error, this.i18n.t('errors.connection')),
+          );
         },
       });
   }
@@ -134,17 +142,27 @@ export class StudentsListPage {
   }
 
   pathLabel(path: string): string {
-    return PATH_LABELS[path as LearningPath];
+    return this.i18n.pathLabel(path);
   }
 
   levelLabel(level: string): string {
-    return LEVEL_LABELS[level as StudentLevel];
+    return this.i18n.levelLabel(level);
   }
 
-  private toErrorMessage(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      return 'Unable to load students.';
-    }
-    return 'Unable to load students.';
+  private loadInactive(): void {
+    this.loading.set(true);
+    this.errorMessage.set(null);
+    this.dashboardApi.getDashboard().subscribe({
+      next: (dashboard) => {
+        this.inactiveStudents.set(dashboard.attention.noRecentActivity);
+        this.loading.set(false);
+      },
+      error: (error: unknown) => {
+        this.loading.set(false);
+        this.errorMessage.set(
+          httpErrorMessage(error, this.i18n.t('errors.connection')),
+        );
+      },
+    });
   }
 }

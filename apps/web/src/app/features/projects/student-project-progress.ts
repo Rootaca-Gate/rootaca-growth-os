@@ -4,45 +4,48 @@ import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { EmptyState } from '../../shared/empty-state';
-import { STUDENT_PROJECT_STATUS_LABELS } from './project.labels';
 import { ProjectApi } from './project.api';
 import { StudentProjectStatus, StudentProjectSummary } from './project.models';
 
 @Component({
   selector: 'app-student-project-progress',
-  imports: [RouterLink, MatButtonModule, EmptyState, MatProgressBarModule, MatProgressSpinnerModule],
+  imports: [RouterLink, MatButtonModule, EmptyState, MatProgressBarModule, MatProgressSpinnerModule, TPipe],
   template: `
     <div class="wrap">
       @if (loading()) {
         <div class="loading"><mat-spinner diameter="28" /></div>
       } @else if (error(); as message) {
-        <app-empty-state title="No educational projects" [message]="message" />
+        <app-empty-state [title]="'projects.empty' | t" [message]="message" />
       } @else if (summary(); as current) {
         <section class="card">
           <header>
             <div>
-              <p class="kicker">Project progress</p>
+              <p class="kicker">{{ 'projects.progressTitle' | t }}</p>
               <h2>{{ current.overallPercent }}%</h2>
               <p>
-                {{ current.completedCount }} completed · {{ current.inProgressCount }} in progress ·
-                classroom work only
+                {{ 'projects.classroomWorkOnly' | t:{
+                  completed: current.completedCount,
+                  inProgress: current.inProgressCount
+                } }}
               </p>
             </div>
             <a mat-stroked-button [routerLink]="['/students', current.studentId, 'projects']">
-              Open projects
+              {{ 'projects.openProjects' | t }}
             </a>
           </header>
           <mat-progress-bar mode="determinate" [value]="current.overallPercent" />
           @if (current.items.length === 0) {
-            <p>No educational projects assigned yet.</p>
+            <p>{{ 'projects.noAssignedYet' | t }}</p>
           } @else {
             <ul>
               @for (item of current.items; track item.id) {
                 <li>
                   <div class="meta">
                     <strong>{{ item.project.name }}</strong>
-                    <span>{{ item.progressPercent }}% · {{ statusLabel(item.status) }}</span>
+                    <span>{{ item.progressPercent }}% · {{ i18n.statusLabel(item.status) }}</span>
                   </div>
                   <mat-progress-bar mode="determinate" [value]="item.progressPercent" />
                 </li>
@@ -119,6 +122,7 @@ import { StudentProjectStatus, StudentProjectSummary } from './project.models';
 })
 export class StudentProjectProgress {
   private readonly api = inject(ProjectApi);
+  readonly i18n = inject(DirectionService);
   readonly studentId = input.required<string>();
   readonly loading = signal(true);
   readonly summary = signal<StudentProjectSummary | null>(null);
@@ -144,13 +148,13 @@ export class StudentProjectProgress {
   }
 
   statusLabel(status: StudentProjectStatus): string {
-    return STUDENT_PROJECT_STATUS_LABELS[status];
+    return this.i18n.statusLabel(status);
   }
 
   private toMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse && error.status === 404) {
-      return 'Student not found.';
+      return this.i18n.t('students.notFound');
     }
-    return 'Unable to load project progress.';
+    return this.i18n.t('projects.unableProgress');
   }
 }

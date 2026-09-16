@@ -27,7 +27,7 @@ export class StudentsService {
     const sortOrder = query.sortOrder ?? 'desc';
     const where = this.buildWhere(query);
 
-    const [total, students] = await this.prisma.$transaction([
+    const [total, students] = await Promise.all([
       this.prisma.student.count({ where }),
       this.prisma.student.findMany({
         where,

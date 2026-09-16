@@ -14,7 +14,47 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        pathMatch: 'full',
+        redirectTo: 'dashboard',
+      },
+      {
+        path: 'dashboard',
         loadComponent: () => import('./features/home/home.page').then((m) => m.HomePage),
+      },
+      {
+        path: 'orientation',
+        loadComponent: () =>
+          import('./features/orientation/orientation-hub.page').then((m) => m.OrientationHubPage),
+      },
+      {
+        path: 'assessments',
+        loadComponent: () =>
+          import('./features/orientation/assessments.page').then((m) => m.AssessmentsPage),
+      },
+      {
+        path: 'roadmaps',
+        loadComponent: () =>
+          import('./features/roadmap/roadmaps-hub.page').then((m) => m.RoadmapsHubPage),
+      },
+      {
+        path: 'progress',
+        loadComponent: () =>
+          import('./features/progress/progress-hub.page').then((m) => m.ProgressHubPage),
+      },
+      {
+        path: 'activity',
+        loadComponent: () =>
+          import('./features/activity/activity.page').then((m) => m.ActivityPage),
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./features/settings/settings.page').then((m) => m.SettingsPage),
+      },
+      {
+        path: 'students/create',
+        redirectTo: 'students/new',
+        pathMatch: 'full',
       },
       {
         path: 'students',

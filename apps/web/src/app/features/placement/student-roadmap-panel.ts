@@ -7,6 +7,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { forkJoin } from 'rxjs';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { EmptyState } from '../../shared/empty-state';
 import { PathRecommendationCard } from './path-recommendation-card';
 import { PlacementApi } from './placement.api';
@@ -22,20 +24,21 @@ import { LearningPath, Level, Placement } from './placement.models';
     MatSelectModule,
     EmptyState,
     PathRecommendationCard,
+    TPipe,
   ],
   template: `
     <section class="panel">
-      <h2>Path recommendation</h2>
+      <h2>{{ 'students.pathRecommendation' | t }}</h2>
       @if (error(); as message) {
-        <app-empty-state title="No placement yet" [message]="message" />
+        <app-empty-state [title]="'students.noPlacement' | t" [message]="message" />
       } @else if (placement(); as current) {
         <div class="level">
-          <p class="kicker">Current level</p>
+          <p class="kicker">{{ 'students.currentLevel' | t }}</p>
           <h3>{{ current.finalLevel.name }}</h3>
           <p>
-            System result {{ current.systemLevel.name }}
+            {{ 'catalogs.systemResult' | t:{ name: current.systemLevel.name } }}
             @if (current.levelChangedBy) {
-              · overridden by {{ current.levelChangedBy.displayName }}
+              · {{ 'catalogs.overriddenBy' | t:{ name: current.levelChangedBy.displayName } }}
             }
           </p>
         </div>
@@ -43,9 +46,9 @@ import { LearningPath, Level, Placement } from './placement.models';
 
         <div class="overrides">
           <form [formGroup]="levelForm" (ngSubmit)="saveLevel()">
-            <h3>Override level</h3>
+            <h3>{{ 'students.overrideLevel' | t }}</h3>
             <mat-form-field appearance="outline">
-              <mat-label>Level</mat-label>
+              <mat-label>{{ 'common.level' | t }}</mat-label>
               <mat-select formControlName="levelId">
                 @for (level of levels(); track level.id) {
                   <mat-option [value]="level.id">{{ level.name }}</mat-option>
@@ -53,18 +56,18 @@ import { LearningPath, Level, Placement } from './placement.models';
               </mat-select>
             </mat-form-field>
             <mat-form-field appearance="outline">
-              <mat-label>Reason</mat-label>
+              <mat-label>{{ 'common.reason' | t }}</mat-label>
               <textarea matInput rows="3" formControlName="reason"></textarea>
             </mat-form-field>
             <button mat-stroked-button type="submit" [disabled]="levelForm.invalid || saving()">
-              Save level override
+              {{ 'catalogs.saveLevelOverride' | t }}
             </button>
           </form>
 
           <form [formGroup]="pathForm" (ngSubmit)="savePath()">
-            <h3>Override path</h3>
+            <h3>{{ 'students.overridePath' | t }}</h3>
             <mat-form-field appearance="outline">
-              <mat-label>Path</mat-label>
+              <mat-label>{{ 'common.path' | t }}</mat-label>
               <mat-select formControlName="pathId">
                 @for (path of paths(); track path.id) {
                   <mat-option [value]="path.id">{{ path.name }}</mat-option>
@@ -72,11 +75,11 @@ import { LearningPath, Level, Placement } from './placement.models';
               </mat-select>
             </mat-form-field>
             <mat-form-field appearance="outline">
-              <mat-label>Reason</mat-label>
+              <mat-label>{{ 'common.reason' | t }}</mat-label>
               <textarea matInput rows="3" formControlName="reason"></textarea>
             </mat-form-field>
             <button mat-stroked-button type="submit" [disabled]="pathForm.invalid || saving()">
-              Save path override
+              {{ 'catalogs.savePathOverride' | t }}
             </button>
           </form>
         </div>
@@ -132,6 +135,7 @@ import { LearningPath, Level, Placement } from './placement.models';
 export class StudentRoadmapPanel {
   private readonly api = inject(PlacementApi);
   private readonly snackBar = inject(MatSnackBar);
+  readonly i18n = inject(DirectionService);
 
   readonly studentId = input.required<string>();
   readonly placement = signal<Placement | null>(null);
@@ -187,11 +191,13 @@ export class StudentRoadmapPanel {
         this.placement.set(placement);
         this.levelForm.controls.reason.reset('');
         this.saving.set(false);
-        this.snackBar.open('Level override saved', 'OK', { duration: 2500 });
+        this.snackBar.open(this.i18n.t('catalogs.levelOverrideSaved'), this.i18n.t('common.ok'), {
+          duration: 2500,
+        });
       },
       error: (error: unknown) => {
         this.saving.set(false);
-        this.snackBar.open(this.toErrorMessage(error), 'OK', { duration: 4000 });
+        this.snackBar.open(this.toErrorMessage(error), this.i18n.t('common.ok'), { duration: 4000 });
       },
     });
   }
@@ -207,11 +213,13 @@ export class StudentRoadmapPanel {
         this.placement.set(placement);
         this.pathForm.controls.reason.reset('');
         this.saving.set(false);
-        this.snackBar.open('Path override saved', 'OK', { duration: 2500 });
+        this.snackBar.open(this.i18n.t('catalogs.pathOverrideSaved'), this.i18n.t('common.ok'), {
+          duration: 2500,
+        });
       },
       error: (error: unknown) => {
         this.saving.set(false);
-        this.snackBar.open(this.toErrorMessage(error), 'OK', { duration: 4000 });
+        this.snackBar.open(this.toErrorMessage(error), this.i18n.t('common.ok'), { duration: 4000 });
       },
     });
   }
@@ -227,12 +235,12 @@ export class StudentRoadmapPanel {
   private toErrorMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 404) {
-        return 'Complete the 20-minute orientation to calculate level, skills, and a path.';
+        return this.i18n.t('catalogs.completeToCalculate');
       }
       if (typeof error.error?.message === 'string') {
         return error.error.message;
       }
     }
-    return 'Unable to load the path recommendation.';
+    return this.i18n.t('catalogs.pathLoadFailed');
   }
 }

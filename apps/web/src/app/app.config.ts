@@ -1,3 +1,4 @@
+import { Directionality } from '@angular/cdk/bidi';
 import {
   ApplicationConfig,
   importProvidersFrom,
@@ -8,11 +9,14 @@ import {
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { ReactiveFormsModule } from '@angular/forms';
 import { provideNativeDateAdapter } from '@angular/material/core';
+import { MatPaginatorIntl } from '@angular/material/paginator';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/auth/auth.interceptor';
 import { AuthService } from './core/auth/auth.service';
+import { DirectionService } from './core/direction.service';
+import { AppPaginatorIntl } from './core/i18n/paginator-intl';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -22,6 +26,11 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideNativeDateAdapter(),
     importProvidersFrom(ReactiveFormsModule),
-    provideAppInitializer(() => inject(AuthService).hydrate()),
+    { provide: Directionality, useExisting: DirectionService },
+    { provide: MatPaginatorIntl, useClass: AppPaginatorIntl },
+    provideAppInitializer(() => {
+      inject(DirectionService);
+      return inject(AuthService).hydrate();
+    }),
   ],
 };

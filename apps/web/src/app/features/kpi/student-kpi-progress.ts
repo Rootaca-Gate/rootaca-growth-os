@@ -1,6 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, effect, inject, input, signal } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { EmptyState } from '../../shared/empty-state';
 import { KpiApi } from './kpi.api';
 import { KpiProgressCard } from './kpi-progress-card';
@@ -8,13 +10,13 @@ import { StudentKpiDashboard } from './kpi.models';
 
 @Component({
   selector: 'app-student-kpi-progress',
-  imports: [EmptyState, KpiProgressCard, MatProgressSpinnerModule],
+  imports: [EmptyState, KpiProgressCard, MatProgressSpinnerModule, TPipe],
   template: `
     <div class="wrap">
       @if (loading()) {
         <div class="loading"><mat-spinner diameter="28" /></div>
       } @else if (error(); as message) {
-        <app-empty-state title="No KPIs yet" [message]="message" />
+        <app-empty-state [title]="'kpis.noKpisYet' | t" [message]="message" />
       } @else if (dashboard(); as current) {
         <app-kpi-progress-card [dashboard]="current" [linkToFull]="true" />
       }
@@ -34,6 +36,7 @@ import { StudentKpiDashboard } from './kpi.models';
 })
 export class StudentKpiProgress {
   private readonly api = inject(KpiApi);
+  readonly i18n = inject(DirectionService);
   readonly studentId = input.required<string>();
   readonly loading = signal(true);
   readonly dashboard = signal<StudentKpiDashboard | null>(null);
@@ -60,8 +63,8 @@ export class StudentKpiProgress {
 
   private toMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse && error.status === 404) {
-      return 'Student not found.';
+      return this.i18n.t('students.notFound');
     }
-    return 'Unable to load KPI progress.';
+    return this.i18n.t('kpis.unableProgress');
   }
 }

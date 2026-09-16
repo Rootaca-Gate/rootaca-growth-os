@@ -1,72 +1,69 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink } from '@angular/router';
-import { DashboardApi } from '../dashboard/dashboard.api';
-import { DashboardBar, DashboardBarChart } from '../dashboard/dashboard-bar-chart';
-import { DashboardLineChart } from '../dashboard/dashboard-line-chart';
-import { ATTENTION_META, CARD_META } from '../dashboard/dashboard.labels';
-import { DashboardCards, DashboardResponse } from '../dashboard/dashboard.models';
+import { AuthService } from '../../core/auth/auth.service';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { EmptyState } from '../../shared/empty-state';
+import { ErrorState } from '../../shared/error-state';
+import { LoadingSkeleton } from '../../shared/loading-skeleton';
 import { PageHeader } from '../../shared/page-header';
-
-const KPI_TONES: Record<string, string> = {
-  ON_TRACK: 'on-track',
-  AT_RISK: 'at-risk',
-  BEHIND: 'behind',
-  COMPLETED: 'completed',
-};
+import { ProgressBar } from '../../shared/progress-bar';
+import { SectionHeader } from '../../shared/section-header';
+import { StatCard } from '../../shared/stat-card';
+import { StatusBadge } from '../../shared/status-badge';
+import { StudentAvatar } from '../../shared/student-avatar';
+import { Timeline } from '../../shared/timeline';
+import { DashboardApi } from '../dashboard/dashboard.api';
+import {
+  DashboardCards,
+  DashboardResponse,
+} from '../dashboard/dashboard.models';
 
 @Component({
   selector: 'app-home-page',
   imports: [
     RouterLink,
+    DatePipe,
     MatButtonModule,
-    MatProgressSpinnerModule,
     PageHeader,
     EmptyState,
-    DashboardBarChart,
-    DashboardLineChart,
+    ErrorState,
+    LoadingSkeleton,
+    StatCard,
+    SectionHeader,
+    ProgressBar,
+    StatusBadge,
+    StudentAvatar,
+    Timeline,
+    TPipe,
   ],
   templateUrl: './home.page.html',
   styleUrl: './home.page.scss',
 })
 export class HomePage {
   private readonly api = inject(DashboardApi);
+  private readonly auth = inject(AuthService);
+  readonly i18n = inject(DirectionService);
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly dashboard = signal<DashboardResponse | null>(null);
-  readonly cards = CARD_META;
-  readonly attention = ATTENTION_META;
 
-  readonly levelBars = computed(() => countBars(this.dashboard()?.charts.studentsByLevel ?? []));
-  readonly pathBars = computed(() => countBars(this.dashboard()?.charts.studentsByPath ?? []));
-  readonly skillBars = computed(
-    (): DashboardBar[] =>
-      this.dashboard()?.charts.averageSkillScores.map((item) => ({
-        key: item.key,
-        label: item.label,
-        value: item.score,
-      })) ?? [],
-  );
-  readonly kpiBars = computed((): DashboardBar[] => {
-    const items = this.dashboard()?.charts.kpiStatus ?? [];
-    if (items.every((item) => item.count === 0)) {
-      return [];
-    }
-    return items.map((item) => ({
-      key: item.key,
-      label: item.label,
-      value: item.count,
-      tone: KPI_TONES[item.key] ?? 'default',
-    }));
-  });
-  readonly monthlyPoints = computed(() => this.dashboard()?.charts.monthlyProgress ?? []);
-  readonly kpiStatusMax = computed(() => {
-    const counts = this.dashboard()?.charts.kpiStatus.map((item) => item.count) ?? [];
-    return Math.max(1, ...counts);
+  readonly greeting = computed(() => {
+    this.i18n.locale();
+    const hour = new Date().getHours();
+    const hello =
+      hour < 12
+        ? this.i18n.t('dashboard.goodMorning')
+        : hour < 18
+          ? this.i18n.t('dashboard.goodAfternoon')
+          : this.i18n.t('dashboard.goodEvening');
+    const name = this.auth.currentUser()?.displayName?.split(' ')[0];
+    const sep = this.i18n.locale() === 'ar' ? '، ' : ', ';
+    return name ? `${hello}${sep}${name}` : hello;
   });
 
   constructor() {
@@ -97,14 +94,66 @@ export class HomePage {
     return String(value);
   }
 
+  progressLabel(value: number | null): string {
+    return value === null ? '—' : `${value}%`;
+  }
+
+  skillLabel(value: number | null): string {
+    this.i18n.locale();
+    return value === null ? this.i18n.t('dashboard.notAssessed') : String(value);
+  }
+
+  kpiLabel(count: number): string {
+    this.i18n.locale();
+    if (count === 0) {
+      return this.i18n.t('dashboard.onTrack');
+    }
+    return this.i18n.t('dashboard.belowTarget', { count });
+  }
+
+  statusLabel(status: string): string {
+    this.i18n.locale();
+    return this.i18n.statusLabel(status);
+  }
+
+  attentionCards(dashboard: DashboardResponse) {
+    this.i18n.locale();
+    return [
+      {
+        count: dashboard.attention.orientationNotCompleted.length,
+        title: this.i18n.t('dashboard.orientationNotCompleted'),
+        href: '/orientation?status=not_started',
+      },
+      {
+        count: dashboard.attention.kpiBelowTarget.length,
+        title: this.i18n.t('dashboard.kpiBelowTarget'),
+        href: '/kpis?status=behind',
+      },
+      {
+        count: dashboard.attention.noRecentActivity.length,
+        title: this.i18n.t('dashboard.noRecentActivity'),
+        href: '/students?activity=inactive',
+      },
+      {
+        count: dashboard.attention.roadmapOverdue.length,
+        title: this.i18n.t('dashboard.roadmapOverdue'),
+        href: '/roadmaps?status=overdue',
+      },
+    ];
+  }
+
+  timeline(dashboard: DashboardResponse) {
+    return dashboard.recentActivity.map((item) => ({
+      title: item.title,
+      occurredAt: item.occurredAt,
+      href: item.href,
+    }));
+  }
+
   private toMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string') {
       return error.error.message;
     }
-    return 'Unable to load the dashboard.';
+    return this.i18n.t('errors.connection');
   }
-}
-
-function countBars(items: Array<{ key: string; label: string; count: number }>): DashboardBar[] {
-  return items.map((item) => ({ key: item.key, label: item.label, value: item.count }));
 }

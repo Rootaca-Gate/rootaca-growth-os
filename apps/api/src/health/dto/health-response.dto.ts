@@ -9,4 +9,10 @@ export class HealthResponseDto {
 
   @ApiProperty({ example: '2026-09-16T00:56:00.000Z' })
   timestamp!: string;
+
+  @ApiProperty({ example: 'ok' })
+  database!: 'ok' | 'error';
+
+  @ApiProperty({ example: true })
+  hasUsers!: boolean;
 }

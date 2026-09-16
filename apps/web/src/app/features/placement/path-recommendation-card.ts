@@ -1,21 +1,24 @@
-import { Component, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { Placement } from './placement.models';
 
 @Component({
   selector: 'app-path-recommendation-card',
+  imports: [TPipe],
   template: `
     @if (placement(); as current) {
       <section class="card">
         <header>
-          <p class="kicker">Path recommendation</p>
+          <p class="kicker">{{ 'students.pathRecommendation' | t }}</p>
           <h2>{{ current.finalPath.name }}</h2>
           @if (current.finalPath.id !== current.systemPath.id) {
-            <p class="override">System recommended {{ current.systemPath.name }}</p>
+            <p class="override">{{ 'catalogs.systemRecommended' | t:{ name: current.systemPath.name } }}</p>
           }
         </header>
         <div class="grid">
           <article>
-            <h3>Recommended path</h3>
+            <h3>{{ 'students.recommendedPath' | t }}</h3>
             <p>{{ current.finalPath.description }}</p>
             <ul>
               @for (reason of current.recommendationReasons; track reason) {
@@ -24,7 +27,7 @@ import { Placement } from './placement.models';
             </ul>
           </article>
           <article>
-            <h3>Alternative path</h3>
+            <h3>{{ 'students.alternativePath' | t }}</h3>
             <p>{{ current.alternativePath.name }} — {{ current.alternativePath.description }}</p>
             <ul>
               @for (reason of current.alternativeReasons; track reason) {
@@ -94,5 +97,6 @@ import { Placement } from './placement.models';
   `,
 })
 export class PathRecommendationCard {
+  readonly i18n = inject(DirectionService);
   readonly placement = input<Placement | null | undefined>();
 }

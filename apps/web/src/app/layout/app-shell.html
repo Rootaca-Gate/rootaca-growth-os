@@ -1,29 +1,61 @@
-<mat-toolbar color="primary">
-  <span class="brand">ROOTACA Growth OS</span>
-  <a
-    mat-button
-    routerLink="/"
-    routerLinkActive="active-link"
-    [routerLinkActiveOptions]="{ exact: true }"
+<mat-sidenav-container class="shell" [dir]="direction()">
+  <mat-sidenav
+    #sidenav
+    class="sidebar"
+    [mode]="sidenavMode()"
+    [opened]="!isMobile()"
+    [fixedInViewport]="true"
   >
-    Dashboard
-  </a>
-  <a mat-button routerLink="/students" routerLinkActive="active-link">Students</a>
-  <a mat-button routerLink="/levels" routerLinkActive="active-link">Levels</a>
-  <a mat-button routerLink="/skills" routerLinkActive="active-link">Skills</a>
-  <a mat-button routerLink="/learning-paths" routerLinkActive="active-link">Paths</a>
-  <a mat-button routerLink="/kpis" routerLinkActive="active-link">KPIs</a>
-  <a mat-button routerLink="/projects" routerLinkActive="active-link">Projects</a>
-  <span class="spacer"></span>
-  @if (auth.currentUser(); as user) {
-  <span class="user-meta">{{ user.displayName }} · {{ user.role }}</span>
-  }
-  <button mat-button type="button" (click)="toggleDirection()">
-    {{ direction() === 'rtl' ? 'English' : 'العربية' }}
-  </button>
-  <button mat-button type="button" (click)="logout()">Logout</button>
-</mat-toolbar>
+    <div class="brand">
+      <strong>{{ 'brand.name' | t }}</strong>
+      <span>{{ 'brand.product' | t }}</span>
+    </div>
 
-<main>
-  <router-outlet />
-</main>
+    <nav>
+      @for (section of nav; track section.titleKey) {
+        <p class="ra-kicker">{{ section.titleKey | t }}</p>
+        @for (item of section.items; track item.path) {
+          <a
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: item.exact === true }"
+          >
+            <mat-icon>{{ item.icon }}</mat-icon>
+            <span>{{ item.labelKey | t }}</span>
+          </a>
+        }
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      @if (auth.currentUser(); as user) {
+        <div class="user">
+          <strong>{{ user.displayName }}</strong>
+          <span>{{ user.email }}</span>
+        </div>
+      }
+      <button type="button" (click)="toggleDirection()">
+        {{ direction() === 'rtl' ? ('common.switchToEnglish' | t) : ('common.switchToArabic' | t) }}
+      </button>
+      <a routerLink="/settings">{{ 'nav.settings' | t }}</a>
+      <button type="button" (click)="logout()">{{ 'nav.logout' | t }}</button>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    @if (isMobile()) {
+      <header class="mobile-bar">
+        <button mat-icon-button type="button" (click)="sidenav.toggle()" [attr.aria-label]="'nav.openNav' | t">
+          <mat-icon>menu</mat-icon>
+        </button>
+        <strong>{{ 'brand.name' | t }}</strong>
+        <button mat-button type="button" (click)="toggleDirection()">
+          {{ direction() === 'rtl' ? ('common.switchToEnglish' | t) : ('common.switchToArabic' | t) }}
+        </button>
+      </header>
+    }
+    <main>
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

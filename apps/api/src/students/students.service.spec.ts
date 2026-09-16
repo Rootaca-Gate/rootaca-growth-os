@@ -43,7 +43,6 @@ describe('StudentsService', () => {
       findUnique: jest.fn(),
       update: jest.fn(),
     },
-    $transaction: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -100,7 +99,8 @@ describe('StudentsService', () => {
   });
 
   it('paginates and filters students', async () => {
-    prisma.$transaction.mockResolvedValue([1, [student]]);
+    prisma.student.count.mockResolvedValue(1);
+    prisma.student.findMany.mockResolvedValue([student]);
 
     const result = await service.findAll({
       search: 'Yara',
@@ -115,7 +115,8 @@ describe('StudentsService', () => {
 
     expect(result.total).toBe(1);
     expect(result.items[0]?.fullName).toBe('Yara Hassan');
-    expect(prisma.$transaction).toHaveBeenCalled();
+    expect(prisma.student.count).toHaveBeenCalled();
+    expect(prisma.student.findMany).toHaveBeenCalled();
   });
 
   it('throws when a student is missing', async () => {

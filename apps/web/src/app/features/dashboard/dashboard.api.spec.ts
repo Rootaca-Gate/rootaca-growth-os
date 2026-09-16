@@ -35,6 +35,8 @@ describe('DashboardApi', () => {
         pendingAssessments: 2,
         averageProgress: 72,
         projectsCompleted: 4,
+        newThisWeek: 1,
+        averageSkillScore: null,
       },
       charts: {
         studentsByLevel: [],
@@ -48,9 +50,15 @@ describe('DashboardApi', () => {
         assessmentPending: [],
         noRecentActivity: [],
         roadmapBehindSchedule: [],
+        orientationNotCompleted: [],
+        assessmentInProgress: [],
+        roadmapOverdue: [],
       },
       recentSessions: [],
       upcomingSessions: [],
+      todaysSessionsList: [],
+      students: [],
+      recentActivity: [],
     });
   });
 });

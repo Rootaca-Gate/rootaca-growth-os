@@ -4,10 +4,12 @@ import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { EmptyState } from '../../shared/empty-state';
 import { formatGrowth } from './progress.labels';
 import { ProgressApi } from './progress.api';
-import { StudentProgressDashboard as ProgressDashboard } from './progress.models';
+import { DimensionKey, StudentProgressDashboard as ProgressDashboard } from './progress.models';
 
 @Component({
   selector: 'app-student-progress-card',
@@ -17,37 +19,41 @@ import { StudentProgressDashboard as ProgressDashboard } from './progress.models
     EmptyState,
     MatProgressBarModule,
     MatProgressSpinnerModule,
+    TPipe,
   ],
   template: `
     <div class="wrap">
       @if (loading()) {
         <div class="loading"><mat-spinner diameter="28" /></div>
       } @else if (error(); as message) {
-        <app-empty-state title="No progress history" [message]="message" />
+        <app-empty-state [title]="'hubs.noHistory' | t" [message]="message" />
       } @else if (dashboard(); as current) {
         <section class="card">
           <header>
             <div>
-              <p class="kicker">Progress reviews</p>
+              <p class="kicker">{{ 'hubs.reviewsTitle' | t }}</p>
               <h2>{{ current.currentScore }}</h2>
               <p>
-                Current {{ current.currentScore }} · Previous {{ current.previousScore ?? '—' }} ·
-                Growth {{ formatGrowth(current.growth) }}
+                {{ 'hubs.scoreLine' | t:{
+                  current: current.currentScore,
+                  previous: current.previousScore ?? '—',
+                  growth: formatGrowth(current.growth)
+                } }}
               </p>
             </div>
             <a mat-stroked-button [routerLink]="['/students', current.studentId, 'progress']">
-              Open progress
+              {{ 'projects.openProgress' | t }}
             </a>
           </header>
           <mat-progress-bar mode="determinate" [value]="current.currentScore" />
           @if (current.history.length === 0) {
-            <p>No initial assessment or monthly review yet.</p>
+            <p>{{ 'hubs.noAssessmentYet' | t }}</p>
           } @else {
             <ul>
               @for (item of current.dimensions; track item.key) {
                 <li>
                   <div class="meta">
-                    <strong>{{ item.label }}</strong>
+                    <strong>{{ dimensionLabel(item.key) }}</strong>
                     <span>{{ item.currentScore }} · {{ formatGrowth(item.growth) }}</span>
                   </div>
                   <mat-progress-bar mode="determinate" [value]="item.currentScore" />
@@ -125,6 +131,7 @@ import { StudentProgressDashboard as ProgressDashboard } from './progress.models
 })
 export class StudentProgressCard {
   private readonly api = inject(ProgressApi);
+  readonly i18n = inject(DirectionService);
   readonly studentId = input.required<string>();
   readonly loading = signal(true);
   readonly dashboard = signal<ProgressDashboard | null>(null);
@@ -150,10 +157,14 @@ export class StudentProgressCard {
     });
   }
 
+  dimensionLabel(key: DimensionKey): string {
+    return this.i18n.t(`hubs.${key}`);
+  }
+
   private toMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse && error.status === 404) {
-      return 'Student not found.';
+      return this.i18n.t('students.notFound');
     }
-    return 'Unable to load progress history.';
+    return this.i18n.t('hubs.unableHistory');
   }
 }

@@ -1,107 +1,119 @@
 <form class="student-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  @if (wizard()) {
+    <ol class="steps" [attr.aria-label]="'students.stepsLabel' | t">
+      <li [attr.data-active]="step() === 1">{{ 'students.stepStudent' | t }}</li>
+      <li [attr.data-active]="step() === 2">{{ 'students.stepBackground' | t }}</li>
+      <li [attr.data-active]="step() === 3">{{ 'students.stepSetup' | t }}</li>
+    </ol>
+  }
+
   <div class="grid">
-    <mat-form-field appearance="outline">
-      <mat-label>Full name</mat-label>
-      <input matInput formControlName="fullName" />
-      @if (form.controls.fullName.invalid && form.controls.fullName.touched) {
-      <mat-error>Enter the student name</mat-error>
-      }
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Date of birth</mat-label>
-      <input matInput [matDatepicker]="picker" formControlName="dateOfBirth" />
-      <mat-datepicker-toggle matIconSuffix [for]="picker" />
-      <mat-datepicker #picker />
-      @if (form.controls.dateOfBirth.invalid && form.controls.dateOfBirth.touched) {
-      <mat-error>Date of birth is required</mat-error>
-      }
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>School grade</mat-label>
-      <input matInput formControlName="schoolGrade" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Phone</mat-label>
-      <input matInput formControlName="phone" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Parent contact</mat-label>
-      <input matInput formControlName="parentContact" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Hours / week</mat-label>
-      <input matInput type="number" formControlName="availableHoursPerWeek" min="1" max="40" />
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>Programming experience</mat-label>
-      <mat-select formControlName="programmingExperience">
-        @for (option of experienceOptions; track option) {
-        <mat-option [value]="option">{{ experienceLabels[option] }}</mat-option>
+    @if (!wizard() || step() === 1) {
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'students.fullName' | t }}</mat-label>
+        <input matInput formControlName="fullName" required />
+        @if (form.controls.fullName.invalid && form.controls.fullName.touched) {
+          <mat-error>{{ 'students.nameRequired' | t }}</mat-error>
         }
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline">
-      <mat-label>English level</mat-label>
-      <mat-select formControlName="englishLevel">
-        @for (option of englishOptions; track option) {
-        <mat-option [value]="option">{{ englishLabels[option] }}</mat-option>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'students.dateOfBirth' | t }}</mat-label>
+        <input matInput [matDatepicker]="picker" formControlName="dateOfBirth" required />
+        <mat-datepicker-toggle matIconSuffix [for]="picker" />
+        <mat-datepicker #picker />
+        @if (form.controls.dateOfBirth.invalid && form.controls.dateOfBirth.touched) {
+          <mat-error>{{ 'students.dobRequired' | t }}</mat-error>
         }
-      </mat-select>
-    </mat-form-field>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'students.schoolGrade' | t }}</mat-label>
+        <input matInput formControlName="schoolGrade" required />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'students.phone' | t }}</mat-label>
+        <input matInput formControlName="phone" required />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'students.parentContact' | t }}</mat-label>
+        <input matInput formControlName="parentContact" required />
+      </mat-form-field>
+    }
 
-    <mat-form-field appearance="outline">
-      <mat-label>Level</mat-label>
-      <mat-select formControlName="level">
-        @for (option of levelOptions; track option) {
-        <mat-option [value]="option">{{ levelLabels[option] }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
+    @if (!wizard() || step() === 2) {
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'students.hoursWeek' | t }}</mat-label>
+        <input matInput type="number" formControlName="availableHoursPerWeek" min="1" max="40" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'students.programmingExperience' | t }}</mat-label>
+        <mat-select formControlName="programmingExperience">
+          @for (option of experienceOptions; track option) {
+            <mat-option [value]="option">{{ i18n.experienceLabel(option) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'students.englishLevel' | t }}</mat-label>
+        <mat-select formControlName="englishLevel">
+          @for (option of englishOptions; track option) {
+            <mat-option [value]="option">{{ i18n.englishLabel(option) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="span-2">
+        <mat-label>{{ 'students.programmingLanguages' | t }}</mat-label>
+        <mat-select formControlName="programmingLanguages" multiple>
+          @for (option of languageOptions; track option) {
+            <mat-option [value]="option">{{ option }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="span-2">
+        <mat-label>{{ 'students.interests' | t }}</mat-label>
+        <mat-select formControlName="interests" multiple>
+          @for (option of interestOptions; track option) {
+            <mat-option [value]="option">{{ i18n.interestLabel(option) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
 
-    <mat-form-field appearance="outline">
-      <mat-label>Path</mat-label>
-      <mat-select formControlName="path">
-        @for (option of pathOptions; track option) {
-        <mat-option [value]="option">{{ pathLabels[option] }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="span-2">
-      <mat-label>Programming languages</mat-label>
-      <mat-select formControlName="programmingLanguages" multiple>
-        @for (option of languageOptions; track option) {
-        <mat-option [value]="option">{{ option }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="span-2">
-      <mat-label>Interests</mat-label>
-      <mat-select formControlName="interests" multiple>
-        @for (option of interestOptions; track option) {
-        <mat-option [value]="option">{{ option }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-
-    <mat-form-field appearance="outline" class="span-2">
-      <mat-label>Learning goal</mat-label>
-      <textarea matInput rows="4" formControlName="learningGoal"></textarea>
-    </mat-form-field>
+    @if (!wizard() || step() === 3) {
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'common.level' | t }}</mat-label>
+        <mat-select formControlName="level">
+          @for (option of levelOptions; track option) {
+            <mat-option [value]="option">{{ i18n.levelLabel(option) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'students.learningPath' | t }}</mat-label>
+        <mat-select formControlName="path">
+          @for (option of pathOptions; track option) {
+            <mat-option [value]="option">{{ i18n.pathLabel(option) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="span-2">
+        <mat-label>{{ 'students.learningGoal' | t }}</mat-label>
+        <textarea matInput rows="4" formControlName="learningGoal" required></textarea>
+      </mat-form-field>
+    }
   </div>
 
   <div class="actions">
-    <button mat-button type="button" (click)="cancelled.emit()">Cancel</button>
-    <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
-      {{ saveLabel() }}
-    </button>
+    @if (wizard() && step() > 1) {
+      <button mat-button type="button" (click)="back()">{{ 'common.back' | t }}</button>
+    } @else {
+      <button mat-button type="button" (click)="cancelled.emit()">{{ 'common.cancel' | t }}</button>
+    }
+    @if (wizard() && step() < 3) {
+      <button mat-flat-button color="primary" type="button" (click)="continue()">{{ 'common.continue' | t }}</button>
+    } @else {
+      <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+        {{ saveLabel() }}
+      </button>
+    }
   </div>
 </form>

@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../core/auth/auth.service';
 import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 
 @Component({
   selector: 'app-login-page',
@@ -21,6 +22,7 @@ import { DirectionService } from '../../core/direction.service';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    TPipe,
   ],
   templateUrl: './login.page.html',
   styleUrl: './login.page.scss',
@@ -29,9 +31,9 @@ export class LoginPage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly formBuilder = inject(FormBuilder);
-  private readonly directionService = inject(DirectionService);
+  readonly i18n = inject(DirectionService);
 
-  readonly direction = this.directionService.direction;
+  readonly direction = this.i18n.direction;
   readonly hidePassword = signal(true);
   readonly submitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
@@ -42,7 +44,7 @@ export class LoginPage {
   });
 
   toggleDirection(): void {
-    this.directionService.toggle();
+    this.i18n.toggle();
   }
 
   submit(): void {
@@ -58,7 +60,7 @@ export class LoginPage {
 
     this.auth.login(email, password).subscribe({
       next: () => {
-        void this.router.navigateByUrl('/');
+        void this.router.navigateByUrl('/dashboard');
       },
       error: (error: unknown) => {
         this.submitting.set(false);
@@ -73,13 +75,13 @@ export class LoginPage {
   private toErrorMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 401) {
-        return 'Invalid email or password.';
+        return this.i18n.t('login.invalid');
       }
       if (error.status === 400) {
-        return 'Check your email and password and try again.';
+        return this.i18n.t('login.checkFields');
       }
     }
 
-    return 'Unable to sign in. Please try again.';
+    return this.i18n.t('login.unable');
   }
 }

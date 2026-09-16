@@ -18,6 +18,12 @@ export class DashboardCardDto {
 
   @ApiProperty()
   projectsCompleted!: number;
+
+  @ApiProperty()
+  newThisWeek!: number;
+
+  @ApiPropertyOptional({ nullable: true, type: Number })
+  averageSkillScore!: number | null;
 }
 
 export class DashboardChartBucketDto {
@@ -88,6 +94,9 @@ export class DashboardAttentionItemDto {
 
   @ApiProperty()
   href!: string;
+
+  @ApiPropertyOptional({ nullable: true, type: Number })
+  inactiveDays?: number | null;
 }
 
 export class DashboardAttentionDto {
@@ -102,6 +111,15 @@ export class DashboardAttentionDto {
 
   @ApiProperty({ type: [DashboardAttentionItemDto] })
   roadmapBehindSchedule!: DashboardAttentionItemDto[];
+
+  @ApiProperty({ type: [DashboardAttentionItemDto] })
+  orientationNotCompleted!: DashboardAttentionItemDto[];
+
+  @ApiProperty({ type: [DashboardAttentionItemDto] })
+  assessmentInProgress!: DashboardAttentionItemDto[];
+
+  @ApiProperty({ type: [DashboardAttentionItemDto] })
+  roadmapOverdue!: DashboardAttentionItemDto[];
 }
 
 export class DashboardSessionItemDto {
@@ -142,6 +160,58 @@ export class DashboardSessionItemDto {
   href!: string;
 }
 
+export class DashboardStudentRowDto {
+  @ApiProperty({ format: 'uuid' })
+  studentId!: string;
+
+  @ApiProperty()
+  studentName!: string;
+
+  @ApiProperty()
+  level!: string;
+
+  @ApiProperty()
+  path!: string;
+
+  @ApiPropertyOptional({ nullable: true, type: Number })
+  progress!: number | null;
+
+  @ApiPropertyOptional({ nullable: true, type: Number })
+  skillScore!: number | null;
+
+  @ApiProperty()
+  kpiBelowCount!: number;
+
+  @ApiPropertyOptional({ nullable: true, type: String })
+  lastActivityAt!: string | null;
+
+  @ApiProperty()
+  lastActivityLabel!: string;
+
+  @ApiProperty()
+  status!: string;
+
+  @ApiProperty()
+  href!: string;
+}
+
+export class DashboardActivityItemDto {
+  @ApiProperty({ format: 'uuid' })
+  studentId!: string;
+
+  @ApiProperty()
+  studentName!: string;
+
+  @ApiProperty()
+  occurredAt!: string;
+
+  @ApiProperty()
+  title!: string;
+
+  @ApiProperty()
+  href!: string;
+}
+
 export class DashboardResponseDto {
   @ApiProperty()
   generatedAt!: string;
@@ -160,4 +230,13 @@ export class DashboardResponseDto {
 
   @ApiProperty({ type: [DashboardSessionItemDto] })
   upcomingSessions!: DashboardSessionItemDto[];
+
+  @ApiProperty({ type: [DashboardSessionItemDto] })
+  todaysSessionsList!: DashboardSessionItemDto[];
+
+  @ApiProperty({ type: [DashboardStudentRowDto] })
+  students!: DashboardStudentRowDto[];
+
+  @ApiProperty({ type: [DashboardActivityItemDto] })
+  recentActivity!: DashboardActivityItemDto[];
 }

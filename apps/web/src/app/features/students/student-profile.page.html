@@ -1,61 +1,101 @@
 @if (loading()) {
-<div class="loading"><mat-spinner diameter="36" /></div>
+  <app-loading-skeleton [rows]="8" [label]="'students.loadingStudent' | t" />
+} @else if (error(); as message) {
+  <app-error-state [title]="'students.loadStudentError' | t" [message]="message" (retry)="reload()" />
 } @else if (student(); as current) {
-<app-page-header [title]="current.fullName" subtitle="Student profile">
+  <app-page-header [title]="current.fullName" [subtitle]="meta(current)">
+    <a mat-stroked-button [routerLink]="['/students', current.id, 'edit']">{{ 'students.editStudent' | t }}</a>
+    <button mat-flat-button color="primary" type="button" (click)="startOrientation()">{{ 'students.scheduleSession' | t }}</button>
+    </app-page-header>
+
+  <section class="ra-card overall">
+    <p class="ra-kicker">{{ 'students.overallProgress' | t }}</p>
+    <strong>{{ overallProgress() }}</strong>
+  </section>
+
+  @if (nextAction(); as action) {
+    <section class="ra-card next">
+      <p class="ra-kicker">{{ 'students.nextAction' | t }}</p>
+      <h2>{{ action.title }}</h2>
+      <p>{{ action.detail }}</p>
+      @if (action.start) {
+        <button mat-flat-button color="primary" type="button" (click)="startOrientation()">{{ action.label }}</button>
+      } @else {
+        <a mat-flat-button color="primary" [routerLink]="action.href">{{ action.label }}</a>
+      }
+    </section>
+  }
+
+  <section class="ra-card block">
+    <h2>{{ 'students.snapshot' | t }}</h2>
+    <app-student-overview [student]="current" />
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'students.learningSkills' | t }}</h2>
+    <app-student-skills-panel [studentId]="current.id" />
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'students.kpis' | t }}</h2>
+    <app-student-kpi-dashboard [studentId]="current.id" />
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'students.roadmap' | t }}</h2>
+    <app-student-roadmap-progress [studentId]="current.id" />
+  </section>
+
+  <section class="ra-card block">
+    <app-student-roadmap-panel [studentId]="current.id" />
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'students.projects' | t }}</h2>
+    <p class="hint">{{ 'students.classroomHint' | t }}</p>
+    <app-student-project-board [studentId]="current.id" />
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'students.assessment' | t }}</h2>
+    <app-student-assessment-panel [studentId]="current.id" [sessions]="sessions()" />
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'students.activity' | t }}</h2>
+    @if (reviews().length === 0) {
+      <p class="hint">{{ 'dashboard.noRecent' | t }}</p>
+    } @else {
+      <app-timeline [items]="activityItems(current.id)" />
+    }
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'students.mentorNotes' | t }}</h2>
+    @if (notes().length === 0) {
+      <p class="hint">{{ 'students.notesHint' | t }}</p>
+    } @else {
+      <app-timeline [items]="notes()" />
+    }
+    <a mat-stroked-button [routerLink]="['/students', current.id, 'progress']">{{ 'students.addNote' | t }}</a>
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'students.progress' | t }}</h2>
+    <app-student-progress-dashboard [studentId]="current.id" />
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'students.report' | t }}</h2>
+    <app-student-report-preview [studentId]="current.id" [showOpenLink]="true" />
+  </section>
+
   <mat-form-field appearance="outline" class="status-field">
-    <mat-label>Status</mat-label>
+    <mat-label>{{ 'common.status' | t }}</mat-label>
     <mat-select [formControl]="statusControl" (selectionChange)="changeStatus($event.value)">
       @for (status of statuses; track status) {
-      <mat-option [value]="status">{{ statusLabels[status] }}</mat-option>
+        <mat-option [value]="status">{{ i18n.statusLabel(status) }}</mat-option>
       }
     </mat-select>
   </mat-form-field>
-  <a mat-stroked-button [routerLink]="['/students', current.id, 'roadmap']">Roadmap</a>
-  <a mat-stroked-button [routerLink]="['/students', current.id, 'kpis']">KPIs</a>
-  <a mat-stroked-button [routerLink]="['/students', current.id, 'projects']">Projects</a>
-  <a mat-stroked-button [routerLink]="['/students', current.id, 'progress']">Progress</a>
-  <a mat-stroked-button [routerLink]="['/students', current.id, 'report']">Report</a>
-  <a mat-stroked-button [routerLink]="['/students', current.id, 'edit']">Edit</a>
-  <a mat-button routerLink="/students">Back to list</a>
-</app-page-header>
-
-<mat-card appearance="outlined">
-  <mat-tab-group animationDuration="0">
-    <mat-tab label="Overview">
-      <app-student-overview [student]="current" />
-      <app-student-roadmap-progress [studentId]="current.id" />
-      <app-student-kpi-progress [studentId]="current.id" />
-      <app-student-project-progress [studentId]="current.id" />
-      <app-student-progress-card [studentId]="current.id" />
-    </mat-tab>
-    <mat-tab label="Assessment">
-      <app-student-assessment-panel [studentId]="current.id" [sessions]="sessions()" />
-    </mat-tab>
-    <mat-tab label="Skills">
-      <app-student-skills-panel [studentId]="current.id" />
-    </mat-tab>
-    <mat-tab label="Roadmap">
-      <app-student-roadmap-progress [studentId]="current.id" />
-      <app-student-roadmap-panel [studentId]="current.id" />
-    </mat-tab>
-    <mat-tab label="KPIs">
-      <app-student-kpi-dashboard [studentId]="current.id" />
-    </mat-tab>
-    <mat-tab label="Projects">
-      <app-student-project-board [studentId]="current.id" />
-    </mat-tab>
-    <mat-tab label="Sessions">
-      <app-coming-soon-panel title="Sessions" />
-    </mat-tab>
-    <mat-tab label="Notes">
-      <app-coming-soon-panel title="Notes" />
-    </mat-tab>
-    <mat-tab label="Reports">
-      <app-student-report-preview [studentId]="current.id" [showOpenLink]="true" />
-    </mat-tab>
-    <mat-tab label="Progress">
-      <app-student-progress-dashboard [studentId]="current.id" />
-    </mat-tab>
-  </mat-tab-group>
-</mat-card>
 }

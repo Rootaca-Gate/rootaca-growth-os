@@ -33,6 +33,8 @@ describe('DashboardService', () => {
       pendingAssessments: 2,
       averageProgress: 72,
       projectsCompleted: 1,
+      newThisWeek: 2,
+      averageSkillScore: 80,
     });
     expect(dashboard.charts.studentsByLevel.map((item) => item.key)).toEqual([
       LevelCode.BEGINNER,
@@ -78,6 +80,7 @@ function activeStudent() {
   return {
     id: '11111111-1111-4111-8111-111111111111',
     fullName: 'AAA Dashboard Active',
+    createdAt: NOW,
     status: StudentStatus.ACTIVE,
     level: StudentLevel.JUNIOR,
     path: PathCode.WEB,
@@ -145,6 +148,7 @@ function intakeStudent() {
   return {
     id: '22222222-2222-4222-8222-222222222222',
     fullName: 'AAA Dashboard Intake',
+    createdAt: createdAt,
     status: StudentStatus.INTAKE,
     level: StudentLevel.JUNIOR,
     path: PathCode.MOBILE,
@@ -171,6 +175,7 @@ function idleStudent() {
   return {
     id: '33333333-3333-4333-8333-333333333333',
     fullName: 'AAA Dashboard Idle',
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
     status: StudentStatus.INTAKE,
     level: StudentLevel.JUNIOR,
     path: PathCode.WEB,

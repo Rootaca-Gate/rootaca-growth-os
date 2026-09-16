@@ -1,76 +1,77 @@
-import { Component, computed, input } from '@angular/core';
-import { ENGLISH_LABELS, EXPERIENCE_LABELS, LEVEL_LABELS, PATH_LABELS } from './student.labels';
+import { Component, computed, inject, input } from '@angular/core';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { Student } from './student.models';
 import { StatusChip } from '../../shared/status-chip';
 
 @Component({
   selector: 'app-student-overview',
-  imports: [StatusChip],
+  imports: [StatusChip, TPipe],
   template: `
     @if (student(); as current) {
       <dl class="details">
         <div>
-          <dt>Full name</dt>
+          <dt>{{ 'students.fullName' | t }}</dt>
           <dd>{{ current.fullName }}</dd>
         </div>
         <div>
-          <dt>Status</dt>
+          <dt>{{ 'common.status' | t }}</dt>
           <dd><app-status-chip [status]="current.status" /></dd>
         </div>
         <div>
-          <dt>Date of birth</dt>
+          <dt>{{ 'students.dateOfBirth' | t }}</dt>
           <dd>{{ current.dateOfBirth }}</dd>
         </div>
         <div>
-          <dt>School grade</dt>
+          <dt>{{ 'students.schoolGrade' | t }}</dt>
           <dd>{{ current.schoolGrade }}</dd>
         </div>
         <div>
-          <dt>Phone</dt>
+          <dt>{{ 'students.phone' | t }}</dt>
           <dd>{{ current.phone }}</dd>
         </div>
         <div>
-          <dt>Parent contact</dt>
+          <dt>{{ 'students.parentContact' | t }}</dt>
           <dd>{{ current.parentContact }}</dd>
         </div>
         <div>
-          <dt>Current level</dt>
+          <dt>{{ 'students.currentLevel' | t }}</dt>
           <dd>{{ currentLevelLabel() }}</dd>
         </div>
         <div>
-          <dt>Recommended path</dt>
+          <dt>{{ 'students.recommendedPath' | t }}</dt>
           <dd>{{ currentPathLabel() }}</dd>
         </div>
         <div>
-          <dt>Intake path</dt>
+          <dt>{{ 'students.intakePath' | t }}</dt>
           <dd>{{ pathLabel() }}</dd>
         </div>
         <div>
-          <dt>Intake level</dt>
+          <dt>{{ 'students.intakeLevel' | t }}</dt>
           <dd>{{ levelLabel() }}</dd>
         </div>
         <div>
-          <dt>English</dt>
+          <dt>{{ 'students.english' | t }}</dt>
           <dd>{{ englishLabel() }}</dd>
         </div>
         <div>
-          <dt>Experience</dt>
+          <dt>{{ 'students.experience' | t }}</dt>
           <dd>{{ experienceLabel() }}</dd>
         </div>
         <div>
-          <dt>Hours / week</dt>
+          <dt>{{ 'students.hoursWeek' | t }}</dt>
           <dd>{{ current.availableHoursPerWeek }}</dd>
         </div>
         <div>
-          <dt>Languages</dt>
+          <dt>{{ 'students.languages' | t }}</dt>
           <dd>{{ current.programmingLanguages.join(', ') || '—' }}</dd>
         </div>
         <div class="span-2">
-          <dt>Interests</dt>
-          <dd>{{ current.interests.join(', ') || '—' }}</dd>
+          <dt>{{ 'students.interests' | t }}</dt>
+          <dd>{{ interestText() }}</dd>
         </div>
         <div class="span-2">
-          <dt>Learning goal</dt>
+          <dt>{{ 'students.learningGoal' | t }}</dt>
           <dd>{{ current.learningGoal }}</dd>
         </div>
       </dl>
@@ -107,17 +108,37 @@ import { StatusChip } from '../../shared/status-chip';
   `,
 })
 export class StudentOverview {
+  readonly i18n = inject(DirectionService);
   readonly student = input.required<Student>();
-  readonly pathLabel = computed(() => PATH_LABELS[this.student().path]);
-  readonly levelLabel = computed(() => LEVEL_LABELS[this.student().level]);
-  readonly currentLevelLabel = computed(
-    () => this.student().currentLevel?.name ?? 'Not calculated yet',
-  );
-  readonly currentPathLabel = computed(
-    () => this.student().currentPath?.name ?? 'Not recommended yet',
-  );
-  readonly englishLabel = computed(() => ENGLISH_LABELS[this.student().englishLevel]);
-  readonly experienceLabel = computed(
-    () => EXPERIENCE_LABELS[this.student().programmingExperience],
-  );
+  readonly pathLabel = computed(() => {
+    this.i18n.locale();
+    return this.i18n.pathLabel(this.student().path);
+  });
+  readonly levelLabel = computed(() => {
+    this.i18n.locale();
+    return this.i18n.levelLabel(this.student().level);
+  });
+  readonly currentLevelLabel = computed(() => {
+    this.i18n.locale();
+    const name = this.student().currentLevel?.name;
+    return name ? this.i18n.namedLevel(name) : this.i18n.t('students.notCalculated');
+  });
+  readonly currentPathLabel = computed(() => {
+    this.i18n.locale();
+    const name = this.student().currentPath?.name;
+    return name ? this.i18n.namedPath(name) : this.i18n.t('students.notRecommended');
+  });
+  readonly englishLabel = computed(() => {
+    this.i18n.locale();
+    return this.i18n.englishLabel(this.student().englishLevel);
+  });
+  readonly experienceLabel = computed(() => {
+    this.i18n.locale();
+    return this.i18n.experienceLabel(this.student().programmingExperience);
+  });
+  readonly interestText = computed(() => {
+    this.i18n.locale();
+    const items = this.student().interests.map((item) => this.i18n.interestLabel(item));
+    return items.join(' · ') || '—';
+  });
 }

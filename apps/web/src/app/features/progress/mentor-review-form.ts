@@ -1,16 +1,13 @@
-import { Component, output } from '@angular/core';
+import { Component, inject, output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import {
-  DIMENSION_KEYS,
-  DIMENSION_LABELS,
-  REVIEW_KIND_LABELS,
-  REVIEW_KINDS,
-} from './progress.labels';
-import { ReviewKind, UpsertProgressReview } from './progress.models';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
+import { DIMENSION_KEYS, REVIEW_KINDS } from './progress.labels';
+import { DimensionKey, ReviewKind, UpsertProgressReview } from './progress.models';
 
 @Component({
   selector: 'app-mentor-review-form',
@@ -20,50 +17,51 @@ import { ReviewKind, UpsertProgressReview } from './progress.models';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    TPipe,
   ],
   template: `
     <form [formGroup]="form" (ngSubmit)="submit()">
       <header>
-        <p class="kicker">Mentor review</p>
-        <h2>Record progress</h2>
-        <p>Score Technical Skills, Problem Solving, Projects, Independence, and Communication.</p>
+        <p class="kicker">{{ 'hubs.mentorReview' | t }}</p>
+        <h2>{{ 'hubs.record' | t }}</h2>
+        <p>{{ 'hubs.recordHint' | t }}</p>
       </header>
       <div class="grid">
         <mat-form-field appearance="outline">
-          <mat-label>Review type</mat-label>
+          <mat-label>{{ 'hubs.reviewType' | t }}</mat-label>
           <mat-select formControlName="kind">
             @for (kind of kinds; track kind) {
-              <mat-option [value]="kind">{{ kindLabels[kind] }}</mat-option>
+              <mat-option [value]="kind">{{ kindLabel(kind) }}</mat-option>
             }
           </mat-select>
         </mat-form-field>
         <mat-form-field appearance="outline">
-          <mat-label>Review date</mat-label>
+          <mat-label>{{ 'hubs.reviewDate' | t }}</mat-label>
           <input matInput type="date" formControlName="reviewedAt" />
         </mat-form-field>
       </div>
       <div class="scores">
         @for (key of dimensions; track key) {
           <mat-form-field appearance="outline">
-            <mat-label>{{ labels[key] }}</mat-label>
+            <mat-label>{{ dimensionLabel(key) }}</mat-label>
             <input matInput type="number" min="0" max="100" [formControlName]="key" />
           </mat-form-field>
         }
       </div>
       <mat-form-field appearance="outline">
-        <mat-label>Strengths</mat-label>
+        <mat-label>{{ 'hubs.strengths' | t }}</mat-label>
         <textarea matInput rows="2" formControlName="strengths"></textarea>
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>Next focus</mat-label>
+        <mat-label>{{ 'hubs.nextFocus' | t }}</mat-label>
         <textarea matInput rows="2" formControlName="nextFocus"></textarea>
       </mat-form-field>
       <mat-form-field appearance="outline">
-        <mat-label>Notes</mat-label>
+        <mat-label>{{ 'common.notes' | t }}</mat-label>
         <textarea matInput rows="3" formControlName="notes"></textarea>
       </mat-form-field>
       <button mat-flat-button color="primary" type="submit" [disabled]="form.invalid">
-        Save review
+        {{ 'hubs.saveReview' | t }}
       </button>
     </form>
   `,
@@ -114,11 +112,10 @@ import { ReviewKind, UpsertProgressReview } from './progress.models';
   `,
 })
 export class MentorReviewForm {
+  readonly i18n = inject(DirectionService);
   readonly saved = output<UpsertProgressReview>();
   readonly kinds = REVIEW_KINDS;
-  readonly kindLabels = REVIEW_KIND_LABELS;
   readonly dimensions = DIMENSION_KEYS;
-  readonly labels = DIMENSION_LABELS;
   readonly form = new FormGroup({
     kind: new FormControl<ReviewKind>('INITIAL_ASSESSMENT', {
       nonNullable: true,
@@ -149,6 +146,14 @@ export class MentorReviewForm {
     nextFocus: new FormControl('', { nonNullable: true }),
     notes: new FormControl('', { nonNullable: true }),
   });
+
+  kindLabel(kind: ReviewKind): string {
+    return this.i18n.t(`hubs.${kind}`);
+  }
+
+  dimensionLabel(key: DimensionKey): string {
+    return this.i18n.t(`hubs.${key}`);
+  }
 
   submit(): void {
     if (this.form.invalid) {

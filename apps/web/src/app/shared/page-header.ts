@@ -5,9 +5,12 @@ import { Component, input } from '@angular/core';
   template: `
     <header class="page-header">
       <div>
+        @if (eyebrow()) {
+          <p class="ra-kicker">{{ eyebrow() }}</p>
+        }
         <h1>{{ title() }}</h1>
         @if (subtitle()) {
-          <p>{{ subtitle() }}</p>
+          <p class="subtitle">{{ subtitle() }}</p>
         }
       </div>
       <div class="actions">
@@ -22,18 +25,22 @@ import { Component, input } from '@angular/core';
       align-items: flex-start;
       justify-content: space-between;
       gap: 16px;
-      margin-bottom: 24px;
+      margin-block-end: 28px;
     }
 
     h1 {
-      margin: 0;
+      margin: 4px 0 0;
       font-size: 1.75rem;
-      font-weight: 600;
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
     }
 
-    p {
-      margin: 6px 0 0;
-      color: var(--mat-sys-on-surface-variant);
+    .subtitle {
+      margin: 8px 0 0;
+      max-width: 46rem;
+      color: var(--ra-muted);
+      line-height: 1.5;
     }
 
     .actions {
@@ -41,9 +48,21 @@ import { Component, input } from '@angular/core';
       flex-wrap: wrap;
       gap: 8px;
     }
+
+    @media (max-width: 720px) {
+      .page-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .page-header > div:first-child {
+        flex: 1 1 auto;
+      }
+    }
   `,
 })
 export class PageHeader {
   readonly title = input.required<string>();
   readonly subtitle = input<string>();
+  readonly eyebrow = input<string>();
 }

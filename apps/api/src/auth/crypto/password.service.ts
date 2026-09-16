@@ -34,8 +34,10 @@ export class PasswordService {
 
     try {
       return await argon2Verify({ password: plain, hash });
-    } catch {
-      return false;
+    } catch (error) {
+      throw new Error(
+        `Password verification failed: ${error instanceof Error ? error.message : 'unknown error'}`,
+      );
     }
   }
 

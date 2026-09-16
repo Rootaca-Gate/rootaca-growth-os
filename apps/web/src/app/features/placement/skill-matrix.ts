@@ -1,21 +1,26 @@
 import { Component, input } from '@angular/core';
-import { StudentSkill } from './placement.models';
+
+export type SkillScoreView = {
+  skillId: string;
+  name: string;
+  score: number | null;
+};
 
 @Component({
   selector: 'app-skill-matrix',
   template: `
     @if (skills().length === 0) {
-      <p class="empty">Skill scores appear after the orientation assessment is completed.</p>
+      <p class="empty">No skill scores yet. Skill scores will appear after completed assessments.</p>
     } @else {
       <ul>
         @for (skill of skills(); track skill.skillId) {
           <li>
             <div class="meta">
               <strong>{{ skill.name }}</strong>
-              <span>{{ skill.score }}</span>
+              <span>{{ skill.score === null ? 'Not assessed' : skill.score }}</span>
             </div>
-            <div class="bar" [style.--value]="skill.score + '%'">
-              <span></span>
+            <div class="bar" [style.--value]="(skill.score ?? 0) + '%'">
+              <span [class.empty-fill]="skill.score === null"></span>
             </div>
           </li>
         }
@@ -25,7 +30,7 @@ import { StudentSkill } from './placement.models';
   styles: `
     .empty {
       margin: 0;
-      color: var(--mat-sys-on-surface-variant);
+      color: var(--ra-muted);
     }
 
     ul {
@@ -56,10 +61,14 @@ import { StudentSkill } from './placement.models';
       width: var(--value);
       height: 100%;
       border-radius: inherit;
-      background: var(--mat-sys-primary);
+      background: var(--ra-accent);
+    }
+
+    .empty-fill {
+      width: 0 !important;
     }
   `,
 })
 export class SkillMatrix {
-  readonly skills = input.required<StudentSkill[]>();
+  readonly skills = input.required<SkillScoreView[]>();
 }

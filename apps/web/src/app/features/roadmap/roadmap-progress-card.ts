@@ -1,28 +1,29 @@
-import { Component, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { ROADMAP_STATUS_LABELS } from './roadmap.labels';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { StudentRoadmap } from './roadmap.models';
 
 @Component({
   selector: 'app-roadmap-progress-card',
-  imports: [RouterLink, MatButtonModule, MatProgressBarModule],
+  imports: [RouterLink, MatButtonModule, MatProgressBarModule, TPipe],
   template: `
     @if (roadmap(); as current) {
       <section class="card">
         <header>
           <div>
-            <p class="kicker">Roadmap progress</p>
+            <p class="kicker">{{ 'hubs.roadmapProgress' | t }}</p>
             <h2>{{ current.progress.overallPercent }}%</h2>
             <p>
               {{ current.pathName }} · {{ current.levelName }} ·
-              {{ current.progress.completedCount }}/{{ current.progress.itemCount }} items
+              {{ 'hubs.itemsCount' | t:{ completed: current.progress.completedCount, total: current.progress.itemCount } }}
             </p>
           </div>
           @if (linkToFull()) {
             <a mat-stroked-button [routerLink]="['/students', current.studentId, 'roadmap']">
-              Open roadmap
+              {{ 'hubs.openRoadmap' | t }}
             </a>
           }
         </header>
@@ -40,12 +41,12 @@ import { StudentRoadmap } from './roadmap.models';
         </ul>
         @if (current.progress.blockedItems.length) {
           <div class="blocked">
-            <h3>Blocked items</h3>
+            <h3>{{ 'hubs.blockedItems' | t }}</h3>
             <ul>
               @for (item of current.progress.blockedItems; track item.id) {
                 <li>
                   <strong>{{ item.title }}</strong>
-                  <span>{{ statusLabel(item.status) }}{{ item.notes ? ' · ' + item.notes : '' }}</span>
+                  <span>{{ i18n.statusLabel(item.status) }}{{ item.notes ? ' · ' + item.notes : '' }}</span>
                 </li>
               }
             </ul>
@@ -114,10 +115,7 @@ import { StudentRoadmap } from './roadmap.models';
   `,
 })
 export class RoadmapProgressCard {
+  readonly i18n = inject(DirectionService);
   readonly roadmap = input.required<StudentRoadmap>();
   readonly linkToFull = input(false);
-
-  statusLabel(status: StudentRoadmap['progress']['blockedItems'][number]['status']): string {
-    return ROADMAP_STATUS_LABELS[status];
-  }
 }

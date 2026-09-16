@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { EmptyUserTableSeed } from './empty-user-table.seed';
 import { PasswordService } from './crypto/password.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
@@ -13,6 +14,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
   controllers: [AuthController],
   providers: [
     AuthService,
+    EmptyUserTableSeed,
     PasswordService,
     JwtStrategy,
     {

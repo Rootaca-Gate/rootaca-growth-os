@@ -43,7 +43,7 @@ export const KPI_STATUS_LABELS: Record<KpiStatus, string> = {
 };
 
 export const SESSION_STATUS_LABELS: Record<OrientationSessionStatus, string> = {
-  DRAFT: 'Draft',
+  DRAFT: 'Scheduled',
   IN_PROGRESS: 'In progress',
   PAUSED: 'Paused',
   COMPLETED: 'Completed',
@@ -96,6 +96,29 @@ export type AttentionItem = {
   studentId: string;
   studentName: string;
   detail: string;
+  href: string;
+  inactiveDays?: number | null;
+};
+
+export type DashboardStudentRow = {
+  studentId: string;
+  studentName: string;
+  level: string;
+  path: string;
+  progress: number | null;
+  skillScore: number | null;
+  kpiBelowCount: number;
+  lastActivityAt: string | null;
+  lastActivityLabel: string;
+  status: string;
+  href: string;
+};
+
+export type DashboardActivityItem = {
+  studentId: string;
+  studentName: string;
+  occurredAt: string;
+  title: string;
   href: string;
 };
 
@@ -234,6 +257,41 @@ export function isInactive(lastActivity: Date | null, cutoff: Date): boolean {
 
 export function activityCutoff(now: Date): Date {
   return addUtcDays(startOfUtcDay(now), -INACTIVITY_DAYS);
+}
+
+export function weekCutoff(now: Date): Date {
+  return addUtcDays(startOfUtcDay(now), -7);
+}
+
+export function daysSince(value: Date | null, now: Date): number | null {
+  if (!value) {
+    return null;
+  }
+  return Math.max(
+    0,
+    Math.floor((startOfUtcDay(now).getTime() - startOfUtcDay(value).getTime()) / 86_400_000),
+  );
+}
+
+export function activityLabel(lastActivity: Date | null, now: Date): string {
+  const days = daysSince(lastActivity, now);
+  if (days === null) {
+    return 'No recent activity';
+  }
+  if (days === 0) {
+    return 'Today';
+  }
+  if (days === 1) {
+    return 'Yesterday';
+  }
+  return `${days} days ago`;
+}
+
+export function averageSkillScore(scores: number[]): number | null {
+  if (scores.length === 0) {
+    return null;
+  }
+  return Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
 }
 
 export function todayBounds(now: Date): { todayStart: Date; tomorrow: Date } {

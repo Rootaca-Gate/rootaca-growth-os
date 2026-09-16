@@ -1,14 +1,23 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
-import { QUESTION_TYPE_LABELS } from './orientation.labels';
-import { AssessmentAnswer, AssessmentQuestion } from './orientation.models';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
+import { AssessmentAnswer, AssessmentQuestion, QuestionType } from './orientation.models';
+
+const QUESTION_TYPE_KEYS: Record<QuestionType, string> = {
+  MULTIPLE_CHOICE: 'orientation.multipleChoice',
+  RATING: 'orientation.rating',
+  MENTOR_EVALUATION: 'orientation.mentorEvaluation',
+  PRACTICAL_EVALUATION: 'orientation.practicalEvaluation',
+  FREE_TEXT: 'orientation.freeText',
+};
 
 @Component({
   selector: 'app-orientation-question',
-  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatRadioModule],
+  imports: [FormsModule, MatFormFieldModule, MatInputModule, MatRadioModule, TPipe],
   template: `
     <article class="question">
       <header>
@@ -49,7 +58,7 @@ import { AssessmentAnswer, AssessmentQuestion } from './orientation.models';
         }
         @case ('MENTOR_EVALUATION') {
           <mat-form-field appearance="outline">
-            <mat-label>Mentor score (0–{{ question().maxScore }})</mat-label>
+            <mat-label>{{ 'orientation.mentorScore' | t:{ max: question().maxScore } }}</mat-label>
             <input
               matInput
               type="number"
@@ -63,7 +72,7 @@ import { AssessmentAnswer, AssessmentQuestion } from './orientation.models';
         }
         @case ('PRACTICAL_EVALUATION') {
           <mat-form-field appearance="outline">
-            <mat-label>Practical score (0–{{ question().maxScore }})</mat-label>
+            <mat-label>{{ 'orientation.practicalScore' | t:{ max: question().maxScore } }}</mat-label>
             <input
               matInput
               type="number"
@@ -77,7 +86,7 @@ import { AssessmentAnswer, AssessmentQuestion } from './orientation.models';
         }
         @case ('FREE_TEXT') {
           <mat-form-field appearance="outline" class="full">
-            <mat-label>Response</mat-label>
+            <mat-label>{{ 'orientation.response' | t }}</mat-label>
             <textarea
               matInput
               rows="4"
@@ -140,12 +149,16 @@ import { AssessmentAnswer, AssessmentQuestion } from './orientation.models';
   `,
 })
 export class OrientationQuestion {
+  private readonly i18n = inject(DirectionService);
   readonly question = input.required<AssessmentQuestion>();
   readonly answer = input<AssessmentAnswer | undefined>(undefined);
   readonly readonly = input(false);
   readonly changed = output<AssessmentAnswer>();
 
-  readonly typeLabel = computed(() => QUESTION_TYPE_LABELS[this.question().type]);
+  readonly typeLabel = computed(() => {
+    this.i18n.locale();
+    return this.i18n.t(QUESTION_TYPE_KEYS[this.question().type]);
+  });
   readonly ratingValues = computed(() =>
     Array.from({ length: this.question().scaleMax }, (_, index) => index + 1),
   );

@@ -3,12 +3,15 @@ import { Component, effect, inject, input, signal } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../core/auth/auth.service';
+import { DirectionService } from '../../core/direction.service';
+import { TPipe } from '../../core/i18n/t.pipe';
 import { EmptyState } from '../../shared/empty-state';
 import { GrowthChartComponent } from './growth-chart';
 import { MentorReviewForm } from './mentor-review-form';
-import { formatGrowth, REVIEW_KIND_LABELS } from './progress.labels';
+import { formatGrowth } from './progress.labels';
 import { ProgressApi } from './progress.api';
 import {
+  DimensionKey,
   ProgressReview,
   StudentProgressDashboard as ProgressDashboard,
   UpsertProgressReview,
@@ -16,27 +19,30 @@ import {
 
 @Component({
   selector: 'app-student-progress-dashboard',
-  imports: [EmptyState, MatProgressSpinnerModule, GrowthChartComponent, MentorReviewForm],
+  imports: [EmptyState, MatProgressSpinnerModule, GrowthChartComponent, MentorReviewForm, TPipe],
   template: `
     <div class="wrap">
       @if (loading()) {
         <div class="loading"><mat-spinner diameter="28" /></div>
       } @else if (error(); as message) {
-        <app-empty-state title="No progress history" [message]="message" />
+        <app-empty-state [title]="'hubs.noHistory' | t" [message]="message" />
       } @else if (dashboard(); as current) {
         <section class="summary">
           <div>
-            <p class="kicker">Progress review</p>
+            <p class="kicker">{{ 'hubs.progressReview' | t }}</p>
             <h2>{{ current.currentScore }}</h2>
             <p>
-              Current {{ current.currentScore }} · Previous {{ current.previousScore ?? '—' }} ·
-              Growth {{ formatGrowth(current.growth) }}
+              {{ 'hubs.scoreLine' | t:{
+                current: current.currentScore,
+                previous: current.previousScore ?? '—',
+                growth: formatGrowth(current.growth)
+              } }}
             </p>
           </div>
           <ul>
             @for (item of current.dimensions; track item.key) {
               <li>
-                <strong>{{ item.label }}</strong>
+                <strong>{{ dimensionLabel(item.key) }}</strong>
                 <span>{{ item.currentScore }}</span>
                 <em>{{ formatGrowth(item.growth) }}</em>
               </li>
@@ -55,11 +61,11 @@ import {
         }
 
         <section class="history">
-          <h3>Progress history</h3>
+          <h3>{{ 'hubs.history' | t }}</h3>
           @if (current.history.length === 0) {
             <app-empty-state
-              title="No reviews yet"
-              message="Mentors can add an initial assessment, then monthly reviews."
+              [title]="'hubs.noReviewsYetTitle' | t"
+              [message]="'hubs.noReviewsYetHint' | t"
             />
           } @else {
             <ol>
@@ -73,15 +79,15 @@ import {
                     </div>
                     <dl>
                       <div>
-                        <dt>Current</dt>
+                        <dt>{{ 'common.current' | t }}</dt>
                         <dd>{{ item.overallScore }}</dd>
                       </div>
                       <div>
-                        <dt>Previous</dt>
+                        <dt>{{ 'common.previousScore' | t }}</dt>
                         <dd>{{ item.previousOverallScore ?? '—' }}</dd>
                       </div>
                       <div>
-                        <dt>Growth</dt>
+                        <dt>{{ 'common.growth' | t }}</dt>
                         <dd>{{ formatGrowth(item.overallGrowth) }}</dd>
                       </div>
                     </dl>
@@ -89,7 +95,7 @@ import {
                   <ul>
                     @for (dimension of item.dimensions; track dimension.key) {
                       <li>
-                        {{ dimension.label }}
+                        {{ dimensionLabel(dimension.key) }}
                         <span
                           >{{ dimension.currentScore }} · {{ formatGrowth(dimension.growth) }}</span
                         >
@@ -97,10 +103,10 @@ import {
                     }
                   </ul>
                   @if (item.strengths) {
-                    <p>Strengths. {{ item.strengths }}</p>
+                    <p>{{ 'hubs.strengths' | t }}. {{ item.strengths }}</p>
                   }
                   @if (item.nextFocus) {
-                    <p>Next focus. {{ item.nextFocus }}</p>
+                    <p>{{ 'hubs.nextFocus' | t }}. {{ item.nextFocus }}</p>
                   }
                   @if (item.notes) {
                     <p>{{ item.notes }}</p>
@@ -232,6 +238,7 @@ export class StudentProgressDashboard {
   private readonly api = inject(ProgressApi);
   private readonly snackBar = inject(MatSnackBar);
   private readonly auth = inject(AuthService);
+  readonly i18n = inject(DirectionService);
 
   readonly studentId = input.required<string>();
   readonly loading = signal(true);
@@ -264,17 +271,21 @@ export class StudentProgressDashboard {
   }
 
   kindLabel(kind: ProgressReview['kind']): string {
-    return REVIEW_KIND_LABELS[kind];
+    return this.i18n.t(`hubs.${kind}`);
+  }
+
+  dimensionLabel(key: DimensionKey): string {
+    return this.i18n.t(`hubs.${key}`);
   }
 
   create(payload: UpsertProgressReview): void {
     this.api.create(this.studentId(), payload).subscribe({
       next: () => {
-        this.snackBar.open('Progress review saved', 'OK', { duration: 2000 });
+        this.snackBar.open(this.i18n.t('hubs.reviewSaved'), this.i18n.t('common.ok'), { duration: 2000 });
         this.reload();
       },
       error: (error: unknown) => {
-        this.snackBar.open(this.toMessage(error), 'OK', { duration: 4000 });
+        this.snackBar.open(this.toMessage(error), this.i18n.t('common.ok'), { duration: 4000 });
       },
     });
   }
@@ -288,12 +299,12 @@ export class StudentProgressDashboard {
   private toMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 403) {
-        return 'Only mentors and admins can write progress reviews.';
+        return this.i18n.t('hubs.onlyMentorsProgress');
       }
       if (typeof error.error?.message === 'string') {
         return error.error.message;
       }
     }
-    return 'Unable to load progress reviews.';
+    return this.i18n.t('hubs.unableProgressReviews');
   }
 }

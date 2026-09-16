@@ -1,9 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "functions": {
-    "src/main.ts": {
-      "maxDuration": 10,
-      "includeFiles": "{prisma/**,src/reports/fonts/**,node_modules/.prisma/client/**}"
-    }
-  }
-}

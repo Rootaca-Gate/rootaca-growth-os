@@ -109,58 +109,51 @@ export class RoadmapService {
     const start = parseDateOnly(toDateOnly(new Date()));
     let cursor = start;
 
-    const created = await this.prisma.$transaction(async (tx) => {
-      if (student.roadmap) {
-        await tx.roadmap.delete({ where: { id: student.roadmap.id } });
-      }
+    if (student.roadmap) {
+      await this.prisma.roadmap.delete({ where: { id: student.roadmap.id } });
+    }
 
-      const roadmap = await tx.roadmap.create({
+    const roadmap = await this.prisma.roadmap.create({
+      data: {
+        studentId,
+        templateId: template.id,
+        pathId,
+        levelId,
+        generatedAt: new Date(),
+      },
+    });
+
+    for (const phase of template.phases) {
+      const createdPhase = await this.prisma.roadmapPhase.create({
         data: {
-          studentId,
-          templateId: template.id,
-          pathId,
-          levelId,
-          generatedAt: new Date(),
+          roadmapId: roadmap.id,
+          title: phase.title,
+          description: phase.description,
+          sortOrder: phase.sortOrder,
         },
       });
 
-      for (const phase of template.phases) {
-        const createdPhase = await tx.roadmapPhase.create({
+      for (const item of phase.items) {
+        const startDate = cursor;
+        const dueDate = addUtcDays(startDate, item.durationDays);
+        cursor = addUtcDays(dueDate, 1);
+
+        await this.prisma.roadmapItem.create({
           data: {
-            roadmapId: roadmap.id,
-            title: phase.title,
-            description: phase.description,
-            sortOrder: phase.sortOrder,
+            phaseId: createdPhase.id,
+            title: item.title,
+            description: item.description,
+            skillId: item.skillId,
+            durationDays: item.durationDays,
+            startDate,
+            dueDate,
+            sortOrder: item.sortOrder,
           },
         });
-
-        for (const item of phase.items) {
-          const startDate = cursor;
-          const dueDate = addUtcDays(startDate, item.durationDays);
-          cursor = addUtcDays(dueDate, 1);
-
-          await tx.roadmapItem.create({
-            data: {
-              phaseId: createdPhase.id,
-              title: item.title,
-              description: item.description,
-              skillId: item.skillId,
-              durationDays: item.durationDays,
-              startDate,
-              dueDate,
-              sortOrder: item.sortOrder,
-            },
-          });
-        }
       }
+    }
 
-      return tx.roadmap.findUniqueOrThrow({
-        where: { id: roadmap.id },
-        include: roadmapInclude,
-      });
-    });
-
-    return toRoadmapResponse(created);
+    return this.getById(roadmap.id);
   }
 
   async addPhase(studentId: string, dto: CreateRoadmapPhaseDto): Promise<RoadmapResponseDto> {
@@ -207,14 +200,12 @@ export class RoadmapService {
       'phase',
     );
 
-    await this.prisma.$transaction(
-      ids.map((id, index) =>
-        this.prisma.roadmapPhase.update({
-          where: { id },
-          data: { sortOrder: index + 1 },
-        }),
-      ),
-    );
+    for (const [index, id] of ids.entries()) {
+      await this.prisma.roadmapPhase.update({
+        where: { id },
+        data: { sortOrder: index + 1 },
+      });
+    }
 
     return this.getById(roadmap.id);
   }
@@ -338,14 +329,12 @@ export class RoadmapService {
       'item',
     );
 
-    await this.prisma.$transaction(
-      ids.map((id, index) =>
-        this.prisma.roadmapItem.update({
-          where: { id },
-          data: { sortOrder: index + 1 },
-        }),
-      ),
-    );
+    for (const [index, id] of ids.entries()) {
+      await this.prisma.roadmapItem.update({
+        where: { id },
+        data: { sortOrder: index + 1 },
+      });
+    }
 
     return this.getById(phase.roadmapId);
   }
@@ -431,14 +420,12 @@ export class RoadmapService {
       where: { roadmapId },
       orderBy: { sortOrder: 'asc' },
     });
-    await this.prisma.$transaction(
-      phases.map((phase, index) =>
-        this.prisma.roadmapPhase.update({
-          where: { id: phase.id },
-          data: { sortOrder: index + 1 },
-        }),
-      ),
-    );
+    for (const [index, phase] of phases.entries()) {
+      await this.prisma.roadmapPhase.update({
+        where: { id: phase.id },
+        data: { sortOrder: index + 1 },
+      });
+    }
     return this.getById(roadmapId);
   }
 
@@ -447,14 +434,12 @@ export class RoadmapService {
       where: { phaseId },
       orderBy: { sortOrder: 'asc' },
     });
-    await this.prisma.$transaction(
-      items.map((item, index) =>
-        this.prisma.roadmapItem.update({
-          where: { id: item.id },
-          data: { sortOrder: index + 1 },
-        }),
-      ),
-    );
+    for (const [index, item] of items.entries()) {
+      await this.prisma.roadmapItem.update({
+        where: { id: item.id },
+        data: { sortOrder: index + 1 },
+      });
+    }
     return this.getById(roadmapId);
   }
 }

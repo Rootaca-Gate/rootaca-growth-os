@@ -195,60 +195,56 @@ export class PlacementService {
 
     const skillIdByCode = Object.fromEntries(skills.map((skill) => [skill.code, skill.id]));
 
-    const placement = await this.prisma.$transaction(async (tx) => {
-      for (const score of skillScores) {
-        const skillId = skillIdByCode[score.code];
-        if (!skillId) {
-          continue;
-        }
-
-        await tx.studentSkill.upsert({
-          where: {
-            studentId_skillId: {
-              studentId: student.id,
-              skillId,
-            },
-          },
-          update: {
-            score: score.score,
-            assessmentResultId: result.id,
-          },
-          create: {
-            studentId: student.id,
-            skillId,
-            score: score.score,
-            assessmentResultId: result.id,
-          },
-        });
+    for (const score of skillScores) {
+      const skillId = skillIdByCode[score.code];
+      if (!skillId) {
+        continue;
       }
 
-      const created = await tx.studentPlacement.create({
-        data: {
-          studentId: student.id,
+      await this.prisma.studentSkill.upsert({
+        where: {
+          studentId_skillId: {
+            studentId: student.id,
+            skillId,
+          },
+        },
+        update: {
+          score: score.score,
           assessmentResultId: result.id,
-          systemLevelId: systemLevel.id,
-          finalLevelId: systemLevel.id,
-          systemPathId: systemPath.id,
-          finalPathId: systemPath.id,
-          alternativePathId: alternativePath.id,
-          recommendationReasons: toJsonArray(recommendation.primaryReasons),
-          alternativeReasons: toJsonArray(recommendation.alternativeReasons),
         },
-        include: placementInclude,
-      });
-
-      await tx.student.update({
-        where: { id: student.id },
-        data: {
-          currentLevelId: systemLevel.id,
-          currentPathId: systemPath.id,
-          path: systemPath.code,
+        create: {
+          studentId: student.id,
+          skillId,
+          score: score.score,
+          assessmentResultId: result.id,
         },
       });
+    }
 
-      return created;
+    const created = await this.prisma.studentPlacement.create({
+      data: {
+        studentId: student.id,
+        assessmentResultId: result.id,
+        systemLevelId: systemLevel.id,
+        finalLevelId: systemLevel.id,
+        systemPathId: systemPath.id,
+        finalPathId: systemPath.id,
+        alternativePathId: alternativePath.id,
+        recommendationReasons: toJsonArray(recommendation.primaryReasons),
+        alternativeReasons: toJsonArray(recommendation.alternativeReasons),
+      },
     });
 
+    await this.prisma.student.update({
+      where: { id: student.id },
+      data: {
+        currentLevelId: systemLevel.id,
+        currentPathId: systemPath.id,
+        path: systemPath.code,
+      },
+    });
+
+    const placement = await this.requirePlacement(created.id);
     await this.roadmapService.syncForStudent(placement.studentId);
     return toPlacementResponse(placement);
   }
@@ -264,26 +260,22 @@ export class PlacementService {
       throw new NotFoundException('Level not found');
     }
 
-    const updated = await this.prisma.$transaction(async (tx) => {
-      const next = await tx.studentPlacement.update({
-        where: { id: placement.id },
-        data: {
-          finalLevelId: level.id,
-          levelChangedById: changedById,
-          levelOverrideReason: dto.reason.trim(),
-          levelChangedAt: new Date(),
-        },
-        include: placementInclude,
-      });
-
-      await tx.student.update({
-        where: { id: studentId },
-        data: { currentLevelId: level.id },
-      });
-
-      return next;
+    await this.prisma.studentPlacement.update({
+      where: { id: placement.id },
+      data: {
+        finalLevelId: level.id,
+        levelChangedById: changedById,
+        levelOverrideReason: dto.reason.trim(),
+        levelChangedAt: new Date(),
+      },
     });
 
+    await this.prisma.student.update({
+      where: { id: studentId },
+      data: { currentLevelId: level.id },
+    });
+
+    const updated = await this.requirePlacement(placement.id);
     await this.roadmapService.syncForStudent(studentId);
     return toPlacementResponse(updated);
   }
@@ -299,31 +291,38 @@ export class PlacementService {
       throw new NotFoundException('Learning path not found');
     }
 
-    const updated = await this.prisma.$transaction(async (tx) => {
-      const next = await tx.studentPlacement.update({
-        where: { id: placement.id },
-        data: {
-          finalPathId: path.id,
-          pathChangedById: changedById,
-          pathOverrideReason: dto.reason.trim(),
-          pathChangedAt: new Date(),
-        },
-        include: placementInclude,
-      });
-
-      await tx.student.update({
-        where: { id: studentId },
-        data: {
-          currentPathId: path.id,
-          path: path.code,
-        },
-      });
-
-      return next;
+    await this.prisma.studentPlacement.update({
+      where: { id: placement.id },
+      data: {
+        finalPathId: path.id,
+        pathChangedById: changedById,
+        pathOverrideReason: dto.reason.trim(),
+        pathChangedAt: new Date(),
+      },
     });
 
+    await this.prisma.student.update({
+      where: { id: studentId },
+      data: {
+        currentPathId: path.id,
+        path: path.code,
+      },
+    });
+
+    const updated = await this.requirePlacement(placement.id);
     await this.roadmapService.syncForStudent(studentId);
     return toPlacementResponse(updated);
+  }
+
+  private async requirePlacement(id: string): Promise<PlacementRecord> {
+    const placement = await this.prisma.studentPlacement.findUnique({
+      where: { id },
+      include: placementInclude,
+    });
+    if (!placement) {
+      throw new NotFoundException('Placement not found');
+    }
+    return placement;
   }
 
   private async latestPlacement(studentId: string): Promise<PlacementRecord | null> {

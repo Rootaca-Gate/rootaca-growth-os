@@ -56,10 +56,9 @@ export class OrientationService {
 
     const session = await this.prisma.orientationSession.create({
       data: { studentId, createdById },
-      include: sessionInclude,
     });
 
-    return this.toResponse(session);
+    return this.toResponse(await this.getSession(session.id));
   }
 
   async findAll(studentId?: string): Promise<OrientationSessionSummaryDto[]> {
@@ -93,7 +92,7 @@ export class OrientationService {
     }
 
     const now = new Date();
-    const updated = await this.prisma.orientationSession.update({
+    await this.prisma.orientationSession.update({
       where: { id },
       data: {
         status: OrientationSessionStatus.IN_PROGRESS,
@@ -101,10 +100,9 @@ export class OrientationService {
         lastResumedAt: now,
         pausedAt: null,
       },
-      include: sessionInclude,
     });
 
-    return this.toResponse(updated, now);
+    return this.toResponse(await this.getSession(id), now);
   }
 
   async pause(id: string): Promise<OrientationSessionResponseDto> {
@@ -116,7 +114,7 @@ export class OrientationService {
     }
 
     const now = new Date();
-    const updated = await this.prisma.orientationSession.update({
+    await this.prisma.orientationSession.update({
       where: { id },
       data: {
         status: OrientationSessionStatus.PAUSED,
@@ -124,10 +122,9 @@ export class OrientationService {
         lastResumedAt: null,
         pausedAt: now,
       },
-      include: sessionInclude,
     });
 
-    return this.toResponse(updated, now);
+    return this.toResponse(await this.getSession(id), now);
   }
 
   async resume(id: string): Promise<OrientationSessionResponseDto> {
@@ -139,17 +136,16 @@ export class OrientationService {
     }
 
     const now = new Date();
-    const updated = await this.prisma.orientationSession.update({
+    await this.prisma.orientationSession.update({
       where: { id },
       data: {
         status: OrientationSessionStatus.IN_PROGRESS,
         lastResumedAt: now,
         pausedAt: null,
       },
-      include: sessionInclude,
     });
 
-    return this.toResponse(updated, now);
+    return this.toResponse(await this.getSession(id), now);
   }
 
   async save(id: string, dto: SaveOrientationSessionDto): Promise<OrientationSessionResponseDto> {
@@ -160,16 +156,15 @@ export class OrientationService {
       await this.persistAnswers(session.id, dto.answers);
     }
 
-    const updated = await this.prisma.orientationSession.update({
+    await this.prisma.orientationSession.update({
       where: { id },
       data: {
         notes: dto.notes ?? session.notes,
         currentStage: dto.currentStage ?? session.currentStage,
       },
-      include: sessionInclude,
     });
 
-    return this.toResponse(updated);
+    return this.toResponse(await this.getSession(id));
   }
 
   async submitAnswers(
@@ -193,53 +188,45 @@ export class OrientationService {
     const elapsedMs = currentElapsedMs(session, now);
     const computation = this.score(questions, session.answers, true);
 
-    const updated = await this.prisma.$transaction(async (tx) => {
-      for (const answer of session.answers) {
-        await tx.assessmentAnswer.update({
-          where: { id: answer.id },
-          data: { score: computation.questionScores[answer.questionId] ?? null },
-        });
-      }
-
-      await tx.orientationSession.update({
-        where: { id },
-        data: {
-          status: OrientationSessionStatus.COMPLETED,
-          elapsedMs,
-          lastResumedAt: null,
-          pausedAt:
-            session.status === OrientationSessionStatus.IN_PROGRESS ? now : session.pausedAt,
-          completedAt: now,
-          startedAt: session.startedAt ?? now,
-        },
+    for (const answer of session.answers) {
+      await this.prisma.assessmentAnswer.update({
+        where: { id: answer.id },
+        data: { score: computation.questionScores[answer.questionId] ?? null },
       });
+    }
 
-      await tx.assessmentResult.upsert({
-        where: { sessionId: id },
-        update: {
-          overallScore: computation.overallScore,
-          categoryScores: toJsonValue(computation.categoryScores),
-          skillScores: toJsonValue(computation.skillScores),
-          summary: computation.summary,
-          completedAt: now,
-        },
-        create: {
-          sessionId: id,
-          overallScore: computation.overallScore,
-          categoryScores: toJsonValue(computation.categoryScores),
-          skillScores: toJsonValue(computation.skillScores),
-          summary: computation.summary,
-          completedAt: now,
-        },
-      });
-
-      return tx.orientationSession.findUniqueOrThrow({
-        where: { id },
-        include: sessionInclude,
-      });
+    await this.prisma.orientationSession.update({
+      where: { id },
+      data: {
+        status: OrientationSessionStatus.COMPLETED,
+        elapsedMs,
+        lastResumedAt: null,
+        pausedAt: session.status === OrientationSessionStatus.IN_PROGRESS ? now : session.pausedAt,
+        completedAt: now,
+        startedAt: session.startedAt ?? now,
+      },
     });
 
-    return this.toResponse(updated, now);
+    await this.prisma.assessmentResult.upsert({
+      where: { sessionId: id },
+      update: {
+        overallScore: computation.overallScore,
+        categoryScores: toJsonValue(computation.categoryScores),
+        skillScores: toJsonValue(computation.skillScores),
+        summary: computation.summary,
+        completedAt: now,
+      },
+      create: {
+        sessionId: id,
+        overallScore: computation.overallScore,
+        categoryScores: toJsonValue(computation.categoryScores),
+        skillScores: toJsonValue(computation.skillScores),
+        summary: computation.summary,
+        completedAt: now,
+      },
+    });
+
+    return this.toResponse(await this.getSession(id), now);
   }
 
   async getResult(id: string): Promise<AssessmentResultResponseDto> {

@@ -128,7 +128,6 @@ describe('PlacementService', () => {
   });
 
   it('creates placement from an assessment result', async () => {
-    prisma.studentPlacement.findUnique.mockResolvedValue(null);
     prisma.assessmentResult.findUnique.mockResolvedValue({
       id: 'result-1',
       overallScore: 25,
@@ -147,7 +146,10 @@ describe('PlacementService', () => {
     prisma.level.findMany.mockResolvedValue([level, beginner]);
     prisma.skill.findMany.mockResolvedValue([skill]);
     prisma.learningPath.findMany.mockResolvedValue([web, mobile, data, path, general]);
-    prisma.studentPlacement.create.mockResolvedValue(placement);
+    prisma.studentPlacement.create.mockResolvedValue({ id: placement.id, studentId: 'student-1' });
+    prisma.studentPlacement.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(placement);
     prisma.student.update.mockResolvedValue({});
 
     const result = await service.applyFromAssessmentResult('result-1');
@@ -169,7 +171,8 @@ describe('PlacementService', () => {
     prisma.student.findUnique.mockResolvedValue({ id: 'student-1' });
     prisma.studentPlacement.findFirst.mockResolvedValue(placement);
     prisma.level.findUnique.mockResolvedValue(beginner);
-    prisma.studentPlacement.update.mockResolvedValue({
+    prisma.studentPlacement.update.mockResolvedValue({ id: placement.id });
+    prisma.studentPlacement.findUnique.mockResolvedValue({
       ...placement,
       finalLevelId: beginner.id,
       finalLevel: beginner,

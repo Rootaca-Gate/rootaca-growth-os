@@ -22,11 +22,11 @@ export const STAGE_WINDOWS: Record<
   OrientationStage,
   { label: string; startMin: number; endMin: number; sortOrder: number }
 > = {
-  STUDENT_PROFILE: { label: 'Student Profile', startMin: 0, endMin: 3, sortOrder: 1 },
-  TECHNICAL_CHECK: { label: 'Technical Check', startMin: 3, endMin: 8, sortOrder: 2 },
-  PROBLEM_SOLVING: { label: 'Problem Solving', startMin: 8, endMin: 13, sortOrder: 3 },
-  INTEREST_PATH: { label: 'Interest & Path Discovery', startMin: 13, endMin: 17, sortOrder: 4 },
-  SUMMARY: { label: 'Summary', startMin: 17, endMin: 20, sortOrder: 5 },
+  STUDENT_PROFILE: { label: 'ملف الطالب', startMin: 0, endMin: 3, sortOrder: 1 },
+  TECHNICAL_CHECK: { label: 'الفحص التقني', startMin: 3, endMin: 8, sortOrder: 2 },
+  PROBLEM_SOLVING: { label: 'حل المشكلات', startMin: 8, endMin: 13, sortOrder: 3 },
+  INTEREST_PATH: { label: 'الاهتمام والمسار', startMin: 13, endMin: 17, sortOrder: 4 },
+  SUMMARY: { label: 'الملخص', startMin: 17, endMin: 20, sortOrder: 5 },
 };
 
 export const ORIENTATION_STAGES: OrientationStage[] = [

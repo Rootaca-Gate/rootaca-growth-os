@@ -296,9 +296,11 @@ export class OrientationService {
 
     if (
       (question.type === QuestionType.MENTOR_EVALUATION ||
-        question.type === QuestionType.PRACTICAL_EVALUATION) &&
+        question.type === QuestionType.PRACTICAL_EVALUATION ||
+        (question.type === QuestionType.FREE_TEXT && question.scored)) &&
       input.numericValue !== undefined &&
-      input.numericValue > question.maxScore
+      input.numericValue !== null &&
+      (input.numericValue < 0 || input.numericValue > question.maxScore)
     ) {
       throw new BadRequestException(`Score must be between 0 and ${question.maxScore}`);
     }

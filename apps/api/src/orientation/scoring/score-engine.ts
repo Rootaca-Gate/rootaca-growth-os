@@ -93,7 +93,7 @@ export function scoreQuestion(
     }
     case QuestionType.FREE_TEXT: {
       if (answer?.numericValue === null || answer?.numericValue === undefined) {
-        return null;
+        return missing();
       }
       const max = question.maxScore > 0 ? question.maxScore : 100;
       return clampScore((answer.numericValue / max) * 100);

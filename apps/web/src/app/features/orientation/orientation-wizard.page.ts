@@ -117,7 +117,14 @@ export class OrientationWizardPage {
   }
 
   setAnswer(answer: AssessmentAnswer): void {
-    this.answers.update((current) => ({ ...current, [answer.questionId]: answer }));
+    this.answers.update((current) => ({
+      ...current,
+      [answer.questionId]: {
+        ...current[answer.questionId],
+        ...answer,
+        questionId: answer.questionId,
+      },
+    }));
   }
 
   goToStage(stage: OrientationStage): void {
@@ -279,13 +286,16 @@ export class OrientationWizardPage {
     if (!answer) {
       return false;
     }
-    if (question?.type === 'FREE_TEXT' || answer.textValue) {
-      return Boolean(answer.textValue?.trim());
-    }
     if (answer.optionId) {
       return true;
     }
-    return answer.numericValue !== null && answer.numericValue !== undefined;
+    if (answer.numericValue !== null && answer.numericValue !== undefined) {
+      return true;
+    }
+    if (question?.type === 'FREE_TEXT' || answer.textValue) {
+      return Boolean(answer.textValue?.trim());
+    }
+    return false;
   }
 
   private toErrorMessage(error: unknown): string {

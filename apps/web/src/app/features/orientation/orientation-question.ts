@@ -95,6 +95,24 @@ const QUESTION_TYPE_KEYS: Record<QuestionType, string> = {
               (ngModelChange)="onText($event)"
             ></textarea>
           </mat-form-field>
+          @if (question().scored) {
+            <div class="mentor-score">
+              <p class="score-label">{{ 'orientation.mentorScore' | t:{ max: question().maxScore } }}</p>
+              <div class="rating">
+                @for (value of mentorScoreValues(); track value) {
+                  <button
+                    type="button"
+                    class="rating-btn"
+                    [class.active]="answer()?.numericValue === value"
+                    [disabled]="readonly()"
+                    (click)="onNumeric(value)"
+                  >
+                    {{ value }}
+                  </button>
+                }
+              </div>
+            </div>
+          }
         }
       }
     </article>
@@ -109,6 +127,8 @@ const QUESTION_TYPE_KEYS: Record<QuestionType, string> = {
       margin: 4px 0 8px;
       font-size: 1.05rem;
       font-weight: 600;
+      white-space: pre-wrap;
+      line-height: 1.45;
     }
 
     .meta,
@@ -116,6 +136,11 @@ const QUESTION_TYPE_KEYS: Record<QuestionType, string> = {
       margin: 0;
       color: var(--mat-sys-on-surface-variant);
       font-size: 0.82rem;
+      white-space: pre-wrap;
+    }
+
+    .help {
+      margin-top: 6px;
     }
 
     .options {
@@ -125,12 +150,14 @@ const QUESTION_TYPE_KEYS: Record<QuestionType, string> = {
 
     .rating {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
     }
 
     .rating-btn {
-      width: 40px;
+      min-width: 40px;
       height: 40px;
+      padding: 0 10px;
       border-radius: 12px;
       border: 1px solid var(--mat-sys-outline-variant);
       background: transparent;
@@ -145,6 +172,16 @@ const QUESTION_TYPE_KEYS: Record<QuestionType, string> = {
 
     .full {
       width: 100%;
+    }
+
+    .mentor-score {
+      margin-top: 8px;
+    }
+
+    .score-label {
+      margin: 0 0 8px;
+      font-size: 0.85rem;
+      color: var(--mat-sys-on-surface-variant);
     }
   `,
 })
@@ -162,20 +199,34 @@ export class OrientationQuestion {
   readonly ratingValues = computed(() =>
     Array.from({ length: this.question().scaleMax }, (_, index) => index + 1),
   );
+  readonly mentorScoreValues = computed(() =>
+    Array.from({ length: this.question().maxScore + 1 }, (_, index) => index),
+  );
 
   onOption(optionId: string): void {
-    this.changed.emit({ questionId: this.question().id, optionId });
+    this.emit({ optionId });
   }
 
   onNumeric(value: number | string | null): void {
     const numericValue = value === null || value === '' ? null : Number(value);
-    this.changed.emit({
-      questionId: this.question().id,
+    this.emit({
       numericValue: Number.isFinite(numericValue) ? numericValue : null,
     });
   }
 
   onText(textValue: string): void {
-    this.changed.emit({ questionId: this.question().id, textValue });
+    this.emit({ textValue });
+  }
+
+  private emit(partial: Partial<AssessmentAnswer>): void {
+    const current = this.answer();
+    this.changed.emit({
+      questionId: this.question().id,
+      optionId: partial.optionId !== undefined ? partial.optionId : (current?.optionId ?? null),
+      numericValue:
+        partial.numericValue !== undefined ? partial.numericValue : (current?.numericValue ?? null),
+      textValue: partial.textValue !== undefined ? partial.textValue : (current?.textValue ?? null),
+      score: current?.score ?? null,
+    });
   }
 }

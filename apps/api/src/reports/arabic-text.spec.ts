@@ -1,4 +1,4 @@
-import { containsArabic, splitFontRuns, toVisualLine } from './arabic-text';
+import { containsArabic, orderedFontRuns, splitFontRuns, toVisualLine } from './arabic-text';
 
 describe('Arabic PDF text', () => {
   it('reshapes Arabic so letters join instead of staying isolated', () => {
@@ -28,5 +28,17 @@ describe('Arabic PDF text', () => {
     const visual = toVisualLine('السلام', true);
     expect(visual).not.toBe('السلام');
     expect(visual.includes('\uFEFB') || visual.includes('\uFEFC')).toBe(true);
+  });
+
+  it('does not bidi-flip reshaped Arabic (PDFKit already handles RTL)', () => {
+    const visual = toVisualLine('مرحبا', true);
+    // Reshape keeps logical reading order of presentation forms; first glyph is meem-initial.
+    expect(visual.startsWith('ﻣ') || visual.startsWith('م')).toBe(true);
+  });
+
+  it('orders mixed runs for RTL drawing with Latin first', () => {
+    const runs = orderedFontRuns(toVisualLine('تقرير ROOTACA', true), true);
+    expect(runs[0]?.text.trim()).toBe('ROOTACA');
+    expect(runs[runs.length - 1]?.arabic).toBe(true);
   });
 });

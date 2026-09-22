@@ -1,7 +1,5 @@
 import ArabicReshaper from 'arabic-reshaper';
-import bidiFactory from 'bidi-js';
 
-const bidi = bidiFactory();
 const ARABIC_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
 const reshapeArabic =
   typeof ArabicReshaper.convertArabic === 'function'
@@ -12,13 +10,15 @@ export function containsArabic(text: string): boolean {
   return ARABIC_RE.test(text);
 }
 
-export function toVisualLine(logical: string, rtl: boolean): string {
-  const reshaped = reshapeArabic(logical);
-  if (!containsArabic(reshaped)) {
-    return reshaped;
-  }
-  const levels = bidi.getEmbeddingLevels(reshaped, rtl ? 'rtl' : 'ltr');
-  return bidi.getReorderedString(reshaped, levels);
+/**
+ * Prepare text for PDFKit.
+ *
+ * PDFKit/fontkit already lays out RTL Unicode (including Arabic presentation forms)
+ * from right to left. We only reshape so letters join correctly.
+ * Applying bidi-js on top of that double-flips the line and makes Arabic look reversed.
+ */
+export function toVisualLine(logical: string, _rtl = false): string {
+  return reshapeArabic(logical);
 }
 
 /** @deprecated use toVisualLine */
@@ -57,4 +57,10 @@ export function splitFontRuns(text: string): FontRun[] {
   }
 
   return runs;
+}
+
+/** RTL pages draw mixed runs right-to-left so Latin stays on the outer left. */
+export function orderedFontRuns(text: string, rtl: boolean): FontRun[] {
+  const runs = splitFontRuns(text);
+  return rtl ? [...runs].reverse() : runs;
 }

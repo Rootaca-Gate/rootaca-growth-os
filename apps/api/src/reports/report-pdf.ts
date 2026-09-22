@@ -1,6 +1,6 @@
 import PDFDocument from 'pdfkit';
 import { StudentProgressReportDto } from './dto/report-response.dto';
-import { splitFontRuns, toVisualLine } from './arabic-text';
+import { orderedFontRuns, toVisualLine } from './arabic-text';
 import { ReportCopy, reportCopy } from './report-copy';
 import { resolveReportFonts } from './report-fonts';
 
@@ -458,7 +458,7 @@ class ReportPainter {
   private measure(text: string, size: number, bold: boolean): number {
     const visual = toVisualLine(text, this.rtl);
     let width = 0;
-    for (const run of splitFontRuns(visual)) {
+    for (const run of orderedFontRuns(visual, false)) {
       this.doc.font(this.fontName(run.arabic, bold)).fontSize(size);
       width += this.doc.widthOfString(run.text, { features: NO_FEATURES });
     }
@@ -477,7 +477,9 @@ class ReportPainter {
     align: Align | 'end' = this.align,
   ): void {
     const visual = brandLatin ? text : toVisualLine(text, this.rtl);
-    const runs = brandLatin ? [{ text: visual, arabic: false }] : splitFontRuns(visual);
+    const runs = brandLatin
+      ? [{ text: visual, arabic: false }]
+      : orderedFontRuns(visual, this.rtl);
     const total = runs.reduce((sum, run) => {
       this.doc.font(this.fontName(run.arabic && !brandLatin, bold)).fontSize(size);
       return sum + this.doc.widthOfString(run.text, { features: NO_FEATURES });

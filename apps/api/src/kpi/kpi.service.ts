@@ -384,10 +384,14 @@ export class KpiService {
 
     const roadmap = await this.prisma.roadmap.findUnique({
       where: { studentId: student.id },
-      include: { phases: { include: { items: true } } },
+      select: { id: true },
     });
     if (roadmap) {
-      values.PROJECT_COMPLETION = averagePercent(roadmap.phases.flatMap((phase) => phase.items));
+      const items = await this.prisma.roadmapItem.findMany({
+        where: { phase: { roadmapId: roadmap.id } },
+        select: { status: true, completionPercentage: true },
+      });
+      values.PROJECT_COMPLETION = averagePercent(items);
     }
 
     return values;

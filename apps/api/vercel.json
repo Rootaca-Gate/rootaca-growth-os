@@ -1,0 +1,12 @@
+{
+  "outputFileTracingIncludes": {
+    "**/*": [
+      "./src/reports/fonts/**",
+      "./dist/src/reports/fonts/**",
+      "./node_modules/@fontsource/noto-sans/files/**",
+      "./node_modules/@fontsource/noto-sans-arabic/files/**",
+      "../../node_modules/@fontsource/noto-sans/files/**",
+      "../../node_modules/@fontsource/noto-sans-arabic/files/**"
+    ]
+  }
+}

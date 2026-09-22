@@ -35,6 +35,8 @@ export async function renderStudentProgressPdf(report: StudentProgressReportDto)
     size: 'A4',
     margin: 0,
     bufferPages: true,
+    // Avoid pdfkit's default Helvetica, which is often missing from Vercel file tracing.
+    font: fonts.latinRegular,
     info: {
       Title: `${report.student.fullName} — ${copy.title}`,
       Author: 'ROOTACA Academy',
@@ -46,6 +48,7 @@ export async function renderStudentProgressPdf(report: StudentProgressReportDto)
   doc.registerFont('NotoSans-Bold', fonts.latinBold);
   doc.registerFont('NotoSansArabic', fonts.arabicRegular);
   doc.registerFont('NotoSansArabic-Bold', fonts.arabicBold);
+  doc.font('NotoSans');
 
   const pdf = collectPdf(doc);
   const painter = new ReportPainter(doc, copy, rtl);

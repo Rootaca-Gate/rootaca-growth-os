@@ -1,0 +1,419 @@
+<app-page-header
+  [title]="'partnerships.researchTitle' | t"
+  [subtitle]="'partnerships.researchSubtitle' | t"
+>
+  @if (permissions.canWrite()) {
+    <button mat-stroked-button type="button" (click)="showJobForm.set(!showJobForm())">
+      {{ 'partnerships.researchNewJob' | t }}
+    </button>
+    <button mat-flat-button color="primary" type="button" (click)="showCandidateForm.set(!showCandidateForm())">
+      {{ 'partnerships.researchAddCandidate' | t }}
+    </button>
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="enrichingContacts() || !!runningJobId()"
+      (click)="fillMissingContacts()"
+    >
+      @if (enrichingContacts()) {
+        {{ 'partnerships.researchEnrichingContacts' | t }}
+      } @else {
+        {{ 'partnerships.researchEnrichContacts' | t }}
+      }
+    </button>
+  }
+  @if (permissions.canAdmin()) {
+    <button
+      mat-stroked-button
+      color="warn"
+      type="button"
+      [disabled]="clearing() || !!runningJobId()"
+      (click)="clearOldResults()"
+    >
+      {{ 'partnerships.researchClearResults' | t }}
+    </button>
+  }
+</app-page-header>
+
+@if (errorMessage(); as message) {
+  <app-error-state
+    [title]="'partnerships.researchErrorTitle' | t"
+    [message]="message"
+    (retry)="reload()"
+  />
+}
+
+@if (runningJobId()) {
+  <section class="run-banner ra-card" role="status" aria-live="polite">
+    <mat-spinner diameter="22" />
+    <p>{{ 'partnerships.researchRunning' | t }}</p>
+  </section>
+}
+
+@if (enrichingContacts()) {
+  <section class="run-banner ra-card" role="status" aria-live="polite">
+    <mat-spinner diameter="22" />
+    <p>{{ 'partnerships.researchEnrichingContacts' | t }}</p>
+  </section>
+} @else if (enrichContactsMessage(); as enrichMsg) {
+  <section class="run-banner ra-card" role="status">
+    <p>{{ enrichMsg }}</p>
+  </section>
+}
+
+@if (importingSelected()) {
+  <section class="run-banner ra-card" role="status" aria-live="polite">
+    <mat-spinner diameter="22" />
+    <p>{{ 'partnerships.researchImportingSelected' | t }}</p>
+  </section>
+} @else if (importSelectedMessage(); as importMsg) {
+  <section class="run-banner ra-card" role="status">
+    <p>{{ importMsg }}</p>
+  </section>
+}
+
+@if (loading() && !dashboard()) {
+  <app-loading-skeleton [rows]="8" [label]="'partnerships.researchLoading' | t" />
+} @else if (dashboard(); as dash) {
+  <section class="notice ra-card">
+    <p>
+      {{ 'partnerships.researchCoverageNote' | t }}
+    </p>
+    <div class="provider-cards">
+      <h3>{{ 'partnerships.researchDiscoveryProviders' | t }}</h3>
+      <div class="provider-grid">
+        @for (provider of dash.providers ?? []; track provider.type) {
+          <div class="provider-card" [class.is-on]="provider.configured && provider.enabled">
+            <strong>
+              @if (provider.configured) { ✓ } @else { ○ }
+              {{ provider.type }}
+            </strong>
+            <span class="muted">
+              @if (provider.free) {
+                {{ 'partnerships.researchProviderFree' | t }}
+              }
+              @if (provider.role === 'enrichment') {
+                {{ 'partnerships.researchProviderEnrichment' | t }}
+              }
+              —
+              {{
+                provider.configured
+                  ? ('partnerships.researchProviderConfigured' | t)
+                  : ('partnerships.researchProviderNotConfigured' | t)
+              }}
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+    <p class="muted">
+      {{
+        dash.automatedDiscoveryConfigured
+          ? ('partnerships.researchAutoOn' | t)
+          : ('partnerships.researchAutoOff' | t)
+      }}
+    </p>
+  </section>
+
+  <section class="stats">
+    <app-stat-card [label]="'partnerships.researchActiveJobs' | t" [value]="'' + dash.activeJobs" />
+    <app-stat-card [label]="'partnerships.researchCandidates' | t" [value]="'' + dash.candidates" />
+    <app-stat-card [label]="'partnerships.researchNeedsReview' | t" [value]="'' + dash.needsReview" />
+    <app-stat-card [label]="'partnerships.researchPossibleDupes' | t" [value]="'' + dash.possibleDuplicates" />
+    <app-stat-card [label]="'partnerships.researchVerified' | t" [value]="'' + dash.verified" />
+    <app-stat-card [label]="'partnerships.researchImported' | t" [value]="'' + dash.imported" />
+    <app-stat-card [label]="'partnerships.researchRejected' | t" [value]="'' + dash.rejected" />
+    <app-stat-card [label]="'partnerships.researchStale' | t" [value]="'' + dash.stale" />
+  </section>
+
+  @if (showJobForm()) {
+    <section class="ra-card form-card">
+      <h2>{{ 'partnerships.researchNewJob' | t }}</h2>
+      <form [formGroup]="jobForm" (ngSubmit)="createJob()">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.researchJobName' | t }}</mat-label>
+          <input matInput formControlName="name" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.governorate' | t }}</mat-label>
+          <mat-select formControlName="governorate">
+            <mat-option value="">{{ 'common.none' | t }}</mat-option>
+            @for (gov of dash.governorates; track gov) {
+              <mat-option [value]="gov">{{ gov }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.city' | t }}</mat-label>
+          <input matInput formControlName="city" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.type' | t }}</mat-label>
+          <mat-select formControlName="institutionType">
+            <mat-option value="">{{ 'common.none' | t }}</mat-option>
+            @for (item of types; track item) {
+              <mat-option [value]="item">{{ label(item) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.curriculum' | t }}</mat-label>
+          <mat-select formControlName="curriculum">
+            <mat-option value="">{{ 'common.none' | t }}</mat-option>
+            @for (item of curricula; track item) {
+              <mat-option [value]="item">{{ label(item) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.researchLanguage' | t }}</mat-label>
+          <mat-select formControlName="language">
+            <mat-option value="BOTH">BOTH</mat-option>
+            <mat-option value="EN">EN</mat-option>
+            <mat-option value="AR">AR</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.researchDiscoveryMode' | t }}</mat-label>
+          <mat-select formControlName="discoveryMode">
+            <mat-option value="HYBRID">HYBRID</mat-option>
+            <mat-option value="OVERPASS">OVERPASS (OpenStreetMap)</mat-option>
+            <mat-option value="WEB_SEARCH">WEB_SEARCH (Serper)</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <div class="checks">
+          <mat-checkbox formControlName="hasCoding">{{ 'partnerships.techCoding' | t }}</mat-checkbox>
+          <mat-checkbox formControlName="hasRobotics">{{ 'partnerships.techRobotics' | t }}</mat-checkbox>
+          <mat-checkbox formControlName="hasStem">{{ 'partnerships.techStem' | t }}</mat-checkbox>
+          <mat-checkbox formControlName="hasAi">{{ 'partnerships.techAi' | t }}</mat-checkbox>
+        </div>
+        <button mat-flat-button color="primary" type="submit">{{ 'common.save' | t }}</button>
+      </form>
+    </section>
+  }
+
+  @if (showCandidateForm()) {
+    <section class="ra-card form-card">
+      <h2>{{ 'partnerships.researchAddCandidate' | t }}</h2>
+      <form [formGroup]="candidateForm" (ngSubmit)="createCandidate()">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.institution' | t }}</mat-label>
+          <input matInput formControlName="discoveredName" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.governorate' | t }}</mat-label>
+          <input matInput formControlName="governorate" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.city' | t }}</mat-label>
+          <input matInput formControlName="city" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.website' | t }}</mat-label>
+          <input matInput formControlName="website" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.email' | t }}</mat-label>
+          <input matInput formControlName="email" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.phone' | t }}</mat-label>
+          <input matInput formControlName="phone" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.researchSourceUrl' | t }}</mat-label>
+          <input matInput formControlName="sourceUrl" />
+        </mat-form-field>
+        <button mat-flat-button color="primary" type="submit">{{ 'common.save' | t }}</button>
+      </form>
+    </section>
+  }
+
+  <section class="ra-card">
+    <h2>{{ 'partnerships.researchJobs' | t }}</h2>
+    @if (jobs().items.length === 0) {
+      <app-empty-state
+        [title]="'partnerships.researchJobsEmptyTitle' | t"
+        [message]="'partnerships.researchJobsEmptyMessage' | t"
+      />
+    } @else {
+      <div class="ra-table-wrap">
+        <table class="jobs-table">
+          <thead>
+            <tr>
+              <th class="col-job">{{ 'partnerships.researchJobName' | t }}</th>
+              <th>{{ 'partnerships.governorate' | t }}</th>
+              <th>{{ 'partnerships.city' | t }}</th>
+              <th>{{ 'partnerships.researchDiscoveryMode' | t }}</th>
+              <th>{{ 'common.status' | t }}</th>
+              <th>{{ 'partnerships.researchQueries' | t }}</th>
+              <th class="col-actions">{{ 'common.actions' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (job of jobs().items; track job.id) {
+              <tr [class.is-running]="runningJobId() === job.id">
+                <td class="col-job">
+                  <a [routerLink]="['/partnerships/research/jobs', job.id]">{{ job.name }}</a>
+                </td>
+                <td>{{ display(job.governorate) }}</td>
+                <td>{{ display(job.city) }}</td>
+                <td><span class="chip">{{ display(job.discoveryMode || 'HYBRID') }}</span></td>
+                <td>{{ job.status }}</td>
+                <td>{{ job.queries.length }}</td>
+                <td class="col-actions">
+                  @if (permissions.canWrite()) {
+                    <button
+                      mat-flat-button
+                      color="primary"
+                      type="button"
+                      class="run-btn"
+                      [disabled]="!!runningJobId()"
+                      (click)="runJob(job.id)"
+                    >
+                      @if (runningJobId() === job.id) {
+                        <mat-spinner diameter="18" />
+                        <span>{{ 'partnerships.researchRunning' | t }}</span>
+                      } @else {
+                        {{ 'partnerships.researchRun' | t }}
+                      }
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <mat-paginator
+        [length]="jobs().total"
+        [pageIndex]="jobs().page - 1"
+        [pageSize]="jobs().pageSize"
+        (page)="onJobsPage($event)"
+      />
+    }
+  </section>
+
+  <section class="ra-card">
+    <div class="section-head">
+      <h2>{{ 'partnerships.researchCandidateQueue' | t }}</h2>
+      @if (permissions.canWrite() && candidates().items.length > 0) {
+        <div class="bulk-actions">
+          @if (selectedCount() > 0) {
+            <span class="muted selected-count">{{ selectedCountLabel() }}</span>
+          }
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="selectedCount() === 0 || importingSelected() || !!runningJobId()"
+            (click)="importSelected()"
+          >
+            @if (importingSelected()) {
+              <mat-spinner diameter="18" />
+              <span>{{ 'partnerships.researchImportingSelected' | t }}</span>
+            } @else {
+              {{ 'partnerships.researchImportSelected' | t }}
+            }
+          </button>
+        </div>
+      }
+    </div>
+    @if (loading() && candidates().items.length === 0 && !!runningJobId()) {
+      <app-loading-skeleton [rows]="5" [label]="'partnerships.researchLoading' | t" />
+    } @else if (candidates().items.length === 0) {
+      <app-empty-state
+        [title]="'partnerships.researchCandidatesEmptyTitle' | t"
+        [message]="'partnerships.researchCandidatesEmptyMessage' | t"
+      />
+    } @else {
+      <div class="ra-table-wrap">
+        <table class="candidates-table">
+          <thead>
+            <tr>
+              @if (permissions.canWrite()) {
+                <th class="col-check">
+                  <mat-checkbox
+                    [checked]="allPageSelected()"
+                    [indeterminate]="somePageSelected()"
+                    [disabled]="importableOnPage().length === 0 || importingSelected()"
+                    [aria-label]="'partnerships.researchSelectAll' | t"
+                    (change)="toggleAllOnPage($event.checked)"
+                  />
+                </th>
+              }
+              <th class="col-institution">{{ 'partnerships.institution' | t }}</th>
+              <th class="col-city">{{ 'partnerships.city' | t }}</th>
+              <th class="col-contact">{{ 'partnerships.phone' | t }}</th>
+              <th class="col-website">{{ 'partnerships.website' | t }}</th>
+              <th class="col-discovery">{{ 'partnerships.researchDiscoverySource' | t }}</th>
+              <th class="col-status">{{ 'partnerships.researchVerification' | t }}</th>
+              <th class="col-actions">{{ 'common.actions' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of candidates().items; track row.id) {
+              <tr [class.is-selected]="isSelected(row.id)">
+                @if (permissions.canWrite()) {
+                  <td class="col-check">
+                    <mat-checkbox
+                      [checked]="isSelected(row.id)"
+                      [disabled]="!canImport(row) || importingSelected()"
+                      (change)="toggleCandidate(row.id, $event.checked)"
+                    />
+                  </td>
+                }
+                <td class="col-institution">
+                  <a class="inst-link" [routerLink]="['/partnerships/research/candidates', row.id]">{{
+                    row.discoveredName
+                  }}</a>
+                  <div class="muted">
+                    {{ display(row.governorate) }}
+                    @if (row.district) {
+                      · {{ row.district }}
+                    }
+                  </div>
+                  @if (row.evidenceSources?.length) {
+                    <div class="muted evidence-line">{{ evidenceLabel(row) }}</div>
+                  }
+                </td>
+                <td class="col-city">{{ display(row.city) }}</td>
+                <td class="col-contact">
+                  <div>{{ display(row.phone || row.mobile) }}</div>
+                  <div class="muted">{{ display(row.email) }}</div>
+                </td>
+                <td class="col-website">
+                  @if (websiteUrl(row); as url) {
+                    <a mat-stroked-button class="site-btn" [href]="url" target="_blank" rel="noopener noreferrer">
+                      {{ 'partnerships.researchOpenWebsite' | t }}
+                    </a>
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td class="col-discovery">
+                  <span class="chip">{{ display(row.discoverySource?.label) }}</span>
+                </td>
+                <td class="col-status">
+                  <div>{{ row.verificationStatus }}</div>
+                  <div class="muted">{{ row.dataQuality }} · {{ row.researchStatus }}</div>
+                </td>
+                <td class="col-actions">
+                  <a mat-button [routerLink]="['/partnerships/research/candidates', row.id]">{{
+                    'common.view' | t
+                  }}</a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <mat-paginator
+        [length]="candidates().total"
+        [pageIndex]="candidates().page - 1"
+        [pageSize]="candidates().pageSize"
+        (page)="onCandidatesPage($event)"
+      />
+    }
+  </section>
+}

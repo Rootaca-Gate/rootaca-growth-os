@@ -1,0 +1,219 @@
+<form class="institution-form" [formGroup]="form" (ngSubmit)="submit()">
+  <section class="ra-card block">
+    <h2>{{ 'partnerships.basicInfo' | t }}</h2>
+    <div class="grid">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.institution' | t }}</mat-label>
+        <input matInput formControlName="name" />
+        @if (form.controls.name.invalid && form.controls.name.touched) {
+          <mat-error>{{ 'partnerships.nameRequired' | t }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.arabicName' | t }}</mat-label>
+        <input matInput formControlName="arabicName" dir="auto" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.englishName' | t }}</mat-label>
+        <input matInput formControlName="englishName" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.type' | t }}</mat-label>
+        <mat-select formControlName="institutionType">
+          <mat-option value="">{{ 'common.none' | t }}</mat-option>
+          @for (item of types; track item) {
+            <mat-option [value]="item">{{ label(item) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.category' | t }}</mat-label>
+        <mat-select formControlName="institutionCategory">
+          <mat-option value="">{{ 'common.none' | t }}</mat-option>
+          @for (item of categories; track item) {
+            <mat-option [value]="item">{{ label(item) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.curriculum' | t }}</mat-label>
+        <mat-select formControlName="curriculum">
+          <mat-option value="">{{ 'common.none' | t }}</mat-option>
+          @for (item of curricula; track item) {
+            <mat-option [value]="item">{{ label(item) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.educationLevel' | t }}</mat-label>
+        <mat-select formControlName="educationLevel">
+          <mat-option value="">{{ 'common.none' | t }}</mat-option>
+          @for (item of levels; track item) {
+            <mat-option [value]="item">{{ label(item) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.gender' | t }}</mat-label>
+        <mat-select formControlName="gender">
+          <mat-option value="">{{ 'common.none' | t }}</mat-option>
+          @for (item of genders; track item) {
+            <mat-option [value]="item">{{ label(item) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.ageRange' | t }}</mat-label>
+        <input matInput formControlName="ageRange" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'common.status' | t }}</mat-label>
+        <mat-select formControlName="status">
+          @for (item of statuses; track item) {
+            <mat-option [value]="item">{{ label(item) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'partnerships.location' | t }}</h2>
+    <div class="grid">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.governorate' | t }}</mat-label>
+        <input matInput formControlName="governorate" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.city' | t }}</mat-label>
+        <input matInput formControlName="city" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.district' | t }}</mat-label>
+        <input matInput formControlName="district" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'partnerships.fullAddress' | t }}</mat-label>
+        <textarea matInput rows="2" formControlName="fullAddress"></textarea>
+      </mat-form-field>
+    </div>
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'partnerships.contactInfo' | t }}</h2>
+    <div class="grid">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.phone' | t }}</mat-label>
+        <input matInput formControlName="phone" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.mobile' | t }}</mat-label>
+        <input matInput formControlName="mobile" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.whatsapp' | t }}</mat-label>
+        <input matInput formControlName="whatsapp" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.generalEmail' | t }}</mat-label>
+        <input matInput formControlName="generalEmail" type="email" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.admissionsEmail' | t }}</mat-label>
+        <input matInput formControlName="admissionsEmail" type="email" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.contactEmail' | t }}</mat-label>
+        <input matInput formControlName="contactEmail" type="email" />
+      </mat-form-field>
+    </div>
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'partnerships.onlinePresence' | t }}</h2>
+    <div class="grid">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.website' | t }}</mat-label>
+        <input matInput formControlName="website" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Facebook</mat-label>
+        <input matInput formControlName="facebook" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Instagram</mat-label>
+        <input matInput formControlName="instagram" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>LinkedIn</mat-label>
+        <input matInput formControlName="linkedin" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>YouTube</mat-label>
+        <input matInput formControlName="youtube" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>TikTok</mat-label>
+        <input matInput formControlName="tiktok" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'partnerships.googleMaps' | t }}</mat-label>
+        <input matInput formControlName="googleMapsUrl" />
+      </mat-form-field>
+    </div>
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'partnerships.technology' | t }}</h2>
+    <div class="checks">
+      <mat-checkbox formControlName="hasCoding">{{ 'partnerships.techCoding' | t }}</mat-checkbox>
+      <mat-checkbox formControlName="hasRobotics">{{ 'partnerships.techRobotics' | t }}</mat-checkbox>
+      <mat-checkbox formControlName="hasStem">{{ 'partnerships.techStem' | t }}</mat-checkbox>
+      <mat-checkbox formControlName="hasAi">{{ 'partnerships.techAi' | t }}</mat-checkbox>
+      <mat-checkbox formControlName="hasTechClub">{{ 'partnerships.techClub' | t }}</mat-checkbox>
+      <mat-checkbox formControlName="hasAfterSchool">{{ 'partnerships.techAfterSchool' | t }}</mat-checkbox>
+      <mat-checkbox formControlName="hasSummerCamp">{{ 'partnerships.techSummerCamp' | t }}</mat-checkbox>
+      <mat-checkbox formControlName="hasMakerspace">{{ 'partnerships.techMakerspace' | t }}</mat-checkbox>
+    </div>
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'nav.partnerships' | t }}</h2>
+    <div class="grid">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.partnershipType' | t }}</mat-label>
+        <mat-select formControlName="partnershipType">
+          <mat-option value="">{{ 'common.none' | t }}</mat-option>
+          @for (item of partnershipTypes; track item) {
+            <mat-option [value]="item">{{ label(item) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.priority' | t }}</mat-label>
+        <mat-select formControlName="leadPriority">
+          @for (item of priorities; track item) {
+            <mat-option [value]="item">{{ label(item) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'partnerships.leadPriorityReason' | t }}</mat-label>
+        <textarea matInput rows="2" formControlName="leadPriorityReason"></textarea>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>{{ 'partnerships.notes' | t }}</mat-label>
+        <textarea matInput rows="3" formControlName="notes"></textarea>
+      </mat-form-field>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button mat-stroked-button type="button" (click)="cancelled.emit()" [disabled]="submitting()">
+      {{ 'common.cancel' | t }}
+    </button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="submitting() || form.invalid">
+      {{ saveLabel() }}
+    </button>
+  </div>
+</form>

@@ -1,0 +1,41 @@
+.tech-filters {
+  padding: 14px 16px;
+  margin-block-end: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.checks {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 12px 14px;
+  text-align: start;
+  border-bottom: 1px solid var(--ra-border);
+  font-size: 0.9rem;
+}
+
+a {
+  color: inherit;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.actions {
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .checks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

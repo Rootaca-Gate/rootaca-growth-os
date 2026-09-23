@@ -1,0 +1,58 @@
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1.25rem;
+  font-size: 0.9rem;
+  color: var(--ra-muted, #6b7280);
+}
+
+.steps .active {
+  color: var(--ra-fg, #111827);
+  font-weight: 600;
+}
+
+.upload,
+.result {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.file-meta {
+  margin: 0;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.kpis .ra-card {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.9rem 1rem;
+}
+
+.kpis strong {
+  font-size: 1.35rem;
+}
+
+.kpis span {
+  font-size: 0.8rem;
+  color: var(--ra-muted, #6b7280);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.ra-table-wrap mat-form-field {
+  width: 100%;
+  min-width: 9rem;
+}

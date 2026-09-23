@@ -1,0 +1,186 @@
+<app-page-header
+  [title]="'partnerships.institutionsTitle' | t"
+  [subtitle]="'partnerships.institutionsSubtitle' | t"
+>
+  @if (permissions.canWrite()) {
+    <a mat-flat-button color="primary" routerLink="/partnerships/institutions/new">{{
+      'partnerships.addInstitution' | t
+    }}</a>
+  }
+</app-page-header>
+
+<section class="ra-filters">
+  <mat-form-field appearance="outline">
+    <mat-label>{{ 'common.search' | t }}</mat-label>
+    <input matInput [formControl]="searchControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ 'common.status' | t }}</mat-label>
+    <mat-select [formControl]="statusControl">
+      <mat-option value="">{{ 'common.allStatuses' | t }}</mat-option>
+      @for (item of statuses; track item) {
+        <mat-option [value]="item">{{ label(item) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ 'partnerships.type' | t }}</mat-label>
+    <mat-select [formControl]="typeControl">
+      <mat-option value="">{{ 'common.none' | t }}</mat-option>
+      @for (item of types; track item) {
+        <mat-option [value]="item">{{ label(item) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ 'partnerships.category' | t }}</mat-label>
+    <mat-select [formControl]="categoryControl">
+      <mat-option value="">{{ 'common.none' | t }}</mat-option>
+      @for (item of categories; track item) {
+        <mat-option [value]="item">{{ label(item) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ 'partnerships.curriculum' | t }}</mat-label>
+    <mat-select [formControl]="curriculumControl">
+      <mat-option value="">{{ 'common.none' | t }}</mat-option>
+      @for (item of curricula; track item) {
+        <mat-option [value]="item">{{ label(item) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ 'partnerships.educationLevel' | t }}</mat-label>
+    <mat-select [formControl]="educationLevelControl">
+      <mat-option value="">{{ 'common.none' | t }}</mat-option>
+      @for (item of levels; track item) {
+        <mat-option [value]="item">{{ label(item) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ 'partnerships.governorate' | t }}</mat-label>
+    <input matInput [formControl]="governorateControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ 'partnerships.city' | t }}</mat-label>
+    <input matInput [formControl]="cityControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ 'partnerships.priority' | t }}</mat-label>
+    <mat-select [formControl]="priorityControl">
+      <mat-option value="">{{ 'common.none' | t }}</mat-option>
+      @for (item of priorities; track item) {
+        <mat-option [value]="item">{{ label(item) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ 'common.sort' | t }}</mat-label>
+    <mat-select [formControl]="sortByControl">
+      @for (field of sortFields; track field) {
+        <mat-option [value]="field">{{ field }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>{{ 'common.order' | t }}</mat-label>
+    <mat-select [formControl]="sortOrderControl">
+      <mat-option value="desc">{{ 'common.descending' | t }}</mat-option>
+      <mat-option value="asc">{{ 'common.ascending' | t }}</mat-option>
+    </mat-select>
+  </mat-form-field>
+</section>
+
+<section class="tech-filters ra-card">
+  <p class="ra-kicker">{{ 'partnerships.filters' | t }}</p>
+  <div class="checks">
+    <mat-checkbox [formControl]="hasCoding">{{ 'partnerships.techCoding' | t }}</mat-checkbox>
+    <mat-checkbox [formControl]="hasRobotics">{{ 'partnerships.techRobotics' | t }}</mat-checkbox>
+    <mat-checkbox [formControl]="hasStem">{{ 'partnerships.techStem' | t }}</mat-checkbox>
+    <mat-checkbox [formControl]="hasAi">{{ 'partnerships.techAi' | t }}</mat-checkbox>
+    <mat-checkbox [formControl]="hasTechClub">{{ 'partnerships.techClub' | t }}</mat-checkbox>
+    <mat-checkbox [formControl]="hasAfterSchool">{{ 'partnerships.techAfterSchool' | t }}</mat-checkbox>
+    <mat-checkbox [formControl]="hasSummerCamp">{{ 'partnerships.techSummerCamp' | t }}</mat-checkbox>
+    <mat-checkbox [formControl]="hasMakerspace">{{ 'partnerships.techMakerspace' | t }}</mat-checkbox>
+    <mat-checkbox [formControl]="hasEmail">{{ 'partnerships.hasEmail' | t }}</mat-checkbox>
+    <mat-checkbox [formControl]="hasPhone">{{ 'partnerships.hasPhone' | t }}</mat-checkbox>
+    <mat-checkbox [formControl]="hasWebsite">{{ 'partnerships.hasWebsite' | t }}</mat-checkbox>
+    <mat-checkbox [formControl]="hasDecisionMaker">{{ 'partnerships.hasDecisionMaker' | t }}</mat-checkbox>
+  </div>
+  <button mat-stroked-button type="button" (click)="clearFilters()">{{ 'partnerships.clearFilters' | t }}</button>
+</section>
+
+@if (loading()) {
+  <app-loading-skeleton [rows]="8" [label]="'partnerships.loadingInstitutions' | t" />
+} @else if (errorMessage(); as message) {
+  <app-error-state
+    [title]="'partnerships.loadInstitutionsError' | t"
+    [message]="message"
+    (retry)="load()"
+  />
+} @else if (result().items.length === 0) {
+  <app-empty-state
+    [title]="'partnerships.institutionsEmptyTitle' | t"
+    [message]="'partnerships.institutionsEmptyMessage' | t"
+  >
+    @if (permissions.canWrite()) {
+      <a mat-flat-button color="primary" routerLink="/partnerships/institutions/new">{{
+        'partnerships.addInstitution' | t
+      }}</a>
+    }
+  </app-empty-state>
+} @else {
+  <div class="ra-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>{{ 'partnerships.institution' | t }}</th>
+          <th>{{ 'partnerships.type' | t }}</th>
+          <th>{{ 'partnerships.category' | t }}</th>
+          <th>{{ 'partnerships.governorate' | t }}</th>
+          <th>{{ 'partnerships.city' | t }}</th>
+          <th>{{ 'partnerships.email' | t }}</th>
+          <th>{{ 'partnerships.phone' | t }}</th>
+          <th>{{ 'common.status' | t }}</th>
+          <th>{{ 'partnerships.priority' | t }}</th>
+          <th>{{ 'common.actions' | t }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of result().items; track row.id) {
+          <tr>
+            <td>
+              <a [routerLink]="['/partnerships/institutions', row.id]">{{ row.name }}</a>
+            </td>
+            <td>{{ label(row.institutionType) }}</td>
+            <td>{{ label(row.institutionCategory) }}</td>
+            <td>{{ displayText(row.governorate) }}</td>
+            <td>{{ displayText(row.city) }}</td>
+            <td>{{ displayText(row.primaryContact?.email) }}</td>
+            <td>{{ contactPhoneOf(row) }}</td>
+            <td>{{ label(row.status) }}</td>
+            <td>{{ label(row.leadPriority) }}</td>
+            <td class="actions">
+              <a mat-button [routerLink]="['/partnerships/institutions', row.id]">{{ 'common.view' | t }}</a>
+              @if (permissions.canWrite()) {
+                <a mat-button [routerLink]="['/partnerships/institutions', row.id, 'edit']">{{
+                  'common.edit' | t
+                }}</a>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <mat-paginator
+    [length]="result().total"
+    [pageIndex]="result().page - 1"
+    [pageSize]="result().pageSize"
+    [pageSizeOptions]="[10, 20, 50]"
+    [attr.aria-label]="'partnerships.institutionsTitle' | t"
+    (page)="onPage($event)"
+  />
+}

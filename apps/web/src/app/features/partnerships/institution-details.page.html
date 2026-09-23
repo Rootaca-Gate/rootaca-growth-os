@@ -1,0 +1,292 @@
+@if (loading()) {
+  <app-loading-skeleton [rows]="10" [label]="'partnerships.loading' | t" />
+} @else if (error(); as message) {
+  <app-error-state [title]="'partnerships.loadError' | t" [message]="message" (retry)="reload()" />
+} @else if (institution(); as current) {
+  <app-page-header [title]="current.name" [subtitle]="meta(current)">
+    <a mat-stroked-button routerLink="/partnerships/institutions">{{ 'common.back' | t }}</a>
+    @if (permissions.canWrite()) {
+      <a mat-stroked-button [routerLink]="['/partnerships/institutions', current.id, 'edit']">{{
+        'common.edit' | t
+      }}</a>
+      <button mat-stroked-button type="button" (click)="panel.set('contact')">{{ 'partnerships.addContact' | t }}</button>
+      <button mat-stroked-button type="button" (click)="panel.set('activity')">{{ 'partnerships.addActivity' | t }}</button>
+      <button mat-stroked-button type="button" (click)="panel.set('followup')">{{ 'partnerships.addFollowUp' | t }}</button>
+      <button mat-stroked-button type="button" (click)="panel.set('note')">{{ 'partnerships.addNote' | t }}</button>
+      <button mat-flat-button color="primary" type="button" (click)="panel.set('lead')">{{ 'partnerships.addLead' | t }}</button>
+    }
+    @if (permissions.canAdmin()) {
+      @if (current.deletedAt) {
+        <button mat-stroked-button type="button" (click)="restore()">{{ 'partnerships.restore' | t }}</button>
+      } @else {
+        <button mat-stroked-button type="button" (click)="softDelete()">{{ 'partnerships.softDelete' | t }}</button>
+      }
+    }
+  </app-page-header>
+
+  @if (panel() !== 'none') {
+    <section class="ra-card panel">
+      @if (panel() === 'contact') {
+        <h2>{{ 'partnerships.addContact' | t }}</h2>
+        <form class="grid" [formGroup]="contactForm" (ngSubmit)="submitContact()">
+          <mat-form-field appearance="outline"><mat-label>{{ 'partnerships.firstName' | t }}</mat-label><input matInput formControlName="firstName" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'partnerships.lastName' | t }}</mat-label><input matInput formControlName="lastName" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'partnerships.jobTitle' | t }}</mat-label><input matInput formControlName="jobTitle" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'partnerships.email' | t }}</mat-label><input matInput formControlName="email" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'partnerships.phone' | t }}</mat-label><input matInput formControlName="phone" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'partnerships.mobile' | t }}</mat-label><input matInput formControlName="mobile" /></mat-form-field>
+          <mat-checkbox formControlName="isPrimary">{{ 'partnerships.primary' | t }}</mat-checkbox>
+          <mat-checkbox formControlName="isDecisionMaker">{{ 'partnerships.decisionMaker' | t }}</mat-checkbox>
+          <div class="actions">
+            <button mat-stroked-button type="button" (click)="panel.set('none')">{{ 'common.cancel' | t }}</button>
+            <button mat-flat-button color="primary" type="submit">{{ 'common.save' | t }}</button>
+          </div>
+        </form>
+      }
+      @if (panel() === 'activity') {
+        <h2>{{ 'partnerships.addActivity' | t }}</h2>
+        <form class="grid" [formGroup]="activityForm" (ngSubmit)="submitActivity()">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.activityType' | t }}</mat-label>
+            <mat-select formControlName="activityType">
+              @for (item of activityTypes; track item) {
+                <mat-option [value]="item">{{ label(item) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'partnerships.subject' | t }}</mat-label><input matInput formControlName="subject" /></mat-form-field>
+          <mat-form-field appearance="outline" class="full"><mat-label>{{ 'common.description' | t }}</mat-label><textarea matInput rows="3" formControlName="description"></textarea></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'partnerships.activityDate' | t }}</mat-label><input matInput type="datetime-local" formControlName="activityDate" /></mat-form-field>
+          <div class="actions">
+            <button mat-stroked-button type="button" (click)="panel.set('none')">{{ 'common.cancel' | t }}</button>
+            <button mat-flat-button color="primary" type="submit">{{ 'common.save' | t }}</button>
+          </div>
+        </form>
+      }
+      @if (panel() === 'followup') {
+        <h2>{{ 'partnerships.addFollowUp' | t }}</h2>
+        <form class="grid" [formGroup]="followUpForm" (ngSubmit)="submitFollowUp()">
+          <mat-form-field appearance="outline" class="full"><mat-label>{{ 'common.titleField' | t }}</mat-label><input matInput formControlName="title" /></mat-form-field>
+          <mat-form-field appearance="outline" class="full"><mat-label>{{ 'common.description' | t }}</mat-label><textarea matInput rows="2" formControlName="description"></textarea></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'partnerships.dueDate' | t }}</mat-label><input matInput type="date" formControlName="dueDate" /></mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.priority' | t }}</mat-label>
+            <mat-select formControlName="priority">
+              @for (item of followUpPriorities; track item) {
+                <mat-option [value]="item">{{ label(item) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <div class="actions">
+            <button mat-stroked-button type="button" (click)="panel.set('none')">{{ 'common.cancel' | t }}</button>
+            <button mat-flat-button color="primary" type="submit">{{ 'common.save' | t }}</button>
+          </div>
+        </form>
+      }
+      @if (panel() === 'note') {
+        <h2>{{ 'partnerships.addNote' | t }}</h2>
+        <form class="grid" [formGroup]="noteForm" (ngSubmit)="submitNote()">
+          <mat-form-field appearance="outline" class="full"><mat-label>{{ 'partnerships.notes' | t }}</mat-label><textarea matInput rows="4" formControlName="content"></textarea></mat-form-field>
+          <div class="actions">
+            <button mat-stroked-button type="button" (click)="panel.set('none')">{{ 'common.cancel' | t }}</button>
+            <button mat-flat-button color="primary" type="submit">{{ 'common.save' | t }}</button>
+          </div>
+        </form>
+      }
+      @if (panel() === 'lead') {
+        <h2>{{ 'partnerships.addLead' | t }}</h2>
+        <form class="grid" [formGroup]="leadForm" (ngSubmit)="submitLead()">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'common.status' | t }}</mat-label>
+            <mat-select formControlName="status">
+              @for (item of leadStatuses; track item) {
+                <mat-option [value]="item">{{ label(item) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.priority' | t }}</mat-label>
+            <mat-select formControlName="priority">
+              @for (item of leadPriorities; track item) {
+                <mat-option [value]="item">{{ label(item) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'partnerships.nextAction' | t }}</mat-label><input matInput formControlName="nextAction" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'partnerships.dueDate' | t }}</mat-label><input matInput type="date" formControlName="nextActionDate" /></mat-form-field>
+          <mat-form-field appearance="outline" class="full"><mat-label>{{ 'partnerships.qualificationReason' | t }}</mat-label><textarea matInput rows="2" formControlName="qualificationReason"></textarea></mat-form-field>
+          <div class="actions">
+            <button mat-stroked-button type="button" (click)="panel.set('none')">{{ 'common.cancel' | t }}</button>
+            <button mat-flat-button color="primary" type="submit">{{ 'common.save' | t }}</button>
+          </div>
+        </form>
+      }
+    </section>
+  }
+
+  <section class="ra-card block">
+    <h2>{{ 'partnerships.overview' | t }}</h2>
+    <dl class="facts">
+      <div>
+        <dt>{{ 'partnerships.website' | t }}</dt>
+        <dd>
+          @if (current.website) {
+            <a mat-stroked-button class="link-btn" [href]="current.website" target="_blank" rel="noopener noreferrer">
+              {{ 'partnerships.researchOpenWebsite' | t }}
+            </a>
+          } @else {
+            —
+          }
+        </dd>
+      </div>
+      <div><dt>{{ 'partnerships.phone' | t }}</dt><dd>{{ current.phone || current.mobile || '—' }}</dd></div>
+      <div><dt>{{ 'partnerships.email' | t }}</dt><dd>{{ current.generalEmail || current.contactEmail || '—' }}</dd></div>
+      <div><dt>{{ 'partnerships.location' | t }}</dt><dd>{{ current.fullAddress || locationLine(current) }}</dd></div>
+      <div><dt>{{ 'partnerships.priority' | t }}</dt><dd>{{ label(current.leadPriority) }}</dd></div>
+      <div><dt>{{ 'common.status' | t }}</dt><dd>{{ label(current.status) }}</dd></div>
+    </dl>
+    <div class="social">
+      @if (current.facebook) {
+        <a mat-stroked-button class="link-btn" [href]="current.facebook" target="_blank" rel="noopener noreferrer">Facebook</a>
+      }
+      @if (current.instagram) {
+        <a mat-stroked-button class="link-btn" [href]="current.instagram" target="_blank" rel="noopener noreferrer">Instagram</a>
+      }
+      @if (current.linkedin) {
+        <a mat-stroked-button class="link-btn" [href]="current.linkedin" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      }
+      @if (current.youtube) {
+        <a mat-stroked-button class="link-btn" [href]="current.youtube" target="_blank" rel="noopener noreferrer">YouTube</a>
+      }
+      @if (current.tiktok) {
+        <a mat-stroked-button class="link-btn" [href]="current.tiktok" target="_blank" rel="noopener noreferrer">TikTok</a>
+      }
+      @if (current.googleMapsUrl) {
+        <a mat-stroked-button class="link-btn" [href]="current.googleMapsUrl" target="_blank" rel="noopener noreferrer">
+          {{ 'partnerships.researchOpenMaps' | t }}
+        </a>
+      }
+    </div>
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'partnerships.technology' | t }}</h2>
+    @if (techFlags(current).length === 0) {
+      <p class="hint">—</p>
+    } @else {
+      <div class="badges">
+        @for (flag of techFlags(current); track flag) {
+          <span class="badge">{{ flag }}</span>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'partnerships.contactsTitle' | t }}</h2>
+    @if (contacts().length === 0) {
+      <p class="hint">{{ 'partnerships.contactsEmptyMessage' | t }}</p>
+    } @else {
+      <div class="ra-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>{{ 'partnerships.fullName' | t }}</th>
+              <th>{{ 'partnerships.jobTitle' | t }}</th>
+              <th>{{ 'partnerships.email' | t }}</th>
+              <th>{{ 'partnerships.phone' | t }}</th>
+              <th>{{ 'partnerships.primary' | t }}</th>
+              <th>{{ 'partnerships.decisionMaker' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of contacts(); track row.id) {
+              <tr>
+                <td>{{ row.fullName }}</td>
+                <td>{{ row.jobTitle || '—' }}</td>
+                <td>{{ row.email || '—' }}</td>
+                <td>{{ row.phone || row.mobile || '—' }}</td>
+                <td>{{ row.isPrimary ? '✓' : '' }}</td>
+                <td>{{ row.isDecisionMaker ? '✓' : '' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'partnerships.leadsTitle' | t }}</h2>
+    @if (leads().length === 0) {
+      <p class="hint">{{ 'partnerships.leadsEmptyMessage' | t }}</p>
+    } @else {
+      <div class="ra-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>{{ 'common.status' | t }}</th>
+              <th>{{ 'partnerships.priority' | t }}</th>
+              <th>{{ 'partnerships.nextAction' | t }}</th>
+              <th>{{ 'partnerships.dueDate' | t }}</th>
+              <th>{{ 'common.actions' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of leads(); track row.id) {
+              <tr>
+                <td>{{ label(row.status) }}</td>
+                <td>{{ label(row.priority) }}</td>
+                <td>{{ row.nextAction || '—' }}</td>
+                <td>{{ row.nextActionDate || '—' }}</td>
+                <td><a mat-button [routerLink]="['/partnerships/leads', row.id]">{{ 'common.open' | t }}</a></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'partnerships.followUpsTitle' | t }}</h2>
+    @if (pendingFollowUps().length === 0 && completedFollowUps().length === 0) {
+      <p class="hint">{{ 'partnerships.followUpsEmptyMessage' | t }}</p>
+    } @else {
+      <ul class="list">
+        @for (row of pendingFollowUps(); track row.id) {
+          <li>
+            <div>
+              <strong>{{ row.title }}</strong>
+              <p>{{ row.dueDate }} · {{ label(row.priority) }} · {{ label(row.status) }}</p>
+            </div>
+            @if (permissions.canWrite()) {
+              <button mat-stroked-button type="button" (click)="completeFollowUp(row.id)">{{ 'partnerships.completeFollowUp' | t }}</button>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <section class="ra-card block">
+    <h2>{{ 'partnerships.notes' | t }}</h2>
+    @if (notes().length === 0) {
+      <p class="hint">—</p>
+    } @else {
+      <ul class="list">
+        @for (row of notes(); track row.id) {
+          <li>
+            <div>
+              <p>{{ row.content }}</p>
+              <time>{{ row.createdAt | date: 'medium' : undefined : i18n.locale() }}@if (row.createdByName) { · {{ row.createdByName }} }</time>
+            </div>
+            @if (permissions.canWrite()) {
+              <button mat-button type="button" (click)="deleteNote(row.id)">{{ 'common.remove' | t }}</button>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+}

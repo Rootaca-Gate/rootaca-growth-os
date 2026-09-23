@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "PartnershipAuditAction" ADD VALUE 'RESEARCH_RESULTS_CLEARED';

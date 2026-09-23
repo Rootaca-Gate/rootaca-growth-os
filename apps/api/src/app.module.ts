@@ -13,6 +13,7 @@ import { ProjectModule } from './projects/project.module';
 import { ProgressModule } from './progress/progress.module';
 import { ReportModule } from './reports/report.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { PartnershipsModule } from './partnerships/partnerships.module';
 import { EnvironmentVariables, validateEnv } from './common/config/env.validation';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -75,6 +76,7 @@ import { PrismaModule } from './prisma/prisma.module';
     ProgressModule,
     ReportModule,
     DashboardModule,
+    PartnershipsModule,
   ],
 })
 export class AppModule {}

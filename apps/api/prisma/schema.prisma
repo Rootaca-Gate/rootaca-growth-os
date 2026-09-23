@@ -105,19 +105,27 @@ enum AssessmentCategoryCode {
 }
 
 model User {
-  id            String         @id @default(uuid()) @db.Uuid
-  email         String         @unique
-  passwordHash  String
-  displayName   String
-  role          Role
-  isActive      Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  refreshTokens RefreshToken[]
-  orientationSessions OrientationSession[] @relation("OrientationFacilitator")
-  levelOverrides      StudentPlacement[]   @relation("LevelOverrideBy")
-  pathOverrides       StudentPlacement[]   @relation("PathOverrideBy")
-  progressReviews     ProgressReview[]     @relation("ProgressReviewer")
+  id                             String                   @id @default(uuid()) @db.Uuid
+  email                          String                   @unique
+  passwordHash                   String
+  displayName                    String
+  role                           Role
+  isActive                       Boolean                  @default(true)
+  createdAt                      DateTime                 @default(now())
+  updatedAt                      DateTime                 @updatedAt
+  refreshTokens                  RefreshToken[]
+  orientationSessions            OrientationSession[]     @relation("OrientationFacilitator")
+  levelOverrides                 StudentPlacement[]       @relation("LevelOverrideBy")
+  pathOverrides                  StudentPlacement[]       @relation("PathOverrideBy")
+  progressReviews                ProgressReview[]         @relation("ProgressReviewer")
+  partnershipLeadsOwned          PartnershipLead[]        @relation("PartnershipLeadOwner")
+  partnershipActivitiesCreated   PartnershipActivity[]    @relation("PartnershipActivityCreator")
+  partnershipFollowUpsAssigned   PartnershipFollowUp[]    @relation("PartnershipFollowUpAssignee")
+  partnershipNotesCreated        PartnershipNote[]        @relation("PartnershipNoteCreator")
+  partnershipAuditEvents         PartnershipAuditEvent[]  @relation("PartnershipAuditActor")
+  partnershipInstitutionsDeleted PartnershipInstitution[] @relation("PartnershipInstitutionDeletedBy")
+  partnershipImportJobs          PartnershipImportJob[]   @relation("PartnershipImportUploader")
+  partnershipResearchJobs        PartnershipResearchJob[] @relation("PartnershipResearchRequester")
 
   @@index([role])
 }
@@ -136,9 +144,9 @@ model RefreshToken {
 }
 
 model Student {
-  id                    String                 @id @default(uuid()) @db.Uuid
+  id                    String                @id @default(uuid()) @db.Uuid
   fullName              String
-  dateOfBirth           DateTime               @db.Date
+  dateOfBirth           DateTime              @db.Date
   schoolGrade           String
   phone                 String
   parentContact         String
@@ -148,15 +156,15 @@ model Student {
   learningGoal          String
   availableHoursPerWeek Int
   englishLevel          EnglishLevel
-  status                StudentStatus          @default(INTAKE)
+  status                StudentStatus         @default(INTAKE)
   level                 StudentLevel
   path                  PathCode
-  currentLevelId        String?                @db.Uuid
-  currentLevel          Level?                 @relation("StudentCurrentLevel", fields: [currentLevelId], references: [id], onDelete: SetNull)
-  currentPathId         String?                @db.Uuid
-  currentPath           LearningPath?          @relation("StudentCurrentPath", fields: [currentPathId], references: [id], onDelete: SetNull)
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
+  currentLevelId        String?               @db.Uuid
+  currentLevel          Level?                @relation("StudentCurrentLevel", fields: [currentLevelId], references: [id], onDelete: SetNull)
+  currentPathId         String?               @db.Uuid
+  currentPath           LearningPath?         @relation("StudentCurrentPath", fields: [currentPathId], references: [id], onDelete: SetNull)
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
   orientationSessions   OrientationSession[]
   skills                StudentSkill[]
   placements            StudentPlacement[]
@@ -174,8 +182,8 @@ model Student {
 }
 
 model AssessmentCategory {
-  id            String                  @id @default(uuid()) @db.Uuid
-  code          AssessmentCategoryCode  @unique
+  id            String                 @id @default(uuid()) @db.Uuid
+  code          AssessmentCategoryCode @unique
   name          String
   weightPercent Int
   sortOrder     Int
@@ -183,17 +191,17 @@ model AssessmentCategory {
 }
 
 model AssessmentQuestion {
-  id         String              @id @default(uuid()) @db.Uuid
-  categoryId String              @db.Uuid
-  category   AssessmentCategory  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  id         String             @id @default(uuid()) @db.Uuid
+  categoryId String             @db.Uuid
+  category   AssessmentCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   stage      OrientationStage
   type       QuestionType
   prompt     String
   helperText String?
   skillKey   String?
-  scored     Boolean             @default(true)
-  maxScore   Int                 @default(10)
-  scaleMax   Int                 @default(5)
+  scored     Boolean            @default(true)
+  maxScore   Int                @default(10)
+  scaleMax   Int                @default(5)
   sortOrder  Int
   options    AssessmentOption[]
   answers    AssessmentAnswer[]
@@ -203,9 +211,9 @@ model AssessmentQuestion {
 }
 
 model AssessmentOption {
-  id         String              @id @default(uuid()) @db.Uuid
-  questionId String              @db.Uuid
-  question   AssessmentQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  id         String             @id @default(uuid()) @db.Uuid
+  questionId String             @db.Uuid
+  question   AssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
   label      String
   scoreValue Int
   sortOrder  Int
@@ -215,21 +223,21 @@ model AssessmentOption {
 }
 
 model OrientationSession {
-  id            String                     @id @default(uuid()) @db.Uuid
-  studentId     String                     @db.Uuid
-  student       Student                    @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  createdById   String                     @db.Uuid
-  createdBy     User                       @relation("OrientationFacilitator", fields: [createdById], references: [id], onDelete: Restrict)
-  status        OrientationSessionStatus   @default(DRAFT)
-  currentStage  OrientationStage           @default(STUDENT_PROFILE)
-  notes         String                     @default("")
+  id            String                   @id @default(uuid()) @db.Uuid
+  studentId     String                   @db.Uuid
+  student       Student                  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdById   String                   @db.Uuid
+  createdBy     User                     @relation("OrientationFacilitator", fields: [createdById], references: [id], onDelete: Restrict)
+  status        OrientationSessionStatus @default(DRAFT)
+  currentStage  OrientationStage         @default(STUDENT_PROFILE)
+  notes         String                   @default("")
   startedAt     DateTime?
   pausedAt      DateTime?
   completedAt   DateTime?
   lastResumedAt DateTime?
-  elapsedMs     Int                        @default(0)
-  createdAt     DateTime                   @default(now())
-  updatedAt     DateTime                   @updatedAt
+  elapsedMs     Int                      @default(0)
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
   answers       AssessmentAnswer[]
   result        AssessmentResult?
 
@@ -239,43 +247,43 @@ model OrientationSession {
 }
 
 model AssessmentAnswer {
-  id            String              @id @default(uuid()) @db.Uuid
-  sessionId     String              @db.Uuid
-  session       OrientationSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  questionId    String              @db.Uuid
-  question      AssessmentQuestion  @relation(fields: [questionId], references: [id], onDelete: Restrict)
-  optionId      String?             @db.Uuid
-  option        AssessmentOption?   @relation(fields: [optionId], references: [id], onDelete: SetNull)
-  numericValue  Float?
-  textValue     String?
-  score         Float?
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
+  id           String             @id @default(uuid()) @db.Uuid
+  sessionId    String             @db.Uuid
+  session      OrientationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  questionId   String             @db.Uuid
+  question     AssessmentQuestion @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  optionId     String?            @db.Uuid
+  option       AssessmentOption?  @relation(fields: [optionId], references: [id], onDelete: SetNull)
+  numericValue Float?
+  textValue    String?
+  score        Float?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   @@unique([sessionId, questionId])
   @@index([questionId])
 }
 
 model AssessmentResult {
-  id              String              @id @default(uuid()) @db.Uuid
-  sessionId       String              @unique @db.Uuid
-  session         OrientationSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  overallScore    Float
-  categoryScores  Json
-  skillScores     Json
-  summary         String
-  completedAt     DateTime            @default(now())
-  placement       StudentPlacement?
+  id             String             @id @default(uuid()) @db.Uuid
+  sessionId      String             @unique @db.Uuid
+  session        OrientationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  overallScore   Float
+  categoryScores Json
+  skillScores    Json
+  summary        String
+  completedAt    DateTime           @default(now())
+  placement      StudentPlacement?
 }
 
 model Level {
-  id          String              @id @default(uuid()) @db.Uuid
-  code        LevelCode           @unique
-  name        String
-  description String
-  sortOrder   Int
-  rules       LevelRule[]
-  students    Student[]           @relation("StudentCurrentLevel")
+  id               String             @id @default(uuid()) @db.Uuid
+  code             LevelCode          @unique
+  name             String
+  description      String
+  sortOrder        Int
+  rules            LevelRule[]
+  students         Student[]          @relation("StudentCurrentLevel")
   systemPlacements StudentPlacement[] @relation("SystemLevel")
   finalPlacements  StudentPlacement[] @relation("FinalLevel")
   roadmapTemplates RoadmapTemplate[]
@@ -283,52 +291,52 @@ model Level {
 }
 
 model LevelRule {
-  id        String @id @default(uuid()) @db.Uuid
-  levelId   String @db.Uuid
-  level     Level  @relation(fields: [levelId], references: [id], onDelete: Cascade)
-  minScore  Float
-  maxScore  Float
-  source    String @default("OVERALL_SCORE")
+  id       String @id @default(uuid()) @db.Uuid
+  levelId  String @db.Uuid
+  level    Level  @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  minScore Float
+  maxScore Float
+  source   String @default("OVERALL_SCORE")
 
   @@index([levelId])
   @@index([minScore, maxScore])
 }
 
 model Skill {
-  id          String         @id @default(uuid()) @db.Uuid
-  code        SkillCode      @unique
-  name        String
-  description String
-  sortOrder   Int
+  id            String                @id @default(uuid()) @db.Uuid
+  code          SkillCode             @unique
+  name          String
+  description   String
+  sortOrder     Int
   studentSkills StudentSkill[]
   pathSkills    PathSkill[]
-  roadmapItems          RoadmapItem[]
-  templateItems         RoadmapTemplateItem[]
+  roadmapItems  RoadmapItem[]
+  templateItems RoadmapTemplateItem[]
 }
 
 model StudentSkill {
-  id                   String            @id @default(uuid()) @db.Uuid
-  studentId            String            @db.Uuid
-  student              Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  skillId              String            @db.Uuid
-  skill                Skill             @relation(fields: [skillId], references: [id], onDelete: Restrict)
-  score                Float
-  assessmentResultId   String?           @db.Uuid
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
+  id                 String   @id @default(uuid()) @db.Uuid
+  studentId          String   @db.Uuid
+  student            Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  skillId            String   @db.Uuid
+  skill              Skill    @relation(fields: [skillId], references: [id], onDelete: Restrict)
+  score              Float
+  assessmentResultId String?  @db.Uuid
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@unique([studentId, skillId])
   @@index([skillId])
 }
 
 model LearningPath {
-  id          String     @id @default(uuid()) @db.Uuid
-  code        PathCode   @unique
-  name        String
-  description String
-  sortOrder   Int
-  skills      PathSkill[]
-  students    Student[]  @relation("StudentCurrentPath")
+  id                    String             @id @default(uuid()) @db.Uuid
+  code                  PathCode           @unique
+  name                  String
+  description           String
+  sortOrder             Int
+  skills                PathSkill[]
+  students              Student[]          @relation("StudentCurrentPath")
   systemPlacements      StudentPlacement[] @relation("SystemPath")
   finalPlacements       StudentPlacement[] @relation("FinalPath")
   alternativePlacements StudentPlacement[] @relation("AlternativePath")
@@ -349,33 +357,33 @@ model PathSkill {
 }
 
 model StudentPlacement {
-  id                   String            @id @default(uuid()) @db.Uuid
-  studentId            String            @db.Uuid
-  student              Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  assessmentResultId   String            @unique @db.Uuid
-  assessmentResult     AssessmentResult  @relation(fields: [assessmentResultId], references: [id], onDelete: Cascade)
-  systemLevelId        String            @db.Uuid
-  systemLevel          Level             @relation("SystemLevel", fields: [systemLevelId], references: [id], onDelete: Restrict)
-  finalLevelId         String            @db.Uuid
-  finalLevel           Level             @relation("FinalLevel", fields: [finalLevelId], references: [id], onDelete: Restrict)
-  systemPathId         String            @db.Uuid
-  systemPath           LearningPath      @relation("SystemPath", fields: [systemPathId], references: [id], onDelete: Restrict)
-  finalPathId          String            @db.Uuid
-  finalPath            LearningPath      @relation("FinalPath", fields: [finalPathId], references: [id], onDelete: Restrict)
-  alternativePathId    String            @db.Uuid
-  alternativePath      LearningPath      @relation("AlternativePath", fields: [alternativePathId], references: [id], onDelete: Restrict)
+  id                    String           @id @default(uuid()) @db.Uuid
+  studentId             String           @db.Uuid
+  student               Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  assessmentResultId    String           @unique @db.Uuid
+  assessmentResult      AssessmentResult @relation(fields: [assessmentResultId], references: [id], onDelete: Cascade)
+  systemLevelId         String           @db.Uuid
+  systemLevel           Level            @relation("SystemLevel", fields: [systemLevelId], references: [id], onDelete: Restrict)
+  finalLevelId          String           @db.Uuid
+  finalLevel            Level            @relation("FinalLevel", fields: [finalLevelId], references: [id], onDelete: Restrict)
+  systemPathId          String           @db.Uuid
+  systemPath            LearningPath     @relation("SystemPath", fields: [systemPathId], references: [id], onDelete: Restrict)
+  finalPathId           String           @db.Uuid
+  finalPath             LearningPath     @relation("FinalPath", fields: [finalPathId], references: [id], onDelete: Restrict)
+  alternativePathId     String           @db.Uuid
+  alternativePath       LearningPath     @relation("AlternativePath", fields: [alternativePathId], references: [id], onDelete: Restrict)
   recommendationReasons Json
   alternativeReasons    Json
-  levelChangedById     String?           @db.Uuid
-  levelChangedBy       User?             @relation("LevelOverrideBy", fields: [levelChangedById], references: [id], onDelete: SetNull)
-  pathChangedById      String?           @db.Uuid
-  pathChangedBy        User?             @relation("PathOverrideBy", fields: [pathChangedById], references: [id], onDelete: SetNull)
-  levelOverrideReason  String?
-  pathOverrideReason   String?
-  levelChangedAt       DateTime?
-  pathChangedAt        DateTime?
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
+  levelChangedById      String?          @db.Uuid
+  levelChangedBy        User?            @relation("LevelOverrideBy", fields: [levelChangedById], references: [id], onDelete: SetNull)
+  pathChangedById       String?          @db.Uuid
+  pathChangedBy         User?            @relation("PathOverrideBy", fields: [pathChangedById], references: [id], onDelete: SetNull)
+  levelOverrideReason   String?
+  pathOverrideReason    String?
+  levelChangedAt        DateTime?
+  pathChangedAt         DateTime?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
 
   @@index([studentId])
   @@index([finalLevelId])
@@ -405,9 +413,9 @@ model RoadmapTemplate {
 }
 
 model RoadmapTemplatePhase {
-  id          String               @id @default(uuid()) @db.Uuid
-  templateId  String               @db.Uuid
-  template    RoadmapTemplate      @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  id          String                @id @default(uuid()) @db.Uuid
+  templateId  String                @db.Uuid
+  template    RoadmapTemplate       @relation(fields: [templateId], references: [id], onDelete: Cascade)
   title       String
   description String
   sortOrder   Int
@@ -464,23 +472,23 @@ model RoadmapPhase {
 }
 
 model RoadmapItem {
-  id                   String             @id @default(uuid()) @db.Uuid
-  phaseId              String             @db.Uuid
-  phase                RoadmapPhase       @relation(fields: [phaseId], references: [id], onDelete: Cascade)
+  id                   String            @id @default(uuid()) @db.Uuid
+  phaseId              String            @db.Uuid
+  phase                RoadmapPhase      @relation(fields: [phaseId], references: [id], onDelete: Cascade)
   title                String
   description          String
-  skillId              String?            @db.Uuid
-  skill                Skill?             @relation(fields: [skillId], references: [id], onDelete: Restrict)
+  skillId              String?           @db.Uuid
+  skill                Skill?            @relation(fields: [skillId], references: [id], onDelete: Restrict)
   durationDays         Int
-  startDate            DateTime?          @db.Date
-  dueDate              DateTime?          @db.Date
-  status               RoadmapItemStatus  @default(NOT_STARTED)
-  completionPercentage Int                @default(0)
-  projectId            String?            @db.Uuid
-  notes                String             @default("")
+  startDate            DateTime?         @db.Date
+  dueDate              DateTime?         @db.Date
+  status               RoadmapItemStatus @default(NOT_STARTED)
+  completionPercentage Int               @default(0)
+  projectId            String?           @db.Uuid
+  notes                String            @default("")
   sortOrder            Int
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
 
   @@index([phaseId])
   @@index([skillId])
@@ -513,8 +521,8 @@ enum KpiRecordSource {
 }
 
 model Kpi {
-  id          String        @id @default(uuid()) @db.Uuid
-  code        String        @unique
+  id          String       @id @default(uuid()) @db.Uuid
+  code        String       @unique
   name        String
   description String
   category    KpiCategory
@@ -522,10 +530,10 @@ model Kpi {
   unit        String
   frequency   KpiFrequency
   weight      Int
-  active      Boolean       @default(true)
+  active      Boolean      @default(true)
   sortOrder   Int
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   studentKpis StudentKpi[]
 
   @@index([active])
@@ -533,18 +541,18 @@ model Kpi {
 }
 
 model StudentKpi {
-  id              String     @id @default(uuid()) @db.Uuid
-  studentId       String     @db.Uuid
-  student         Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  kpiId           String     @db.Uuid
-  kpi             Kpi        @relation(fields: [kpiId], references: [id], onDelete: Restrict)
+  id              String      @id @default(uuid()) @db.Uuid
+  studentId       String      @db.Uuid
+  student         Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  kpiId           String      @db.Uuid
+  kpi             Kpi         @relation(fields: [kpiId], references: [id], onDelete: Restrict)
   target          Float
-  actual          Float      @default(0)
-  progressPercent Int        @default(0)
-  status          KpiStatus  @default(BEHIND)
-  active          Boolean    @default(true)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  actual          Float       @default(0)
+  progressPercent Int         @default(0)
+  status          KpiStatus   @default(BEHIND)
+  active          Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
   records         KpiRecord[]
 
   @@unique([studentId, kpiId])
@@ -553,20 +561,20 @@ model StudentKpi {
 }
 
 model KpiRecord {
-  id              String           @id @default(uuid()) @db.Uuid
-  studentKpiId    String           @db.Uuid
-  studentKpi      StudentKpi       @relation(fields: [studentKpiId], references: [id], onDelete: Cascade)
+  id              String          @id @default(uuid()) @db.Uuid
+  studentKpiId    String          @db.Uuid
+  studentKpi      StudentKpi      @relation(fields: [studentKpiId], references: [id], onDelete: Cascade)
   frequency       KpiFrequency
-  periodStart     DateTime         @db.Date
-  periodEnd       DateTime         @db.Date
+  periodStart     DateTime        @db.Date
+  periodEnd       DateTime        @db.Date
   target          Float
-  actual          Float            @default(0)
-  progressPercent Int              @default(0)
-  status          KpiStatus        @default(BEHIND)
-  notes           String           @default("")
-  source          KpiRecordSource  @default(SYSTEM)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  actual          Float           @default(0)
+  progressPercent Int             @default(0)
+  status          KpiStatus       @default(BEHIND)
+  notes           String          @default("")
+  source          KpiRecordSource @default(SYSTEM)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   @@unique([studentKpiId, frequency, periodStart])
   @@index([frequency, periodStart])
@@ -603,19 +611,19 @@ enum MilestoneStatus {
 }
 
 model Project {
-  id           String         @id @default(uuid()) @db.Uuid
-  code         String         @unique
+  id           String           @id @default(uuid()) @db.Uuid
+  code         String           @unique
   name         String
   description  String
   learningGoal String
-  purpose      ProjectPurpose @default(EDUCATIONAL)
+  purpose      ProjectPurpose   @default(EDUCATIONAL)
   path         PathCode
   level        LevelCode
   durationDays Int
-  active       Boolean        @default(true)
+  active       Boolean          @default(true)
   sortOrder    Int
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
   assignments  StudentProject[]
 
   @@index([active])
@@ -644,19 +652,19 @@ model StudentProject {
 }
 
 model ProjectMilestone {
-  id                 String           @id @default(uuid()) @db.Uuid
-  studentProjectId   String           @db.Uuid
-  studentProject     StudentProject   @relation(fields: [studentProjectId], references: [id], onDelete: Cascade)
-  kind               MilestoneKind
-  title              String
-  description        String
-  sortOrder          Int
-  completionPercent  Int              @default(0)
-  status             MilestoneStatus  @default(NOT_STARTED)
-  dueDate            DateTime?        @db.Date
-  mentorFeedback     String           @default("")
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  id                String          @id @default(uuid()) @db.Uuid
+  studentProjectId  String          @db.Uuid
+  studentProject    StudentProject  @relation(fields: [studentProjectId], references: [id], onDelete: Cascade)
+  kind              MilestoneKind
+  title             String
+  description       String
+  sortOrder         Int
+  completionPercent Int             @default(0)
+  status            MilestoneStatus @default(NOT_STARTED)
+  dueDate           DateTime?       @db.Date
+  mentorFeedback    String          @default("")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   @@unique([studentProjectId, kind])
   @@index([kind])
@@ -696,4 +704,739 @@ model ProgressReview {
   @@index([studentId, reviewedAt])
   @@index([reviewerId])
   @@index([kind])
+}
+
+// ---------------------------------------------------------------------------
+// Partnership CRM (School Partnerships)
+// Additive domain — does not alter Growth OS student/learning models.
+// Delete policy: Restrict on institution/contact/lead parents so CRM history
+// is never cascade-wiped. Optional FKs use SetNull. User refs use Restrict
+// (or SetNull where optional) so users cannot be removed while CRM rows exist.
+// ---------------------------------------------------------------------------
+
+enum PartnershipInstitutionType {
+  SCHOOL
+  EDUCATION_CENTER
+  CODING_CENTER
+  STEM_CENTER
+  ROBOTICS_CENTER
+  AI_CENTER
+  LEARNING_CENTER
+  AFTER_SCHOOL_CENTER
+  MAKERSPACE
+  OTHER
+}
+
+enum PartnershipInstitutionCategory {
+  INTERNATIONAL
+  MULTINATIONAL
+  MULTI_INTERNATIONAL
+  SEMI_INTERNATIONAL
+  SEMI_NATIONAL
+  NATIONAL
+  PRIVATE
+  LANGUAGE_SCHOOL
+  STEM
+  OTHER
+}
+
+enum PartnershipCurriculum {
+  BRITISH
+  AMERICAN
+  IB
+  CANADIAN
+  GERMAN
+  FRENCH
+  ITALIAN
+  NATIONAL
+  STEM
+  OTHER
+  UNKNOWN
+}
+
+/// Institution lifecycle (not opportunity pipeline).
+enum PartnershipInstitutionStatus {
+  PROSPECT
+  ACTIVE
+  INACTIVE
+  DO_NOT_CONTACT
+  ARCHIVED
+}
+
+/// Lead / opportunity pipeline status (separate from institution lifecycle).
+enum PartnershipLeadStatus {
+  NEW
+  QUALIFIED
+  CONTACTED
+  REPLIED
+  MEETING_SCHEDULED
+  MEETING_DONE
+  PROPOSAL_SENT
+  NEGOTIATION
+  PARTNER
+  NOT_INTERESTED
+  NO_RESPONSE
+  LOST
+}
+
+enum PartnershipLeadPriority {
+  HIGH
+  MEDIUM
+  LOW
+  UNKNOWN
+}
+
+enum PartnershipType {
+  SCHOOL_PARTNERSHIP
+  AFTER_SCHOOL
+  CODING_CLUB
+  STEM_PROGRAM
+  ROBOTICS_PROGRAM
+  AI_PROGRAM
+  SUMMER_CAMP
+  WORKSHOP
+  TECHNOLOGY_ACTIVITIES
+  STUDENT_PROJECTS
+  TEACHER_TRAINING
+  PARENT_WORKSHOP
+  ONLINE_PROGRAM
+  HYBRID_PROGRAM
+  OTHER
+}
+
+enum PartnershipEducationLevel {
+  KG
+  PRIMARY
+  PREPARATORY
+  SECONDARY
+  MIXED
+  HIGHER_EDUCATION
+  OTHER
+  UNKNOWN
+}
+
+enum PartnershipGender {
+  MALE
+  FEMALE
+  COED
+  OTHER
+  UNKNOWN
+}
+
+enum PartnershipActivityType {
+  EMAIL
+  PHONE_CALL
+  WHATSAPP
+  MEETING
+  NOTE
+  FOLLOW_UP
+  RESEARCH
+  OTHER
+}
+
+enum PartnershipFollowUpStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum PartnershipFollowUpPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum PartnershipSourceType {
+  OFFICIAL_WEBSITE
+  FACEBOOK
+  GOOGLE_MAPS
+  LINKEDIN
+  EDUCATION_DIRECTORY
+  MANUAL_RESEARCH
+  IMPORT
+  OTHER
+}
+
+enum PartnershipAuditEntityType {
+  INSTITUTION
+  CONTACT
+  LEAD
+  ACTIVITY
+  FOLLOW_UP
+  NOTE
+  SOURCE
+  IMPORT
+  RESEARCH_JOB
+  RESEARCH_CANDIDATE
+}
+
+enum PartnershipAuditAction {
+  INSTITUTION_CREATED
+  INSTITUTION_UPDATED
+  INSTITUTION_DELETED
+  INSTITUTION_RESTORED
+  CONTACT_CREATED
+  CONTACT_UPDATED
+  CONTACT_DELETED
+  LEAD_CREATED
+  LEAD_UPDATED
+  STATUS_CHANGED
+  ACTIVITY_CREATED
+  FOLLOWUP_CREATED
+  FOLLOWUP_UPDATED
+  FOLLOWUP_COMPLETED
+  NOTE_CREATED
+  NOTE_UPDATED
+  NOTE_DELETED
+  SOURCE_CREATED
+  SOURCE_UPDATED
+  IMPORT_STARTED
+  IMPORT_COMPLETED
+  IMPORT_FAILED
+  INSTITUTION_MERGED
+  RESEARCH_JOB_CREATED
+  RESEARCH_JOB_STARTED
+  RESEARCH_JOB_COMPLETED
+  RESEARCH_JOB_FAILED
+  RESEARCH_JOB_CANCELLED
+  RESEARCH_CANDIDATE_CREATED
+  RESEARCH_CANDIDATE_UPDATED
+  RESEARCH_CANDIDATE_VERIFIED
+  RESEARCH_CANDIDATE_REJECTED
+  RESEARCH_CANDIDATE_DUPLICATE
+  RESEARCH_CANDIDATE_IMPORTED
+  RESEARCH_RESULTS_CLEARED
+}
+
+model PartnershipSource {
+  id           String                   @id @default(uuid()) @db.Uuid
+  sourceType   PartnershipSourceType
+  sourceName   String
+  sourceUrl    String?
+  description  String                   @default("")
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  institutions PartnershipInstitution[]
+  leads        PartnershipLead[]
+
+  @@index([sourceType])
+  @@index([sourceName])
+}
+
+model PartnershipInstitution {
+  id                      String                          @id @default(uuid()) @db.Uuid
+  name                    String
+  arabicName              String?
+  englishName             String?
+  normalizedName          String?
+  institutionType         PartnershipInstitutionType?
+  institutionCategory     PartnershipInstitutionCategory?
+  curriculum              PartnershipCurriculum?
+  educationLevel          PartnershipEducationLevel?
+  gender                  PartnershipGender?
+  ageRange                String?
+  governorate             String?
+  city                    String?
+  district                String?
+  fullAddress             String?
+  phone                   String?
+  mobile                  String?
+  whatsapp                String?
+  normalizedPhone         String?
+  generalEmail            String?
+  admissionsEmail         String?
+  contactEmail            String?
+  website                 String?
+  normalizedWebsiteDomain String?
+  facebook                String?
+  instagram               String?
+  linkedin                String?
+  youtube                 String?
+  tiktok                  String?
+  googleMapsUrl           String?
+  hasCoding               Boolean                         @default(false)
+  hasRobotics             Boolean                         @default(false)
+  hasStem                 Boolean                         @default(false)
+  hasAi                   Boolean                         @default(false)
+  hasTechClub             Boolean                         @default(false)
+  hasAfterSchool          Boolean                         @default(false)
+  hasSummerCamp           Boolean                         @default(false)
+  hasMakerspace           Boolean                         @default(false)
+  partnershipType         PartnershipType?
+  leadPriority            PartnershipLeadPriority         @default(UNKNOWN)
+  leadPriorityReason      String?
+  status                  PartnershipInstitutionStatus    @default(PROSPECT)
+  notes                   String                          @default("")
+  branchName              String?
+  parentInstitutionId     String?                         @db.Uuid
+  parentInstitution       PartnershipInstitution?         @relation("InstitutionBranches", fields: [parentInstitutionId], references: [id], onDelete: Restrict)
+  branches                PartnershipInstitution[]        @relation("InstitutionBranches")
+  sourceId                String?                         @db.Uuid
+  source                  PartnershipSource?              @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  metadata                Json?
+  lastVerifiedAt          DateTime?
+  deletedAt               DateTime?
+  deletedById             String?                         @db.Uuid
+  deletedBy               User?                           @relation("PartnershipInstitutionDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
+  createdAt               DateTime                        @default(now())
+  updatedAt               DateTime                        @updatedAt
+  contacts                PartnershipContact[]
+  leads                   PartnershipLead[]
+  activities              PartnershipActivity[]
+  followUps               PartnershipFollowUp[]
+  notesList               PartnershipNote[]
+
+  @@index([status])
+  @@index([institutionType])
+  @@index([institutionCategory])
+  @@index([curriculum])
+  @@index([governorate])
+  @@index([city])
+  @@index([leadPriority])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([normalizedName])
+  @@index([normalizedPhone])
+  @@index([normalizedWebsiteDomain])
+  @@index([parentInstitutionId])
+  @@index([sourceId])
+  @@index([name])
+  @@index([hasCoding])
+  @@index([hasStem])
+  @@index([hasRobotics])
+  @@index([hasAi])
+  @@index([hasAfterSchool])
+  @@index([deletedAt])
+  @@index([deletedById])
+}
+
+model PartnershipContact {
+  id              String                 @id @default(uuid()) @db.Uuid
+  institutionId   String                 @db.Uuid
+  institution     PartnershipInstitution @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  firstName       String
+  lastName        String                 @default("")
+  fullName        String
+  jobTitle        String?
+  department      String?
+  email           String?
+  phone           String?
+  mobile          String?
+  whatsapp        String?
+  linkedin        String?
+  isPrimary       Boolean                @default(false)
+  isDecisionMaker Boolean                @default(false)
+  isPublicContact Boolean                @default(false)
+  notes           String                 @default("")
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  primaryForLeads PartnershipLead[]
+  activities      PartnershipActivity[]
+  followUps       PartnershipFollowUp[]
+  notesList       PartnershipNote[]
+
+  @@index([institutionId])
+  @@index([email])
+  @@index([isDecisionMaker])
+  @@index([isPrimary])
+  @@index([fullName])
+}
+
+model PartnershipLead {
+  id                    String                  @id @default(uuid()) @db.Uuid
+  institutionId         String                  @db.Uuid
+  institution           PartnershipInstitution  @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  primaryContactId      String?                 @db.Uuid
+  primaryContact        PartnershipContact?     @relation(fields: [primaryContactId], references: [id], onDelete: SetNull)
+  status                PartnershipLeadStatus   @default(NEW)
+  priority              PartnershipLeadPriority @default(UNKNOWN)
+  sourceId              String?                 @db.Uuid
+  source                PartnershipSource?      @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  qualificationReason   String?
+  estimatedStudentCount Int?
+  estimatedOpportunity  String?
+  nextAction            String?
+  nextActionDate        DateTime?               @db.Date
+  ownerId               String?                 @db.Uuid
+  owner                 User?                   @relation("PartnershipLeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  metadata              Json?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  activities            PartnershipActivity[]
+  followUps             PartnershipFollowUp[]
+  notesList             PartnershipNote[]
+
+  @@index([institutionId])
+  @@index([status])
+  @@index([priority])
+  @@index([nextActionDate])
+  @@index([ownerId])
+  @@index([primaryContactId])
+  @@index([sourceId])
+  @@index([createdAt])
+  @@index([updatedAt])
+}
+
+model PartnershipActivity {
+  id            String                  @id @default(uuid()) @db.Uuid
+  institutionId String                  @db.Uuid
+  institution   PartnershipInstitution  @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  contactId     String?                 @db.Uuid
+  contact       PartnershipContact?     @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  leadId        String?                 @db.Uuid
+  lead          PartnershipLead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  activityType  PartnershipActivityType
+  subject       String
+  description   String                  @default("")
+  activityDate  DateTime                @default(now())
+  createdById   String                  @db.Uuid
+  createdBy     User                    @relation("PartnershipActivityCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  metadata      Json?
+  createdAt     DateTime                @default(now())
+
+  @@index([institutionId])
+  @@index([leadId])
+  @@index([contactId])
+  @@index([activityDate])
+  @@index([activityType])
+  @@index([createdById])
+  @@index([createdAt])
+}
+
+model PartnershipFollowUp {
+  id            String                      @id @default(uuid()) @db.Uuid
+  institutionId String                      @db.Uuid
+  institution   PartnershipInstitution      @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  contactId     String?                     @db.Uuid
+  contact       PartnershipContact?         @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  leadId        String?                     @db.Uuid
+  lead          PartnershipLead?            @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  title         String
+  description   String                      @default("")
+  dueDate       DateTime                    @db.Date
+  priority      PartnershipFollowUpPriority @default(MEDIUM)
+  status        PartnershipFollowUpStatus   @default(PENDING)
+  assignedToId  String?                     @db.Uuid
+  assignedTo    User?                       @relation("PartnershipFollowUpAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  completedAt   DateTime?
+  metadata      Json?
+  createdAt     DateTime                    @default(now())
+  updatedAt     DateTime                    @updatedAt
+
+  @@index([institutionId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([assignedToId])
+  @@index([priority])
+  @@index([leadId])
+  @@index([contactId])
+}
+
+model PartnershipNote {
+  id            String                 @id @default(uuid()) @db.Uuid
+  institutionId String                 @db.Uuid
+  institution   PartnershipInstitution @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  contactId     String?                @db.Uuid
+  contact       PartnershipContact?    @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  leadId        String?                @db.Uuid
+  lead          PartnershipLead?       @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  content       String
+  createdById   String                 @db.Uuid
+  createdBy     User                   @relation("PartnershipNoteCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  @@index([institutionId])
+  @@index([contactId])
+  @@index([leadId])
+  @@index([createdById])
+  @@index([createdAt])
+}
+
+model PartnershipAuditEvent {
+  id            String                     @id @default(uuid()) @db.Uuid
+  entityType    PartnershipAuditEntityType
+  entityId      String                     @db.Uuid
+  action        PartnershipAuditAction
+  metadata      Json?
+  performedById String?                    @db.Uuid
+  performedBy   User?                      @relation("PartnershipAuditActor", fields: [performedById], references: [id], onDelete: SetNull)
+  createdAt     DateTime                   @default(now())
+
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([performedById])
+  @@index([createdAt])
+}
+
+enum PartnershipImportStatus {
+  DRAFT
+  PROCESSING
+  COMPLETED
+  COMPLETED_WITH_ERRORS
+  FAILED
+}
+
+enum PartnershipImportRowDecision {
+  PENDING
+  SKIP
+  MERGE
+  IMPORT
+  IMPORT_ANYWAY
+}
+
+enum PartnershipImportMatchConfidence {
+  NONE
+  POSSIBLE
+  EXACT
+}
+
+enum PartnershipImportRowResult {
+  PENDING
+  IMPORTED
+  MERGED
+  SKIPPED
+  FAILED
+  INVALID
+}
+
+/// Staged CSV import job (preview → decisions → execute). File bytes are not retained.
+model PartnershipImportJob {
+  id            String                  @id @default(uuid()) @db.Uuid
+  fileName      String
+  fileSizeBytes Int
+  uploadedById  String                  @db.Uuid
+  uploadedBy    User                    @relation("PartnershipImportUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+  status        PartnershipImportStatus @default(DRAFT)
+  headersJson   Json
+  mappingJson   Json
+  summaryJson   Json?
+  resultJson    Json?
+  errorMessage  String?
+  expiresAt     DateTime
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  completedAt   DateTime?
+  rows          PartnershipImportRow[]
+
+  @@index([uploadedById])
+  @@index([status])
+  @@index([createdAt])
+  @@index([expiresAt])
+}
+
+model PartnershipImportRow {
+  id                     String                            @id @default(uuid()) @db.Uuid
+  jobId                  String                            @db.Uuid
+  job                    PartnershipImportJob              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  rowNumber              Int
+  rawJson                Json
+  mappedJson             Json?
+  normalizedJson         Json?
+  isValid                Boolean                           @default(false)
+  validationErrorsJson   Json?
+  matchConfidence        PartnershipImportMatchConfidence  @default(NONE)
+  matchReasonsJson       Json?
+  matchedInstitutionId   String?                           @db.Uuid
+  matchedInstitutionName String?
+  csvDuplicateOfRow      Int?
+  decision               PartnershipImportRowDecision      @default(PENDING)
+  resultStatus           PartnershipImportRowResult        @default(PENDING)
+  resultError            String?
+  resultInstitutionId    String?                           @db.Uuid
+
+  @@unique([jobId, rowNumber])
+  @@index([jobId])
+  @@index([decision])
+  @@index([matchConfidence])
+  @@index([isValid])
+  @@index([resultStatus])
+}
+
+enum PartnershipResearchJobStatus {
+  DRAFT
+  QUEUED
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum PartnershipResearchStatus {
+  DISCOVERED
+  ENRICHING
+  READY_FOR_REVIEW
+  VERIFIED
+  REJECTED
+  DUPLICATE
+  IMPORTED
+  STALE
+}
+
+enum PartnershipResearchVerificationStatus {
+  UNVERIFIED
+  PARTIALLY_VERIFIED
+  VERIFIED
+  STALE
+}
+
+enum PartnershipResearchDuplicateStatus {
+  NEW
+  EXACT_MATCH
+  POSSIBLE_MATCH
+  REVIEWED_DUPLICATE
+}
+
+enum PartnershipResearchSourceType {
+  SEARCH_ENGINE
+  OFFICIAL_WEBSITE
+  PUBLIC_DIRECTORY
+  PUBLIC_MAPS_LISTING
+  PUBLIC_SOCIAL_PAGE
+  GOVERNMENT_LISTING
+  OSM
+  MANUAL
+  OTHER
+}
+
+enum PartnershipResearchLanguage {
+  EN
+  AR
+  BOTH
+}
+
+enum PartnershipResearchDataQuality {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+/// Controlled research job (geography + templates). Automated web discovery requires a configured provider.
+model PartnershipResearchJob {
+  id                   String                        @id @default(uuid()) @db.Uuid
+  name                 String
+  governorate          String?
+  city                 String?
+  district             String?
+  institutionType      PartnershipInstitutionType?
+  institutionCategory  PartnershipInstitutionCategory?
+  curriculum           PartnershipCurriculum?
+  language             PartnershipResearchLanguage   @default(BOTH)
+  technologyJson       Json                          @default("{}")
+  queriesJson          Json                          @default("[]")
+  maxResultsPerQuery   Int                           @default(20)
+  maxQueries           Int                           @default(24)
+  maxCandidates        Int                           @default(200)
+  /// Discovery mode for this job: OVERPASS | WEB_SEARCH | HYBRID (null = env default)
+  discoveryMode        String?
+  status               PartnershipResearchJobStatus  @default(DRAFT)
+  statisticsJson       Json?
+  errorMessage         String?
+  providerNote         String?
+  requestedById        String                        @db.Uuid
+  requestedBy          User                          @relation("PartnershipResearchRequester", fields: [requestedById], references: [id], onDelete: Restrict)
+  startedAt            DateTime?
+  completedAt          DateTime?
+  createdAt            DateTime                      @default(now())
+  updatedAt            DateTime                      @updatedAt
+  candidates           PartnershipResearchCandidate[]
+
+  @@index([status])
+  @@index([governorate])
+  @@index([city])
+  @@index([requestedById])
+  @@index([createdAt])
+}
+
+model PartnershipResearchCandidate {
+  id                       String                                 @id @default(uuid()) @db.Uuid
+  jobId                    String?                                @db.Uuid
+  job                      PartnershipResearchJob?                @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  discoveredName           String
+  discoveredNameAr         String?
+  discoveredNameEn         String?
+  normalizedName           String?
+  country                  String                                 @default("Egypt")
+  governorate              String?
+  city                     String?
+  district                 String?
+  address                  String?
+  latitude                 Float?
+  longitude                Float?
+  osmType                  String?
+  osmId                    String?
+  osmUrl                   String?
+  institutionType          PartnershipInstitutionType?
+  institutionCategory      PartnershipInstitutionCategory?
+  curriculum               PartnershipCurriculum?
+  educationLevel           PartnershipEducationLevel?
+  email                    String?
+  phone                    String?
+  mobile                   String?
+  whatsapp                 String?
+  normalizedPhone          String?
+  website                  String?
+  normalizedWebsiteDomain  String?
+  facebook                 String?
+  instagram                String?
+  linkedin                 String?
+  youtube                  String?
+  tiktok                   String?
+  googleMapsUrl            String?
+  hasCoding                Boolean                                @default(false)
+  hasRobotics              Boolean                                @default(false)
+  hasStem                  Boolean                                @default(false)
+  hasAi                    Boolean                                @default(false)
+  hasTechClub              Boolean                                @default(false)
+  hasAfterSchool           Boolean                                @default(false)
+  hasSummerCamp            Boolean                                @default(false)
+  hasMakerspace            Boolean                                @default(false)
+  sourceType               PartnershipResearchSourceType          @default(MANUAL)
+  sourceName               String?
+  sourceUrl                String?
+  discoveredAt             DateTime                               @default(now())
+  lastCheckedAt            DateTime?
+  researchStatus           PartnershipResearchStatus              @default(DISCOVERED)
+  verificationStatus       PartnershipResearchVerificationStatus  @default(UNVERIFIED)
+  dataQuality              PartnershipResearchDataQuality         @default(LOW)
+  duplicateStatus          PartnershipResearchDuplicateStatus     @default(NEW)
+  duplicateOfCandidateId   String?                                @db.Uuid
+  duplicateOfCandidate     PartnershipResearchCandidate?          @relation("ResearchCandidateDuplicates", fields: [duplicateOfCandidateId], references: [id], onDelete: SetNull)
+  duplicates               PartnershipResearchCandidate[]         @relation("ResearchCandidateDuplicates")
+  matchedInstitutionId     String?                                @db.Uuid
+  notes                    String                                 @default("")
+  createdAt                DateTime                               @default(now())
+  updatedAt                DateTime                               @updatedAt
+  evidence                 PartnershipResearchEvidence[]
+
+  @@index([jobId])
+  @@index([researchStatus])
+  @@index([verificationStatus])
+  @@index([duplicateStatus])
+  @@index([governorate])
+  @@index([city])
+  @@index([normalizedName])
+  @@index([normalizedWebsiteDomain])
+  @@index([normalizedPhone])
+  @@index([discoveredAt])
+  @@index([matchedInstitutionId])
+  @@index([sourceType])
+  @@index([osmId])
+}
+
+model PartnershipResearchEvidence {
+  id            String                        @id @default(uuid()) @db.Uuid
+  candidateId   String                        @db.Uuid
+  candidate     PartnershipResearchCandidate  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  field         String
+  value         String
+  sourceUrl     String?
+  sourceType    PartnershipResearchSourceType?
+  discoveredAt  DateTime                      @default(now())
+  confidence    PartnershipResearchDataQuality @default(MEDIUM)
+
+  @@index([candidateId])
+  @@index([field])
+  @@index([discoveredAt])
 }

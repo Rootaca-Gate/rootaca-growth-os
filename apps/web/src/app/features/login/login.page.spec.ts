@@ -11,7 +11,7 @@ describe('LoginPage', () => {
     await TestBed.configureTestingModule({
       imports: [LoginPage],
       providers: [
-        provideRouter([]),
+        provideRouter([{ path: 'dashboard', component: LoginPage }]),
         provideNoopAnimations(),
         provideHttpClient(),
         provideHttpClientTesting(),

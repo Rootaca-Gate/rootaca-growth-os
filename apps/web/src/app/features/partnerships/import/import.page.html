@@ -1,0 +1,210 @@
+<app-page-header
+  [title]="'partnerships.importTitle' | t"
+  [subtitle]="'partnerships.importSubtitle' | t"
+>
+  <a mat-stroked-button routerLink="/partnerships/import/history">{{
+    'partnerships.importHistory' | t
+  }}</a>
+</app-page-header>
+
+<nav class="steps" aria-label="Import steps">
+  <span [class.active]="step() === 1">1. {{ 'partnerships.importStepUpload' | t }}</span>
+  <span [class.active]="step() === 2">2. {{ 'partnerships.importStepMapping' | t }}</span>
+  <span [class.active]="step() === 3">3. {{ 'partnerships.importStepReview' | t }}</span>
+  <span [class.active]="step() === 4">4. {{ 'partnerships.importStepConfirm' | t }}</span>
+  <span [class.active]="step() === 5">5. {{ 'partnerships.importStepResult' | t }}</span>
+</nav>
+
+@if (errorMessage(); as message) {
+  <app-error-state
+    [title]="'partnerships.importErrorTitle' | t"
+    [message]="message"
+    (retry)="errorMessage.set(null)"
+  />
+}
+
+@if (loading()) {
+  <app-loading-skeleton [rows]="6" [label]="'partnerships.importLoading' | t" />
+} @else if (step() === 1) {
+  <section class="ra-card upload">
+    <p>{{ 'partnerships.importUploadHint' | t }}</p>
+    <input type="file" accept=".csv,text/csv" (change)="onFileSelected($event)" />
+    @if (selectedFile(); as file) {
+      <p class="file-meta">{{ file.name }} ({{ file.size }} bytes)</p>
+      <button mat-flat-button color="primary" type="button" (click)="uploadAndPreview()">
+        {{ 'partnerships.importContinue' | t }}
+      </button>
+    } @else {
+      <app-empty-state
+        [title]="'partnerships.importEmptyTitle' | t"
+        [message]="'partnerships.importEmptyMessage' | t"
+      />
+    }
+  </section>
+} @else if (step() === 2 && preview(); as data) {
+  <section class="ra-card">
+    <p class="ra-kicker">{{ 'partnerships.importMappingHint' | t }}</p>
+    <div class="ra-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>{{ 'partnerships.importCsvColumn' | t }}</th>
+            <th>{{ 'partnerships.importCrmField' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (header of data.job.headers; track header) {
+            <tr>
+              <td>{{ header }}</td>
+              <td>
+                <mat-form-field appearance="outline">
+                  <mat-select
+                    [ngModel]="mapping()[header]"
+                    (ngModelChange)="setMapping(header, $event)"
+                  >
+                    <mat-option [value]="null">{{ 'partnerships.importIgnoreColumn' | t }}</mat-option>
+                    @for (field of crmFields(); track field) {
+                      <mat-option [value]="field">{{ field }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="actions">
+      <button mat-stroked-button type="button" (click)="step.set(1)">{{ 'common.back' | t }}</button>
+      <button mat-flat-button color="primary" type="button" (click)="applyMapping()">
+        {{ 'partnerships.importValidate' | t }}
+      </button>
+    </div>
+  </section>
+} @else if ((step() === 3 || step() === 4) && preview(); as data) {
+  <section class="kpis">
+    <div class="ra-card"><strong>{{ summary()?.totalRows ?? 0 }}</strong><span>{{ 'partnerships.importTotalRows' | t }}</span></div>
+    <div class="ra-card"><strong>{{ summary()?.validRows ?? 0 }}</strong><span>{{ 'partnerships.importValidRows' | t }}</span></div>
+    <div class="ra-card"><strong>{{ summary()?.invalidRows ?? 0 }}</strong><span>{{ 'partnerships.importInvalidRows' | t }}</span></div>
+    <div class="ra-card"><strong>{{ summary()?.newInstitutions ?? 0 }}</strong><span>{{ 'partnerships.importNewRows' | t }}</span></div>
+    <div class="ra-card"><strong>{{ summary()?.exactDuplicates ?? 0 }}</strong><span>{{ 'partnerships.importExactDupes' | t }}</span></div>
+    <div class="ra-card"><strong>{{ summary()?.possibleDuplicates ?? 0 }}</strong><span>{{ 'partnerships.importPossibleDupes' | t }}</span></div>
+    <div class="ra-card"><strong>{{ summary()?.csvDuplicates ?? 0 }}</strong><span>{{ 'partnerships.importCsvDupes' | t }}</span></div>
+    <div class="ra-card"><strong>{{ summary()?.needsReview ?? 0 }}</strong><span>{{ 'partnerships.importNeedsReview' | t }}</span></div>
+  </section>
+
+  <section class="ra-filters">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'partnerships.filters' | t }}</mat-label>
+      <mat-select [ngModel]="rowFilter()" (ngModelChange)="changeFilter($event)">
+        <mat-option value="all">{{ 'common.allStatuses' | t }}</mat-option>
+        <mat-option value="valid">{{ 'partnerships.importValidRows' | t }}</mat-option>
+        <mat-option value="invalid">{{ 'partnerships.importInvalidRows' | t }}</mat-option>
+        <mat-option value="duplicates">{{ 'partnerships.importDuplicates' | t }}</mat-option>
+        <mat-option value="new">{{ 'partnerships.importNewRows' | t }}</mat-option>
+        <mat-option value="needs_review">{{ 'partnerships.importNeedsReview' | t }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <button mat-stroked-button type="button" (click)="bulkSkipExact()">
+      {{ 'partnerships.importSkipAllExact' | t }}
+    </button>
+    <button mat-stroked-button type="button" (click)="bulkImportNew()">
+      {{ 'partnerships.importImportAllNew' | t }}
+    </button>
+  </section>
+
+  <div class="ra-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>{{ 'partnerships.institution' | t }}</th>
+          <th>{{ 'partnerships.governorate' | t }}</th>
+          <th>{{ 'partnerships.city' | t }}</th>
+          <th>{{ 'partnerships.website' | t }}</th>
+          <th>{{ 'partnerships.phone' | t }}</th>
+          <th>{{ 'partnerships.importMatch' | t }}</th>
+          <th>{{ 'partnerships.importConfidence' | t }}</th>
+          <th>{{ 'partnerships.importReasons' | t }}</th>
+          <th>{{ 'partnerships.importDecision' | t }}</th>
+          <th>{{ 'partnerships.importErrors' | t }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.rowNumber) {
+          <tr>
+            <td>{{ row.rowNumber }}</td>
+            <td>{{ displayText(row.name) }}</td>
+            <td>{{ displayText(row.governorate) }}</td>
+            <td>{{ displayText(row.city) }}</td>
+            <td>{{ displayText(row.website) }}</td>
+            <td>{{ displayText(row.phone) }}</td>
+            <td>
+              @if (row.csvDuplicateOfRow) {
+                CSV #{{ row.csvDuplicateOfRow }}
+              } @else {
+                {{ displayText(row.matchedInstitutionName) }}
+              }
+            </td>
+            <td>{{ row.matchConfidence }}</td>
+            <td>{{ row.matchReasons.join(', ') || '—' }}</td>
+            <td>
+              <mat-form-field appearance="outline">
+                <mat-select
+                  [ngModel]="row.decision"
+                  (ngModelChange)="setRowDecision(row, $event)"
+                >
+                  @for (option of decisionOptions(row); track option) {
+                    <mat-option [value]="option">{{ option }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </td>
+            <td>{{ formatErrors(row) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <mat-paginator
+    [length]="data.rowsTotal"
+    [pageIndex]="data.page - 1"
+    [pageSize]="data.pageSize"
+    [pageSizeOptions]="[20, 50, 100]"
+    (page)="onPage($event)"
+  />
+
+  <div class="actions">
+    @if (step() === 3) {
+      <button mat-stroked-button type="button" (click)="step.set(2)">{{ 'common.back' | t }}</button>
+      <button mat-flat-button color="primary" type="button" (click)="goReview()">
+        {{ 'partnerships.importContinue' | t }}
+      </button>
+    } @else {
+      <button mat-stroked-button type="button" (click)="step.set(3)">{{ 'common.back' | t }}</button>
+      <button mat-flat-button color="primary" type="button" (click)="execute()">
+        {{ 'partnerships.importExecute' | t }}
+      </button>
+    }
+  </div>
+} @else if (step() === 5 && resultJob(); as job) {
+  <section class="ra-card result">
+    <h2>{{ 'partnerships.importResultTitle' | t }}</h2>
+    <p>{{ 'common.status' | t }}: {{ job.status }}</p>
+    <ul>
+      <li>{{ 'partnerships.importImported' | t }}: {{ job.result?.imported ?? 0 }}</li>
+      <li>{{ 'partnerships.importMerged' | t }}: {{ job.result?.merged ?? 0 }}</li>
+      <li>{{ 'partnerships.importSkipped' | t }}: {{ job.result?.skipped ?? 0 }}</li>
+      <li>{{ 'partnerships.importFailed' | t }}: {{ job.result?.failed ?? 0 }}</li>
+    </ul>
+    <div class="actions">
+      <a mat-flat-button color="primary" routerLink="/partnerships/institutions">{{
+        'nav.institutions' | t
+      }}</a>
+      <a mat-stroked-button routerLink="/partnerships/import/history">{{
+        'partnerships.importHistory' | t
+      }}</a>
+    </div>
+  </section>
+}

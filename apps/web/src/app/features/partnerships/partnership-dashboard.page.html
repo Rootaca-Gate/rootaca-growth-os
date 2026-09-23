@@ -1,0 +1,130 @@
+<app-page-header
+  [title]="'partnerships.dashboardTitle' | t"
+  [subtitle]="'partnerships.dashboardSubtitle' | t"
+>
+  <a mat-flat-button color="primary" routerLink="/partnerships/institutions">{{
+    'partnerships.institutionsTitle' | t
+  }}</a>
+</app-page-header>
+
+@if (loading()) {
+  <app-loading-skeleton [rows]="8" [label]="'partnerships.loading' | t" />
+} @else if (error(); as message) {
+  <app-error-state [title]="'partnerships.loadError' | t" [message]="message" (retry)="load()" />
+} @else if (dashboard(); as data) {
+  <section class="stats">
+    <app-stat-card [label]="'partnerships.totalInstitutions' | t" [value]="'' + data.totalInstitutions" />
+    <app-stat-card [label]="'partnerships.totalLeads' | t" [value]="'' + data.totalLeads" />
+    <app-stat-card [label]="'partnerships.newLeads' | t" [value]="'' + data.newLeads" />
+    <app-stat-card [label]="'partnerships.qualified' | t" [value]="'' + data.qualifiedLeads" />
+    <app-stat-card [label]="'partnerships.contacted' | t" [value]="'' + data.contactedLeads" />
+    <app-stat-card [label]="'partnerships.replied' | t" [value]="'' + data.repliedLeads" />
+    <app-stat-card [label]="'partnerships.meetings' | t" [value]="'' + data.meetings" />
+    <app-stat-card [label]="'partnerships.proposals' | t" [value]="'' + data.proposals" />
+    <app-stat-card [label]="'partnerships.partners' | t" [value]="'' + data.partners" />
+    <app-stat-card [label]="'partnerships.followUpsDue' | t" [value]="'' + data.followUpsDueToday" />
+    <app-stat-card [label]="'partnerships.overdueFollowUps' | t" [value]="'' + data.overdueFollowUps" />
+  </section>
+
+  <section class="ra-card block">
+    <app-section-header [title]="'partnerships.leadPipeline' | t" />
+    <div class="pipeline">
+      @for (status of leadStatuses; track status) {
+        <article>
+          <p class="ra-kicker">{{ label(status) }}</p>
+          <strong>{{ statusCount(status) }}</strong>
+        </article>
+      }
+    </div>
+  </section>
+
+  <div class="split">
+    <section class="ra-card block">
+      <app-section-header [title]="'partnerships.byGovernorate' | t" />
+      @if (data.institutionsByGovernorate.length === 0) {
+        <p class="hint">—</p>
+      } @else {
+        <ul>
+          @for (row of data.institutionsByGovernorate; track row.key) {
+            <li><span>{{ row.key }}</span><strong>{{ row.count }}</strong></li>
+          }
+        </ul>
+      }
+    </section>
+    <section class="ra-card block">
+      <app-section-header [title]="'partnerships.byType' | t" />
+      @if (data.institutionsByType.length === 0) {
+        <p class="hint">—</p>
+      } @else {
+        <ul>
+          @for (row of data.institutionsByType; track row.key) {
+            <li><span>{{ label(row.key) }}</span><strong>{{ row.count }}</strong></li>
+          }
+        </ul>
+      }
+    </section>
+  </div>
+
+  <div class="split">
+    <section class="ra-card block">
+      <app-section-header [title]="'partnerships.followUpsTitle' | t" />
+      <p class="ra-kicker">{{ 'partnerships.overdue' | t }}</p>
+      @if (overdue().length === 0) {
+        <p class="hint">—</p>
+      } @else {
+        <ul class="links">
+          @for (row of overdue(); track row.id) {
+            <li>
+              <a [routerLink]="['/partnerships/institutions', row.institutionId]">{{ row.title }}</a>
+              <span>{{ row.dueDate }}</span>
+            </li>
+          }
+        </ul>
+      }
+      <p class="ra-kicker">{{ 'partnerships.dueToday' | t }}</p>
+      @if (dueToday().length === 0) {
+        <p class="hint">—</p>
+      } @else {
+        <ul class="links">
+          @for (row of dueToday(); track row.id) {
+            <li>
+              <a [routerLink]="['/partnerships/institutions', row.institutionId]">{{ row.title }}</a>
+              <span>{{ row.dueDate }}</span>
+            </li>
+          }
+        </ul>
+      }
+      <p class="ra-kicker">{{ 'partnerships.upcoming' | t }}</p>
+      @if (upcoming().length === 0) {
+        <p class="hint">—</p>
+      } @else {
+        <ul class="links">
+          @for (row of upcoming(); track row.id) {
+            <li>
+              <a [routerLink]="['/partnerships/institutions', row.institutionId]">{{ row.title }}</a>
+              <span>{{ row.dueDate }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+    <section class="ra-card block">
+      <app-section-header [title]="'partnerships.recentActivity' | t" />
+      @if (recent().length === 0) {
+        <app-empty-state
+          [title]="'partnerships.activitiesEmptyTitle' | t"
+          [message]="'partnerships.activitiesEmptyMessage' | t"
+        />
+      } @else {
+        <ul class="links">
+          @for (row of recent(); track row.id) {
+            <li>
+              <a [routerLink]="['/partnerships/institutions', row.institutionId]">{{ row.subject }}</a>
+              <span>{{ label(row.activityType) }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  </div>
+}

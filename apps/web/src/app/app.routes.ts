@@ -135,6 +135,102 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/students/student-profile.page').then((m) => m.StudentProfilePage),
       },
+      {
+        path: 'partnerships',
+        loadComponent: () =>
+          import('./features/partnerships/partnership-dashboard.page').then(
+            (m) => m.PartnershipDashboardPage,
+          ),
+      },
+      {
+        path: 'partnerships/institutions',
+        loadComponent: () =>
+          import('./features/partnerships/institutions-list.page').then(
+            (m) => m.InstitutionsListPage,
+          ),
+      },
+      {
+        path: 'partnerships/institutions/new',
+        loadComponent: () =>
+          import('./features/partnerships/institution-create.page').then(
+            (m) => m.InstitutionCreatePage,
+          ),
+      },
+      {
+        path: 'partnerships/institutions/:id/edit',
+        loadComponent: () =>
+          import('./features/partnerships/institution-edit.page').then(
+            (m) => m.InstitutionEditPage,
+          ),
+      },
+      {
+        path: 'partnerships/institutions/:id',
+        loadComponent: () =>
+          import('./features/partnerships/institution-details.page').then(
+            (m) => m.InstitutionDetailsPage,
+          ),
+      },
+      {
+        path: 'partnerships/contacts',
+        loadComponent: () =>
+          import('./features/partnerships/contacts-list.page').then((m) => m.ContactsListPage),
+      },
+      {
+        path: 'partnerships/leads',
+        loadComponent: () =>
+          import('./features/partnerships/leads-list.page').then((m) => m.LeadsListPage),
+      },
+      {
+        path: 'partnerships/leads/:id',
+        loadComponent: () =>
+          import('./features/partnerships/lead-details.page').then((m) => m.LeadDetailsPage),
+      },
+      {
+        path: 'partnerships/follow-ups',
+        loadComponent: () =>
+          import('./features/partnerships/followups-list.page').then((m) => m.FollowUpsListPage),
+      },
+      {
+        path: 'partnerships/activities',
+        loadComponent: () =>
+          import('./features/partnerships/activities-list.page').then((m) => m.ActivitiesListPage),
+      },
+      {
+        path: 'partnerships/import',
+        loadComponent: () =>
+          import('./features/partnerships/import/import.page').then((m) => m.ImportPage),
+      },
+      {
+        path: 'partnerships/import/history',
+        loadComponent: () =>
+          import('./features/partnerships/import/import-history.page').then(
+            (m) => m.ImportHistoryPage,
+          ),
+      },
+      {
+        path: 'partnerships/import/history/:id',
+        loadComponent: () =>
+          import('./features/partnerships/import/import-history-detail.page').then(
+            (m) => m.ImportHistoryDetailPage,
+          ),
+      },
+      {
+        path: 'partnerships/research',
+        loadComponent: () =>
+          import('./features/partnerships/research/research.page').then((m) => m.ResearchPage),
+      },
+      {
+        path: 'partnerships/research/jobs/:id',
+        loadComponent: () =>
+          import('./features/partnerships/research/research-job.page').then((m) => m.ResearchJobPage),
+      },
+      {
+        path: 'partnerships/research/candidates/:id',
+        loadComponent: () =>
+          import('./features/partnerships/research/research-candidate.page').then(
+            (m) => m.ResearchCandidatePage,
+          ),
+      },
     ],
   },
   {

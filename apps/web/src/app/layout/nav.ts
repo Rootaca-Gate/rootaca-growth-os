@@ -46,4 +46,17 @@ export const APP_NAV: NavSection[] = [
       { labelKey: 'nav.skills', path: '/skills', icon: 'bolt' },
     ],
   },
+  {
+    titleKey: 'nav.partnerships',
+    items: [
+      { labelKey: 'nav.partnershipDashboard', path: '/partnerships', icon: 'handshake', exact: true },
+      { labelKey: 'nav.institutions', path: '/partnerships/institutions', icon: 'apartment' },
+      { labelKey: 'nav.contacts', path: '/partnerships/contacts', icon: 'contact_page' },
+      { labelKey: 'nav.leads', path: '/partnerships/leads', icon: 'filter_alt' },
+      { labelKey: 'nav.followUps', path: '/partnerships/follow-ups', icon: 'event_available' },
+      { labelKey: 'nav.activities', path: '/partnerships/activities', icon: 'history_edu' },
+      { labelKey: 'nav.import', path: '/partnerships/import', icon: 'upload_file' },
+      { labelKey: 'nav.research', path: '/partnerships/research', icon: 'travel_explore' },
+    ],
+  },
 ];

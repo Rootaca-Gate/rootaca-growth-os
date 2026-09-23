@@ -48,6 +48,95 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsString()
   LOG_LEVEL = 'info';
+
+  /** Research discovery — optional; API starts even when unset. */
+  @IsOptional()
+  @IsString()
+  RESEARCH_DISCOVERY_PROVIDER?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_DISCOVERY_API_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_DISCOVERY_API_URL?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_DISCOVERY_ENGINE?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_DISCOVERY_TIMEOUT_MS?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_DISCOVERY_MAX_RETRIES?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_DISCOVERY_CONCURRENCY?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_DISCOVERY_REQUEST_DELAY_MS?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_DISCOVERY_CACHE_TTL_MS?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_ENRICHMENT_ENABLED?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_ENRICHMENT_MAX_PAGES?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_ENRICHMENT_MAX_BYTES?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_ENRICHMENT_TIMEOUT_MS?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_OVERPASS_ENABLED?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_OVERPASS_API_URL?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_OVERPASS_USER_AGENT?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_OVERPASS_TIMEOUT_MS?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_OVERPASS_MAX_RESULTS?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_OVERPASS_CONCURRENCY?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_OVERPASS_MAX_RETRIES?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_OVERPASS_REQUEST_DELAY_MS?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEARCH_OVERPASS_CACHE_TTL_MS?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {

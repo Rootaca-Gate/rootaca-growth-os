@@ -8,8 +8,9 @@ import {
   PartnershipReportStatus,
   PartnershipSowStatus,
 } from '@prisma/client';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PrismaService } from '../../prisma/prisma.service';
+import { buildCommandCenter, CommandCenterDto } from './command-center';
 
 export class NamedCountDto {
   @ApiProperty()
@@ -105,6 +106,9 @@ export class PartnershipDashboardDto {
 
   @ApiProperty({ type: [NamedCountDto] })
   leadsByPriority!: NamedCountDto[];
+
+  @ApiPropertyOptional({ type: () => CommandCenterDto })
+  commandCenter?: CommandCenterDto;
 }
 
 export class PartnershipSearchHitDto {
@@ -152,7 +156,7 @@ export class PartnershipSearchResultDto {
 export class PartnershipDashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getDashboard(): Promise<PartnershipDashboardDto> {
+  async getDashboard(period?: string | null): Promise<PartnershipDashboardDto> {
     const activeInstitution = { deletedAt: null };
     const leadWhere = { institution: activeInstitution };
     const today = new Date();
@@ -277,6 +281,8 @@ export class PartnershipDashboardService {
     const statusCount = (status: PartnershipLeadStatus) =>
       leadStatusGroups.find((g) => g.status === status)?._count._all ?? 0;
 
+    const commandCenter = await buildCommandCenter(this.prisma, period);
+
     return {
       totalInstitutions,
       totalLeads,
@@ -320,6 +326,7 @@ export class PartnershipDashboardService {
         key: g.priority,
         count: g._count._all,
       })),
+      commandCenter,
     };
   }
 

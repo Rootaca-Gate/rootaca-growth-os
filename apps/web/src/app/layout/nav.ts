@@ -49,6 +49,14 @@ export const APP_NAV: NavSection[] = [
   {
     titleKey: 'nav.partnerships',
     showJourney: true,
+    items: [
+      {
+        labelKey: 'nav.commandCenter',
+        path: '/partnerships',
+        icon: 'space_dashboard',
+        exact: true,
+      },
+    ],
     groups: [
       {
         stage: '01',
@@ -145,10 +153,7 @@ export function isNavItemActive(url: string, item: Pick<NavItem, 'path' | 'exact
 }
 
 export function sectionItems(section: NavSection): NavItem[] {
-  if (section.groups?.length) {
-    return section.groups.flatMap((group) => group.items);
-  }
-  return section.items ?? [];
+  return [...(section.items ?? []), ...(section.groups?.flatMap((group) => group.items) ?? [])];
 }
 
 export function findActiveNavSection(

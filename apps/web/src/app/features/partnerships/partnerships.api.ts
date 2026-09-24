@@ -114,8 +114,10 @@ export class PartnershipsApi {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiBaseUrl}/partnerships`;
 
-  getDashboard(): Observable<PartnershipDashboard> {
-    return this.http.get<PartnershipDashboard>(`${this.base}/dashboard`);
+  getDashboard(period?: string): Observable<PartnershipDashboard> {
+    return this.http.get<PartnershipDashboard>(`${this.base}/dashboard`, {
+      params: toParams({ period: period && period !== 'all' ? period : undefined }),
+    });
   }
 
   searchPartnerships(q: string): Observable<PartnershipSearchResult> {

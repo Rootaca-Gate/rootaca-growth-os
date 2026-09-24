@@ -16,9 +16,10 @@ export class PartnershipDashboardController {
 
   @Get()
   @Roles(...CRM_READ_ROLES)
+  @ApiQuery({ name: 'period', required: false, type: String })
   @ApiOkResponse({ type: PartnershipDashboardDto })
-  getDashboard(): Promise<PartnershipDashboardDto> {
-    return this.dashboardService.getDashboard();
+  getDashboard(@Query('period') period?: string): Promise<PartnershipDashboardDto> {
+    return this.dashboardService.getDashboard(period);
   }
 
   @Get('search')

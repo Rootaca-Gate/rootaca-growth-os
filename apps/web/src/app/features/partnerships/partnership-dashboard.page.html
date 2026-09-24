@@ -1,309 +1,512 @@
 <app-page-header
-  [title]="'partnerships.dashboardTitle' | t"
-  [subtitle]="'partnerships.dashboardSubtitle' | t"
+  [title]="'partnerships.commandCenterTitle' | t"
+  [subtitle]="'partnerships.commandCenterSubtitle' | t"
 >
-  <div class="header-create" [class.open]="createOpen()">
-    <button mat-flat-button color="primary" type="button" (click)="toggleCreate()">
-      {{ 'partnerships.quickCreate' | t }}
+  <div class="header-tools">
+    <app-search-input
+      class="header-search"
+      [formControl]="searchControl"
+      [placeholder]="'partnerships.globalSearchPlaceholder' | t"
+      [ariaLabel]="'partnerships.globalSearch' | t"
+    />
+    <mat-form-field appearance="outline" class="period-field" subscriptSizing="dynamic">
+      <mat-label>{{ 'partnerships.ccPeriod' | t }}</mat-label>
+      <mat-select [formControl]="periodControl">
+        <mat-option value="all">{{ 'partnerships.ccPeriodAll' | t }}</mat-option>
+        <mat-option value="today">{{ 'partnerships.ccPeriodToday' | t }}</mat-option>
+        <mat-option value="week">{{ 'partnerships.ccPeriodWeek' | t }}</mat-option>
+        <mat-option value="month">{{ 'partnerships.ccPeriodMonth' | t }}</mat-option>
+        <mat-option value="quarter">{{ 'partnerships.ccPeriodQuarter' | t }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <button mat-stroked-button type="button" (click)="refresh()" [disabled]="loading()">
+      {{ 'partnerships.ccRefresh' | t }}
     </button>
-    @if (createOpen()) {
-      <div class="create-menu" role="menu">
-        @for (item of quickCreateItems; track item.path) {
-          @if (!item.requiresWrite || permissions.canWrite()) {
-            <a role="menuitem" [routerLink]="item.path" (click)="createOpen.set(false)">{{
-              item.labelKey | t
-            }}</a>
-          }
+    @if (permissions.canWrite()) {
+      <div class="header-create" [class.open]="createOpen()">
+        <button mat-flat-button color="primary" type="button" (click)="toggleCreate()">
+          {{ 'partnerships.quickCreate' | t }}
+        </button>
+        @if (createOpen()) {
+          <div class="create-menu" role="menu">
+            @for (item of headerCreateItems; track item.path) {
+              <a role="menuitem" [routerLink]="item.path" (click)="createOpen.set(false)">{{
+                item.labelKey | t
+              }}</a>
+            }
+          </div>
         }
-        <p class="create-hint">{{ 'partnerships.quickCreateHint' | t }}</p>
       </div>
     }
   </div>
-  <a mat-stroked-button routerLink="/partnerships/institutions">{{
-    'partnerships.institutionsTitle' | t
-  }}</a>
 </app-page-header>
 
+@if (lastUpdated(); as updated) {
+  <p class="last-updated">{{ 'partnerships.ccLastUpdated' | t }}: {{ updated | date: 'medium' }}</p>
+}
+<p class="hint period-hint">{{ 'partnerships.ccPeriodHint' | t }}</p>
+
+@if (searchLoading()) {
+  <p class="hint search-hint">{{ 'partnerships.globalSearchLoading' | t }}</p>
+} @else if (searchResult(); as result) {
+  <section class="ra-card block search-results">
+    <app-section-header [title]="'partnerships.globalSearch' | t" />
+    @if (result.groups.length === 0) {
+      <p class="hint">{{ 'partnerships.globalSearchEmpty' | t }}</p>
+    } @else {
+      <div class="search-groups">
+        @for (group of result.groups; track group.group) {
+          <article>
+            <p class="ra-kicker">{{ searchGroupLabel(group.group) }}</p>
+            <ul class="links">
+              @for (hit of group.items; track hit.id) {
+                <li>
+                  <a [routerLink]="hit.path">{{ hit.label }}</a>
+                  <span class="hint">{{ hit.subtitle }}</span>
+                </li>
+              }
+            </ul>
+          </article>
+        }
+      </div>
+    }
+  </section>
+}
+
 @if (loading()) {
-  <app-loading-skeleton [rows]="8" [label]="'partnerships.loading' | t" />
+  <app-loading-skeleton [rows]="10" [label]="'partnerships.loading' | t" />
 } @else if (error(); as message) {
   <app-error-state [title]="'partnerships.loadError' | t" [message]="message" (retry)="load()" />
+} @else if (isEmpty()) {
+  <section class="ra-card block">
+    <app-empty-state
+      icon="handshake"
+      [title]="'partnerships.ccEmptyTitle' | t"
+      [message]="'partnerships.ccEmptyMessage' | t"
+    >
+      @if (permissions.canWrite()) {
+        <a mat-flat-button color="primary" routerLink="/partnerships/leads">{{
+          'partnerships.ccCreateLead' | t
+        }}</a>
+        <a mat-stroked-button routerLink="/partnerships/institutions/new">{{
+          'partnerships.ccCreateInstitution' | t
+        }}</a>
+      }
+    </app-empty-state>
+  </section>
 } @else if (dashboard(); as data) {
-  <section class="ra-card block search-block">
-    <app-section-header [title]="'partnerships.globalSearch' | t" />
-    <mat-form-field appearance="outline" class="search-field">
-      <mat-label>{{ 'partnerships.globalSearchPlaceholder' | t }}</mat-label>
-      <input matInput [formControl]="searchControl" autocomplete="off" />
-    </mat-form-field>
-    @if (searchLoading()) {
-      <p class="hint">{{ 'partnerships.globalSearchLoading' | t }}</p>
-    } @else if (searchResult(); as result) {
-      @if (result.groups.length === 0) {
-        <p class="hint">{{ 'partnerships.globalSearchEmpty' | t }}</p>
+  <section class="kpi-grid">
+    <a class="kpi-link" routerLink="/partnerships/leads">
+      <app-stat-card
+        [label]="'partnerships.ccKpiLeads' | t"
+        [value]="'' + (cc()?.openLeads ?? data.totalLeads)"
+      />
+    </a>
+    <a class="kpi-link" routerLink="/partnerships/institutions">
+      <app-stat-card
+        [label]="'partnerships.ccKpiInstitutions' | t"
+        [value]="'' + data.totalInstitutions"
+      />
+    </a>
+    <a class="kpi-link" routerLink="/partnerships/proposals">
+      <app-stat-card
+        [label]="'partnerships.ccKpiProposals' | t"
+        [value]="'' + (cc()?.openProposals ?? data.proposalsTotal)"
+      />
+    </a>
+    <a class="kpi-link" routerLink="/partnerships/sows" [queryParams]="{ status: 'ACTIVE' }">
+      <app-stat-card [label]="'partnerships.ccKpiSows' | t" [value]="'' + data.sowsActive" />
+    </a>
+    <a class="kpi-link" routerLink="/partnerships/delivery" [queryParams]="{ status: 'ACTIVE' }">
+      <app-stat-card
+        [label]="'partnerships.ccKpiDeliveries' | t"
+        [value]="'' + data.deliveriesActive"
+      />
+    </a>
+    <a class="kpi-link" routerLink="/partnerships/renewals">
+      <app-stat-card [label]="'partnerships.ccKpiRenewals' | t" [value]="'' + data.renewalsOpen" />
+    </a>
+  </section>
+
+  @if (cc()?.periodNew; as periodNew) {
+    <section class="ra-card block period-new">
+      <app-section-header [title]="'partnerships.ccPeriodNewTitle' | t" />
+      <p class="hint">{{ 'partnerships.ccPeriodNewHint' | t }}</p>
+      <div class="period-new-grid">
+        <span>{{ 'partnerships.ccPeriodNewLeads' | t }}: {{ periodNew.newLeads }}</span>
+        <span>{{ 'partnerships.ccPeriodNewInstitutions' | t }}: {{ periodNew.newInstitutions }}</span>
+        <span>{{ 'partnerships.ccPeriodNewProposals' | t }}: {{ periodNew.newProposals }}</span>
+        <span>{{ 'partnerships.ccPeriodNewSows' | t }}: {{ periodNew.newSows }}</span>
+        <span>{{ 'partnerships.ccPeriodNewDeliveries' | t }}: {{ periodNew.newDeliveries }}</span>
+        <span>{{ 'partnerships.ccPeriodNewReports' | t }}: {{ periodNew.newReports }}</span>
+        <span>{{ 'partnerships.ccPeriodNewOpportunities' | t }}: {{ periodNew.newOpportunities }}</span>
+      </div>
+    </section>
+  }
+
+  @if (cc(); as center) {
+    <section class="ra-card block">
+      <app-section-header [title]="'partnerships.ccPipelineTitle' | t" />
+      <p class="hint">{{ 'partnerships.ccPipelineHint' | t }}</p>
+      <div class="pipeline-flow" aria-label="Partnership pipeline">
+        @for (stage of center.pipeline; track stage.key; let last = $last) {
+          <a class="pipeline-stage" [routerLink]="stage.path">
+            <span class="pipeline-label">{{ pipelineLabel(stage) }}</span>
+            <strong>{{ stage.total }}</strong>
+            @if (stage.highlight != null && stage.highlightKey) {
+              <span class="pipeline-meta">{{ pipelineHighlight(stage) }}</span>
+            }
+            @if (stage.latestActivityAt) {
+              <span class="pipeline-activity">{{ relativeTime(stage.latestActivityAt) }}</span>
+            }
+          </a>
+          @if (!last) {
+            <span class="pipeline-arrow" aria-hidden="true">↓</span>
+          }
+        }
+      </div>
+    </section>
+
+    <section class="ra-card block">
+      <app-section-header [title]="'partnerships.ccAttentionTitle' | t" />
+      <p class="hint">{{ 'partnerships.attentionNeededHint' | t }}</p>
+      @if (center.attention.length === 0) {
+        <p class="hint">{{ 'partnerships.attentionNeededEmpty' | t }}</p>
       } @else {
-        <div class="search-groups">
-          @for (group of result.groups; track group.group) {
-            <article>
-              <p class="ra-kicker">{{ searchGroupLabel(group.group) }}</p>
-              <ul class="links">
-                @for (hit of group.items; track hit.id) {
-                  <li>
-                    <a [routerLink]="hit.path">{{ hit.label }}</a>
-                    <span class="hint">{{ hit.subtitle }}</span>
-                  </li>
-                }
-              </ul>
+        <div class="attention-grid">
+          @for (item of center.attention; track item.path + item.entityLabel + item.kind) {
+            <article class="attention-card">
+              <span class="attention-badge">{{ attentionKindLabel(item.kind) }}</span>
+              @if (item.schoolName) {
+                <h3>{{ item.schoolName }}</h3>
+              }
+              <p class="entity-id">{{ item.entityLabel }}</p>
+              @if (item.status) {
+                <p class="hint">{{ 'common.status' | t }}: {{ label(item.status) }}</p>
+              }
+              <p class="hint">
+                {{ 'partnerships.ccLastActivity' | t }}:
+                {{ relativeTime(item.lastActivityAt || item.dueDate) }}
+              </p>
+              <a class="action-link" [routerLink]="item.path" [queryParams]="item.queryParams || {}">
+                {{ 'partnerships.ccViewRecord' | t }} →
+              </a>
             </article>
           }
         </div>
       }
-    }
-  </section>
+    </section>
 
-  <section class="stats">
-    <app-stat-card [label]="'partnerships.totalInstitutions' | t" [value]="'' + data.totalInstitutions" />
-    <app-stat-card [label]="'partnerships.totalLeads' | t" [value]="'' + data.totalLeads" />
-    <app-stat-card [label]="'partnerships.newLeads' | t" [value]="'' + data.newLeads" />
-    <app-stat-card [label]="'partnerships.qualified' | t" [value]="'' + data.qualifiedLeads" />
-    <app-stat-card [label]="'partnerships.contacted' | t" [value]="'' + data.contactedLeads" />
-    <app-stat-card [label]="'partnerships.replied' | t" [value]="'' + data.repliedLeads" />
-    <app-stat-card [label]="'partnerships.meetings' | t" [value]="'' + data.meetings" />
-    <app-stat-card [label]="'partnerships.proposals' | t" [value]="'' + data.proposals" />
-    <app-stat-card [label]="'partnerships.partners' | t" [value]="'' + data.partners" />
-    <app-stat-card [label]="'partnerships.followUpsDue' | t" [value]="'' + data.followUpsDueToday" />
-    <app-stat-card [label]="'partnerships.overdueFollowUps' | t" [value]="'' + data.overdueFollowUps" />
-  </section>
+    <section class="ra-card block">
+      <app-section-header [title]="'partnerships.ccActivePartnerships' | t" />
+      @if (center.activePartnerships.length === 0) {
+        <p class="hint">{{ 'partnerships.ccNoActivePartnerships' | t }}</p>
+      } @else {
+        <div class="ra-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'partnerships.ccColSchool' | t }}</th>
+                <th>{{ 'partnerships.ccColProgram' | t }}</th>
+                <th>{{ 'nav.sows' | t }}</th>
+                <th>{{ 'nav.delivery' | t }}</th>
+                <th>{{ 'partnerships.ccColProgress' | t }}</th>
+                <th>{{ 'partnerships.endDate' | t }}</th>
+                <th>{{ 'common.status' | t }}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of center.activePartnerships; track row.deliveryId) {
+                <tr>
+                  <td>
+                    <a [routerLink]="['/partnerships/institutions', row.institutionId]">{{
+                      row.schoolName
+                    }}</a>
+                  </td>
+                  <td>{{ blank(row.programName) }}</td>
+                  <td>
+                    <a class="entity-id" [routerLink]="['/partnerships/sows', row.sowId]">{{
+                      row.sowNumber || '—'
+                    }}</a>
+                  </td>
+                  <td>
+                    <a class="entity-id" [routerLink]="['/partnerships/delivery', row.deliveryId]">{{
+                      row.deliveryNumber
+                    }}</a>
+                  </td>
+                  <td>
+                    @if (row.progressPercent != null) {
+                      <div class="progress-cell">
+                        <app-progress-bar [value]="row.progressPercent" />
+                        <span>{{ progressText(row.progressPercent) }}</span>
+                      </div>
+                    } @else {
+                      —
+                    }
+                  </td>
+                  <td>{{ row.endDate ? (row.endDate | date: 'mediumDate') : '—' }}</td>
+                  <td>{{ label(row.status) }}</td>
+                  <td class="row-actions">
+                    <a [routerLink]="['/partnerships/delivery', row.deliveryId]">{{
+                      'common.view' | t
+                    }}</a>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
 
-  <section class="ra-card block">
-    <app-section-header [title]="'partnerships.dashboardLifecycleFlow' | t" />
-    <p class="hint">{{ 'partnerships.dashboardLifecycleFlowHint' | t }}</p>
-    <div class="lifecycle-flow" aria-label="Partnership lifecycle">
-      <a class="flow-stage" routerLink="/partnerships/leads">
-        <span class="flow-label">{{ 'partnerships.dashboardLifecycleLeads' | t }}</span>
-        <strong>{{ data.totalLeads }}</strong>
-      </a>
-      <span class="flow-arrow" aria-hidden="true">↓</span>
-      <a class="flow-stage" routerLink="/partnerships/institutions">
-        <span class="flow-label">{{ 'partnerships.dashboardLifecycleInstitutions' | t }}</span>
-        <strong>{{ data.totalInstitutions }}</strong>
-      </a>
-      <span class="flow-arrow" aria-hidden="true">↓</span>
-      <a class="flow-stage" routerLink="/partnerships/proposals">
-        <span class="flow-label">{{ 'partnerships.dashboardLifecycleProposals' | t }}</span>
-        <strong>{{ data.proposalsTotal }}</strong>
-      </a>
-      <span class="flow-arrow" aria-hidden="true">↓</span>
-      <a class="flow-stage" routerLink="/partnerships/sows">
-        <span class="flow-label">{{ 'partnerships.dashboardLifecycleSowsActive' | t }}</span>
-        <strong>{{ data.sowsActive }}</strong>
-      </a>
-      <span class="flow-arrow" aria-hidden="true">↓</span>
-      <a class="flow-stage" routerLink="/partnerships/delivery">
-        <span class="flow-label">{{ 'partnerships.dashboardLifecycleDeliveriesActive' | t }}</span>
-        <strong>{{ data.deliveriesActive }}</strong>
-      </a>
-      <span class="flow-arrow" aria-hidden="true">↓</span>
-      <a class="flow-stage" routerLink="/partnerships/reports">
-        <span class="flow-label">{{ 'partnerships.dashboardLifecycleReportsPublished' | t }}</span>
-        <strong>{{ data.reportsPublished }}</strong>
-      </a>
-      <span class="flow-arrow" aria-hidden="true">↓</span>
-      <a class="flow-stage" routerLink="/partnerships/renewals">
-        <span class="flow-label">{{ 'partnerships.dashboardLifecycleRenewalsOpen' | t }}</span>
-        <strong>{{ data.renewalsOpen }}</strong>
-      </a>
-    </div>
-  </section>
-
-  <section class="ra-card block">
-    <app-section-header [title]="'partnerships.dashboardLifecycle' | t" />
-    <div class="lifecycle-strip">
-      <a class="lifecycle-link" routerLink="/partnerships/proposals">
-        <app-stat-card
-          [label]="'partnerships.dashboardLifecycleProposals' | t"
-          [value]="'' + data.proposalsTotal"
-        />
-      </a>
-      <a class="lifecycle-link" routerLink="/partnerships/proposals">
-        <app-stat-card
-          [label]="'partnerships.dashboardLifecycleProposalsAccepted' | t"
-          [value]="'' + data.proposalsAccepted"
-        />
-      </a>
-      <a class="lifecycle-link" routerLink="/partnerships/sows">
-        <app-stat-card
-          [label]="'partnerships.dashboardLifecycleSowsActive' | t"
-          [value]="'' + data.sowsActive"
-        />
-      </a>
-      <a class="lifecycle-link" routerLink="/partnerships/delivery">
-        <app-stat-card
-          [label]="'partnerships.dashboardLifecycleDeliveriesActive' | t"
-          [value]="'' + data.deliveriesActive"
-        />
-      </a>
-      <a class="lifecycle-link" routerLink="/partnerships/reports">
-        <app-stat-card
-          [label]="'partnerships.dashboardLifecycleReportsPublished' | t"
-          [value]="'' + data.reportsPublished"
-        />
-      </a>
-      <a class="lifecycle-link" routerLink="/partnerships/renewals">
-        <app-stat-card
-          [label]="'partnerships.dashboardLifecycleRenewalsOpen' | t"
-          [value]="'' + data.renewalsOpen"
-        />
-      </a>
-    </div>
-  </section>
-
-  <section class="ra-card block">
-    <app-section-header [title]="'partnerships.attentionNeeded' | t" />
-    <p class="hint">{{ 'partnerships.attentionNeededHint' | t }}</p>
-    @if (attentionTotal() === 0) {
-      <p class="hint">{{ 'partnerships.attentionNeededEmpty' | t }}</p>
-    } @else {
-      <div class="attention-grid">
-        @if (data.overdueFollowUps > 0) {
-          <a class="attention-item" routerLink="/partnerships/follow-ups">
-            <strong>{{ data.overdueFollowUps }}</strong>
-            <span>{{ 'partnerships.attentionOverdueFollowUps' | t }}</span>
-          </a>
-        }
-        @if (data.attentionProposalFollowUp > 0) {
-          <a class="attention-item" routerLink="/partnerships/proposals">
-            <strong>{{ data.attentionProposalFollowUp }}</strong>
-            <span>{{ 'partnerships.attentionProposalFollowUp' | t }}</span>
-          </a>
-        }
-        @if (data.attentionSowPendingSignature > 0) {
-          <a class="attention-item" routerLink="/partnerships/sows">
-            <strong>{{ data.attentionSowPendingSignature }}</strong>
-            <span>{{ 'partnerships.attentionSowPendingSignature' | t }}</span>
-          </a>
-        }
-        @if (data.attentionDeliveryPaused > 0) {
-          <a class="attention-item" routerLink="/partnerships/delivery">
-            <strong>{{ data.attentionDeliveryPaused }}</strong>
-            <span>{{ 'partnerships.attentionDeliveryPaused' | t }}</span>
-          </a>
-        }
-        @if (data.attentionReportInReview > 0) {
-          <a class="attention-item" routerLink="/partnerships/reports">
-            <strong>{{ data.attentionReportInReview }}</strong>
-            <span>{{ 'partnerships.attentionReportInReview' | t }}</span>
-          </a>
-        }
-        @if (data.attentionRenewalPlanning > 0) {
-          <a class="attention-item" routerLink="/partnerships/renewals">
-            <strong>{{ data.attentionRenewalPlanning }}</strong>
-            <span>{{ 'partnerships.attentionRenewalPlanning' | t }}</span>
-          </a>
-        }
+    <section class="ra-card block">
+      <app-section-header [title]="'partnerships.ccCurrentDelivery' | t" />
+      <div class="delivery-status">
+        <a routerLink="/partnerships/delivery" [queryParams]="{ status: 'PREPARING' }">
+          {{ 'partnerships.ccDeliveryPreparing' | t }}: {{ center.deliveryStatus.preparing }}
+        </a>
+        <a routerLink="/partnerships/delivery" [queryParams]="{ status: 'ACTIVE' }">
+          {{ 'partnerships.ccDeliveryActive' | t }}: {{ center.deliveryStatus.active }}
+        </a>
+        <a routerLink="/partnerships/delivery" [queryParams]="{ status: 'PAUSED' }">
+          {{ 'partnerships.ccDeliveryPaused' | t }}: {{ center.deliveryStatus.paused }}
+        </a>
+        <a routerLink="/partnerships/delivery" [queryParams]="{ status: 'COMPLETED' }">
+          {{ 'partnerships.ccDeliveryCompleted' | t }}: {{ center.deliveryStatus.completed }}
+        </a>
+        <a routerLink="/partnerships/delivery" [queryParams]="{ status: 'CANCELLED' }">
+          {{ 'partnerships.ccDeliveryCancelled' | t }}: {{ center.deliveryStatus.cancelled }}
+        </a>
       </div>
-    }
-  </section>
-
-  <section class="ra-card block">
-    <app-section-header [title]="'partnerships.leadPipeline' | t" />
-    <div class="pipeline">
-      @for (status of leadStatuses; track status) {
-        <article>
-          <p class="ra-kicker">{{ label(status) }}</p>
-          <strong>{{ statusCount(status) }}</strong>
-        </article>
+      @if (center.activeDeliveries.length === 0) {
+        <p class="hint">{{ 'partnerships.ccNoActiveDeliveries' | t }}</p>
+      } @else {
+        <div class="delivery-cards">
+          @for (row of center.activeDeliveries; track row.id) {
+            <article class="delivery-card">
+              <div class="delivery-card__head">
+                <a class="entity-id" [routerLink]="['/partnerships/delivery', row.id]">{{
+                  row.deliveryNumber
+                }}</a>
+                <span class="soft-badge">{{ label(row.status) }}</span>
+              </div>
+              <h3>
+                <a [routerLink]="['/partnerships/institutions', row.institutionId]">{{
+                  row.schoolName
+                }}</a>
+              </h3>
+              <p class="hint">{{ blank(row.programName) }}</p>
+              <dl class="mini-facts">
+                <div>
+                  <dt>{{ 'partnerships.ccGroups' | t }}</dt>
+                  <dd>{{ row.groupsCount }}</dd>
+                </div>
+                <div>
+                  <dt>{{ 'partnerships.ccStudents' | t }}</dt>
+                  <dd>{{ row.studentsCount }}</dd>
+                </div>
+                <div>
+                  <dt>{{ 'partnerships.ccSessions' | t }}</dt>
+                  <dd>{{ row.sessionsCompleted }} / {{ row.sessionsTotal }}</dd>
+                </div>
+                <div>
+                  <dt>{{ 'partnerships.ccMilestones' | t }}</dt>
+                  <dd>{{ row.milestonesCompleted }} / {{ row.milestonesTotal }}</dd>
+                </div>
+                <div>
+                  <dt>{{ 'partnerships.ccIssues' | t }}</dt>
+                  <dd>{{ row.openIssues }}</dd>
+                </div>
+              </dl>
+              @if (row.progressPercent != null) {
+                <app-progress-bar [value]="row.progressPercent" />
+                <p class="hint">{{ progressText(row.progressPercent) }}</p>
+              }
+            </article>
+          }
+        </div>
       }
+    </section>
+
+    <div class="split">
+      <section class="ra-card block">
+        <app-section-header [title]="'partnerships.ccUpcomingMilestones' | t" />
+        @if (center.upcomingMilestones.length === 0) {
+          <p class="hint">{{ 'partnerships.ccNoMilestones' | t }}</p>
+        } @else {
+          <div class="ra-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>{{ 'partnerships.ccColMilestone' | t }}</th>
+                  <th>{{ 'partnerships.ccColSchool' | t }}</th>
+                  <th>{{ 'nav.delivery' | t }}</th>
+                  <th>{{ 'partnerships.dueDate' | t }}</th>
+                  <th>{{ 'partnerships.owner' | t }}</th>
+                  <th>{{ 'common.status' | t }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of center.upcomingMilestones; track row.id) {
+                  <tr>
+                    <td>{{ row.name }}</td>
+                    <td>{{ row.schoolName }}</td>
+                    <td>
+                      <a class="entity-id" [routerLink]="['/partnerships/delivery', row.deliveryId]">{{
+                        row.deliveryNumber
+                      }}</a>
+                    </td>
+                    <td>{{ row.dueDate ? (row.dueDate | date: 'mediumDate') : '—' }}</td>
+                    <td>{{ blank(row.owner) }}</td>
+                    <td>{{ label(row.status) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+
+      <section class="ra-card block">
+        <app-section-header [title]="'partnerships.ccUpcomingRenewals' | t" />
+        @if (center.upcomingRenewals.length === 0) {
+          <p class="hint">{{ 'partnerships.ccNoRenewals' | t }}</p>
+        } @else {
+          <div class="ra-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>{{ 'partnerships.ccColSchool' | t }}</th>
+                  <th>{{ 'nav.delivery' | t }}</th>
+                  <th>{{ 'partnerships.endDate' | t }}</th>
+                  <th>{{ 'nav.renewals' | t }}</th>
+                  <th>{{ 'common.status' | t }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of center.upcomingRenewals; track row.path + (row.opportunityId || row.deliveryId)) {
+                  <tr>
+                    <td>
+                      <a [routerLink]="['/partnerships/institutions', row.institutionId]">{{
+                        row.schoolName
+                      }}</a>
+                    </td>
+                    <td>
+                      @if (row.deliveryId) {
+                        <a class="entity-id" [routerLink]="['/partnerships/delivery', row.deliveryId]">{{
+                          row.deliveryNumber || '—'
+                        }}</a>
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td>{{ row.endDate ? (row.endDate | date: 'mediumDate') : '—' }}</td>
+                    <td>
+                      <a [routerLink]="row.path" [queryParams]="row.queryParams || {}">{{
+                        row.opportunityNumber || ('partnerships.ccCreateOpportunity' | t)
+                      }}</a>
+                    </td>
+                    <td>{{ row.status ? label(row.status) : '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
     </div>
-  </section>
 
-  <div class="split">
-    <section class="ra-card block">
-      <app-section-header [title]="'partnerships.byGovernorate' | t" />
-      @if (data.institutionsByGovernorate.length === 0) {
-        <p class="hint">—</p>
-      } @else {
-        <ul>
-          @for (row of data.institutionsByGovernorate; track row.key) {
-            <li><span>{{ row.key }}</span><strong>{{ row.count }}</strong></li>
-          }
-        </ul>
-      }
-    </section>
-    <section class="ra-card block">
-      <app-section-header [title]="'partnerships.byType' | t" />
-      @if (data.institutionsByType.length === 0) {
-        <p class="hint">—</p>
-      } @else {
-        <ul>
-          @for (row of data.institutionsByType; track row.key) {
-            <li><span>{{ label(row.key) }}</span><strong>{{ row.count }}</strong></li>
-          }
-        </ul>
-      }
-    </section>
-  </div>
+    <div class="split">
+      <section class="ra-card block">
+        <app-section-header [title]="'partnerships.ccRecentActivity' | t" />
+        @if (center.recentActivity.length === 0) {
+          <p class="hint">{{ 'partnerships.noRecentActivity' | t }}</p>
+        } @else {
+          <ul class="activity-list">
+            @for (row of center.recentActivity; track row.id) {
+              <li>
+                <div>
+                  <a [routerLink]="row.path">{{ row.subject }}</a>
+                  <p class="hint">
+                    {{ blank(row.schoolName) }} · {{ label(row.activityType) }}
+                  </p>
+                </div>
+                <span class="hint">{{ relativeTime(row.occurredAt) }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </section>
 
-  <div class="split">
+      <section class="ra-card block">
+        <app-section-header [title]="'partnerships.ccOutcomes' | t" />
+        <div class="outcomes">
+          <article>
+            <strong>{{ center.outcomes.activeStudents }}</strong>
+            <span>{{ 'partnerships.ccOutcomeActiveStudents' | t }}</span>
+          </article>
+          <article>
+            <strong>{{ center.outcomes.activeDeliveries }}</strong>
+            <span>{{ 'partnerships.ccOutcomeActiveDeliveries' | t }}</span>
+          </article>
+          <article>
+            <strong>{{ center.outcomes.completedDeliveries }}</strong>
+            <span>{{ 'partnerships.ccOutcomeCompletedDeliveries' | t }}</span>
+          </article>
+          <article>
+            <strong>{{ center.outcomes.publishedReports }}</strong>
+            <span>{{ 'partnerships.ccOutcomePublishedReports' | t }}</span>
+          </article>
+          <article>
+            <strong>{{ center.outcomes.openRenewals }}</strong>
+            <span>{{ 'partnerships.ccOutcomeOpenRenewals' | t }}</span>
+          </article>
+        </div>
+      </section>
+    </div>
+
     <section class="ra-card block">
-      <app-section-header [title]="'partnerships.followUpsTitle' | t" />
-      <p class="ra-kicker">{{ 'partnerships.overdue' | t }}</p>
-      @if (overdue().length === 0) {
-        <p class="hint">—</p>
+      <app-section-header [title]="'partnerships.ccProgramsTitle' | t" />
+      <p class="hint">{{ 'partnerships.ccProgramsHint' | t }}</p>
+      @if (center.programPerformance.length === 0) {
+        <p class="hint">{{ 'partnerships.ccProgramsEmpty' | t }}</p>
       } @else {
-        <ul class="links">
-          @for (row of overdue(); track row.id) {
-            <li>
-              <a [routerLink]="['/partnerships/institutions', row.institutionId]">{{ row.title }}</a>
-              <span>{{ row.dueDate }}</span>
-            </li>
-          }
-        </ul>
-      }
-      <p class="ra-kicker">{{ 'partnerships.dueToday' | t }}</p>
-      @if (dueToday().length === 0) {
-        <p class="hint">—</p>
-      } @else {
-        <ul class="links">
-          @for (row of dueToday(); track row.id) {
-            <li>
-              <a [routerLink]="['/partnerships/institutions', row.institutionId]">{{ row.title }}</a>
-              <span>{{ row.dueDate }}</span>
-            </li>
-          }
-        </ul>
-      }
-      <p class="ra-kicker">{{ 'partnerships.upcoming' | t }}</p>
-      @if (upcoming().length === 0) {
-        <p class="hint">—</p>
-      } @else {
-        <ul class="links">
-          @for (row of upcoming(); track row.id) {
-            <li>
-              <a [routerLink]="['/partnerships/institutions', row.institutionId]">{{ row.title }}</a>
-              <span>{{ row.dueDate }}</span>
-            </li>
-          }
-        </ul>
+        <div class="ra-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'partnerships.ccColProgram' | t }}</th>
+                <th>{{ 'partnerships.ccColActiveOfferings' | t }}</th>
+                <th>{{ 'partnerships.ccColActiveDeliveries' | t }}</th>
+                <th>{{ 'partnerships.ccStudents' | t }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of center.programPerformance; track row.programName) {
+                <tr>
+                  <td>{{ row.programName }}</td>
+                  <td>{{ row.activeOfferings }}</td>
+                  <td>{{ row.activeDeliveries }}</td>
+                  <td>{{ row.students }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
     </section>
-    <section class="ra-card block">
-      <app-section-header [title]="'partnerships.recentActivity' | t" />
-      @if (recent().length === 0) {
-        <app-empty-state
-          [title]="'partnerships.noRecentActivity' | t"
-          [message]="'partnerships.institutionHubActivityEmptyMessage' | t"
-          icon="history"
-        />
-      } @else {
-        <ul class="links">
-          @for (row of recent(); track row.id) {
-            <li>
-              <a [routerLink]="['/partnerships/institutions', row.institutionId]">{{ row.subject }}</a>
-              <span>{{ label(row.activityType) }}</span>
-            </li>
+
+    @if (permissions.canWrite()) {
+      <section class="ra-card block">
+        <app-section-header [title]="'partnerships.ccQuickActions' | t" />
+        <p class="hint">{{ 'partnerships.quickCreateHint' | t }}</p>
+        <div class="quick-actions">
+          @for (item of quickActions; track item.path + item.labelKey) {
+            <a mat-stroked-button [routerLink]="item.path">{{ item.labelKey | t }}</a>
           }
-        </ul>
-      }
-    </section>
-  </div>
+        </div>
+      </section>
+    }
+  }
 }

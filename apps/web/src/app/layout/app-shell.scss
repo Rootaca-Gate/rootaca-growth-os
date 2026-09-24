@@ -111,6 +111,12 @@ nav {
   gap: 2px;
 }
 
+/* Primary section links (e.g. Command Center) sit above numbered stage groups. */
+.section-items > a {
+  margin-block-end: 6px;
+  font-weight: 600;
+}
+
 .nav-group {
   display: grid;
   gap: 2px;

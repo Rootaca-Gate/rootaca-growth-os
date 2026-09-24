@@ -43,6 +43,22 @@
             }
 
             <div class="section-items">
+              @if (section.items?.length) {
+                @for (item of section.items; track item.path) {
+                  <a
+                    [routerLink]="item.path"
+                    routerLinkActive="active"
+                    [routerLinkActiveOptions]="{ exact: item.exact === true }"
+                    [class.active]="isItemActive(item.path, item.exact)"
+                    [matTooltip]="item.labelKey | t"
+                    matTooltipShowDelay="400"
+                    (click)="onNavLinkClick()"
+                  >
+                    <mat-icon>{{ item.icon }}</mat-icon>
+                    <span>{{ item.labelKey | t }}</span>
+                  </a>
+                }
+              }
               @if (section.groups; as groups) {
                 @for (group of groups; track group.titleKey) {
                   <div class="nav-group">
@@ -67,21 +83,6 @@
                       </a>
                     }
                   </div>
-                }
-              } @else {
-                @for (item of section.items; track item.path) {
-                  <a
-                    [routerLink]="item.path"
-                    routerLinkActive="active"
-                    [routerLinkActiveOptions]="{ exact: item.exact === true }"
-                    [class.active]="isItemActive(item.path, item.exact)"
-                    [matTooltip]="item.labelKey | t"
-                    matTooltipShowDelay="400"
-                    (click)="onNavLinkClick()"
-                  >
-                    <mat-icon>{{ item.icon }}</mat-icon>
-                    <span>{{ item.labelKey | t }}</span>
-                  </a>
                 }
               }
             </div>

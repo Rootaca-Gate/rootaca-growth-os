@@ -6,7 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { debounceTime } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DirectionService } from '../../../core/direction.service';
@@ -51,6 +51,7 @@ export class DeliveriesListPage {
   private readonly api = inject(PartnershipsApi);
   private readonly snackBar = inject(MatSnackBar);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   readonly i18n = inject(DirectionService);
   readonly permissions = usePartnershipPermissions();
 
@@ -81,6 +82,10 @@ export class DeliveriesListPage {
   });
 
   constructor() {
+    const status = this.route.snapshot.queryParamMap.get('status');
+    if (status && (DELIVERY_STATUSES as readonly string[]).includes(status)) {
+      this.statusControl.setValue(status as PartnershipDeliveryStatus, { emitEvent: false });
+    }
     this.loadInstitutions();
     this.loadSows();
     this.searchControl.valueChanges

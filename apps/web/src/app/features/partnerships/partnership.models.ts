@@ -479,6 +479,157 @@ export type PartnershipDashboard = {
   institutionsByType: NamedCount[];
   leadsByStatus: NamedCount[];
   leadsByPriority: NamedCount[];
+  commandCenter?: PartnershipCommandCenter;
+};
+
+export type PipelineStage = {
+  key: string;
+  path: string;
+  total: number;
+  active: number | null;
+  highlight: number | null;
+  highlightKey: string | null;
+  latestActivityAt: string | null;
+};
+
+export type AttentionItem = {
+  kind:
+    | 'PROPOSAL_FOLLOW_UP'
+    | 'SOW_PENDING'
+    | 'DELIVERY_ISSUE'
+    | 'REPORT_PENDING'
+    | 'RENEWAL_PLANNING'
+    | 'OVERDUE_FOLLOW_UP'
+    | string;
+  title: string;
+  entityLabel: string;
+  path: string;
+  queryParams: Record<string, string> | null;
+  schoolName: string | null;
+  status: string | null;
+  lastActivityAt: string | null;
+  dueDate: string | null;
+};
+
+export type ActivePartnershipRow = {
+  institutionId: string;
+  schoolName: string;
+  programName: string | null;
+  sowId: string;
+  sowNumber: string;
+  deliveryId: string;
+  deliveryNumber: string;
+  progressPercent: number | null;
+  endDate: string | null;
+  status: string;
+};
+
+export type ActiveDeliveryCard = {
+  id: string;
+  deliveryNumber: string;
+  name: string;
+  institutionId: string;
+  schoolName: string;
+  programName: string | null;
+  status: string;
+  groupsCount: number;
+  studentsCount: number;
+  sessionsCompleted: number;
+  sessionsTotal: number;
+  milestonesCompleted: number;
+  milestonesTotal: number;
+  openIssues: number;
+  progressPercent: number | null;
+  endDate: string | null;
+};
+
+export type UpcomingMilestoneRow = {
+  id: string;
+  name: string;
+  deliveryId: string;
+  deliveryNumber: string;
+  schoolName: string;
+  dueDate: string | null;
+  owner: string;
+  status: string;
+};
+
+export type UpcomingRenewalRow = {
+  opportunityId: string | null;
+  opportunityNumber: string | null;
+  institutionId: string;
+  schoolName: string;
+  deliveryId: string | null;
+  deliveryNumber: string | null;
+  endDate: string | null;
+  status: string | null;
+  path: string;
+  queryParams: Record<string, string> | null;
+};
+
+export type CommandCenterActivity = {
+  id: string;
+  subject: string;
+  activityType: string;
+  institutionId: string;
+  schoolName: string | null;
+  occurredAt: string;
+  path: string;
+};
+
+export type CommandCenterOutcomes = {
+  activeStudents: number;
+  completedDeliveries: number;
+  publishedReports: number;
+  activeDeliveries: number;
+  openRenewals: number;
+};
+
+export type DeliveryStatusBreakdown = {
+  preparing: number;
+  active: number;
+  paused: number;
+  completed: number;
+  cancelled: number;
+};
+
+export type ProgramPerformanceRow = {
+  programName: string;
+  activeOfferings: number;
+  activeDeliveries: number;
+  students: number;
+};
+
+export type PeriodNewCounts = {
+  period: string;
+  newLeads: number;
+  newInstitutions: number;
+  newProposals: number;
+  newSows: number;
+  newDeliveries: number;
+  newReports: number;
+  newOpportunities: number;
+};
+
+export type PartnershipCommandCenter = {
+  generatedAt: string;
+  openLeads: number;
+  openProposals: number;
+  proposalsAwaitingResponse: number;
+  sowsPendingSignature: number;
+  reportsPending: number;
+  reportsTotal: number;
+  pipeline: PipelineStage[];
+  attention: AttentionItem[];
+  activePartnerships: ActivePartnershipRow[];
+  activeDeliveries: ActiveDeliveryCard[];
+  deliveryStatus: DeliveryStatusBreakdown;
+  upcomingMilestones: UpcomingMilestoneRow[];
+  upcomingRenewals: UpcomingRenewalRow[];
+  recentActivity: CommandCenterActivity[];
+  outcomes: CommandCenterOutcomes;
+  programPerformance: ProgramPerformanceRow[];
+  periodNew: PeriodNewCounts | null;
 };
 
 export type PartnershipSearchHit = {

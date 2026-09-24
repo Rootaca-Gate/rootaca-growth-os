@@ -3,6 +3,41 @@ import { PartnershipLeadStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PartnershipDashboardService } from './dashboard.service';
 
+jest.mock('./command-center', () => ({
+  buildCommandCenter: jest.fn().mockResolvedValue({
+    generatedAt: '2026-09-24T12:00:00.000Z',
+    openLeads: 4,
+    openProposals: 2,
+    proposalsAwaitingResponse: 1,
+    sowsPendingSignature: 0,
+    reportsPending: 1,
+    reportsTotal: 5,
+    pipeline: [],
+    attention: [],
+    activePartnerships: [],
+    activeDeliveries: [],
+    deliveryStatus: {
+      preparing: 0,
+      active: 2,
+      paused: 0,
+      completed: 1,
+      cancelled: 0,
+    },
+    upcomingMilestones: [],
+    upcomingRenewals: [],
+    recentActivity: [],
+    outcomes: {
+      activeStudents: 0,
+      completedDeliveries: 1,
+      publishedReports: 5,
+      activeDeliveries: 2,
+      openRenewals: 6,
+    },
+    programPerformance: [],
+    periodNew: null,
+  }),
+}));
+
 describe('PartnershipDashboardService', () => {
   let service: PartnershipDashboardService;
   const prisma = {
@@ -88,5 +123,6 @@ describe('PartnershipDashboardService', () => {
     expect(result.attentionReportInReview).toBe(2);
     expect(result.attentionRenewalPlanning).toBe(3);
     expect(result.institutionsByGovernorate[0]?.key).toBe('Cairo');
+    expect(result.commandCenter?.openLeads).toBe(4);
   });
 });

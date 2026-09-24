@@ -1,0 +1,138 @@
+@if (loading()) {
+  <app-loading-skeleton [rows]="12" [label]="'partnerships.reportsLoading' | t" />
+} @else if (error(); as message) {
+  <app-error-state
+    [title]="'partnerships.reportsLoadError' | t"
+    [message]="message"
+  />
+} @else if (!isEdit) {
+  <app-page-header
+    [title]="'partnerships.reportsCreateTitle' | t"
+    [subtitle]="'partnerships.reportsCreateSubtitle' | t"
+  />
+  <form class="report-form" (ngSubmit)="create()">
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.reportsDelivery' | t }}</mat-label>
+      <mat-select [formControl]="createForm.controls.deliveryId">
+        @for (item of deliveries(); track item.id) {
+          <mat-option [value]="item.id"
+            >{{ item.deliveryNumber }} — {{ item.name }} ({{ item.institutionName }})</mat-option
+          >
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.reportsType' | t }}</mat-label>
+      <mat-select [formControl]="createForm.controls.type">
+        @for (item of reportTypes; track item) {
+          <mat-option [value]="item">{{ reportLabel('type', item) }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <div class="actions">
+      <a mat-stroked-button routerLink="/partnerships/reports">{{ 'common.cancel' | t }}</a>
+      <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+        {{ 'partnerships.reportsCreate' | t }}
+      </button>
+    </div>
+  </form>
+} @else {
+  <app-page-header
+    [title]="'partnerships.reportsEditTitle' | t"
+    [subtitle]="'partnerships.reportsEditSubtitle' | t"
+  />
+  <form class="report-form" [formGroup]="editForm" (ngSubmit)="save()">
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.reportsColReport' | t }}</mat-label>
+      <input matInput formControlName="title" />
+    </mat-form-field>
+    <div class="grid-2">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.reportsPeriodStart' | t }}</mat-label>
+        <input matInput type="date" formControlName="periodStart" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.reportsPeriodEnd' | t }}</mat-label>
+        <input matInput type="date" formControlName="periodEnd" />
+      </mat-form-field>
+    </div>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.reportsPeriodLabel' | t }}</mat-label>
+      <input matInput formControlName="periodLabel" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.reportsPreparedBy' | t }}</mat-label>
+      <input matInput formControlName="preparedBy" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.reportsExecutiveSummary' | t }}</mat-label>
+      <textarea matInput rows="4" formControlName="executiveSummary"></textarea>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.reportsAchievements' | t }}</mat-label>
+      <textarea matInput rows="4" formControlName="achievements"></textarea>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.reportsNextSteps' | t }}</mat-label>
+      <textarea matInput rows="4" formControlName="nextSteps"></textarea>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.reportsRenewalNotes' | t }}</mat-label>
+      <textarea matInput rows="3" formControlName="renewalNotes"></textarea>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.reportsInternalNotes' | t }}</mat-label>
+      <textarea matInput rows="3" formControlName="internalNotes"></textarea>
+    </mat-form-field>
+
+    <section class="rec-section">
+      <div class="rec-head">
+        <h2>{{ 'partnerships.reportsRecommendations' | t }}</h2>
+        <button mat-stroked-button type="button" (click)="addRecommendation()">
+          {{ 'partnerships.reportsAddRecommendation' | t }}
+        </button>
+      </div>
+      @for (group of recommendations.controls; track $index; let i = $index) {
+        <div class="rec-card" [formGroup]="$any(group)">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.reportsRecommendationText' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="text"></textarea>
+          </mat-form-field>
+          <div class="grid-3">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'partnerships.reportsPriority' | t }}</mat-label>
+              <mat-select formControlName="priority">
+                @for (p of recommendationPriorities; track p) {
+                  <mat-option [value]="p">{{ reportLabel('priority', p) }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'partnerships.reportsOwner' | t }}</mat-label>
+              <input matInput formControlName="owner" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'partnerships.reportsTargetDate' | t }}</mat-label>
+              <input matInput type="date" formControlName="targetDate" />
+            </mat-form-field>
+          </div>
+          <mat-checkbox formControlName="isInternal">{{
+            'partnerships.reportsInternalRecommendation' | t
+          }}</mat-checkbox>
+          <button mat-button type="button" color="warn" (click)="removeRecommendation(i)">
+            {{ 'common.remove' | t }}
+          </button>
+        </div>
+      }
+    </section>
+
+    <div class="actions">
+      <a mat-stroked-button [routerLink]="['/partnerships/reports', editId]">{{
+        'common.cancel' | t
+      }}</a>
+      <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+        {{ 'common.save' | t }}
+      </button>
+    </div>
+  </form>
+}

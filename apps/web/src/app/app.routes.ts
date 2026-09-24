@@ -171,6 +171,206 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'partnerships/programs',
+        loadComponent: () =>
+          import('./features/partnerships/programs/programs-list.page').then(
+            (m) => m.ProgramsListPage,
+          ),
+      },
+      {
+        path: 'partnerships/programs/new',
+        loadComponent: () =>
+          import('./features/partnerships/programs/program-form.page').then(
+            (m) => m.ProgramFormPage,
+          ),
+      },
+      {
+        path: 'partnerships/programs/:id/edit',
+        loadComponent: () =>
+          import('./features/partnerships/programs/program-form.page').then(
+            (m) => m.ProgramFormPage,
+          ),
+      },
+      {
+        path: 'partnerships/programs/:id/preview',
+        loadComponent: () =>
+          import('./features/partnerships/programs/program-preview.page').then(
+            (m) => m.ProgramPreviewPage,
+          ),
+      },
+      {
+        path: 'partnerships/programs/:id',
+        loadComponent: () =>
+          import('./features/partnerships/programs/program-details.page').then(
+            (m) => m.ProgramDetailsPage,
+          ),
+      },
+      {
+        path: 'partnerships/offerings',
+        loadComponent: () =>
+          import('./features/partnerships/offerings/offerings-list.page').then(
+            (m) => m.OfferingsListPage,
+          ),
+      },
+      {
+        path: 'partnerships/offerings/new',
+        loadComponent: () =>
+          import('./features/partnerships/offerings/offering-form.page').then(
+            (m) => m.OfferingFormPage,
+          ),
+      },
+      {
+        path: 'partnerships/offerings/:id/edit',
+        loadComponent: () =>
+          import('./features/partnerships/offerings/offering-form.page').then(
+            (m) => m.OfferingFormPage,
+          ),
+      },
+      {
+        path: 'partnerships/offerings/:id/preview',
+        loadComponent: () =>
+          import('./features/partnerships/offerings/offering-preview.page').then(
+            (m) => m.OfferingPreviewPage,
+          ),
+      },
+      {
+        path: 'partnerships/offerings/:id',
+        loadComponent: () =>
+          import('./features/partnerships/offerings/offering-details.page').then(
+            (m) => m.OfferingDetailsPage,
+          ),
+      },
+      {
+        path: 'partnerships/proposals',
+        loadComponent: () =>
+          import('./features/partnerships/proposals/proposals-list.page').then(
+            (m) => m.ProposalsListPage,
+          ),
+      },
+      {
+        path: 'partnerships/proposals/new',
+        loadComponent: () =>
+          import('./features/partnerships/proposals/proposal-form.page').then(
+            (m) => m.ProposalFormPage,
+          ),
+      },
+      {
+        path: 'partnerships/proposals/:id/edit',
+        loadComponent: () =>
+          import('./features/partnerships/proposals/proposal-form.page').then(
+            (m) => m.ProposalFormPage,
+          ),
+      },
+      {
+        path: 'partnerships/proposals/:id/preview',
+        loadComponent: () =>
+          import('./features/partnerships/proposals/proposal-preview.page').then(
+            (m) => m.ProposalPreviewPage,
+          ),
+      },
+      {
+        path: 'partnerships/proposals/:id',
+        loadComponent: () =>
+          import('./features/partnerships/proposals/proposal-details.page').then(
+            (m) => m.ProposalDetailsPage,
+          ),
+      },
+      {
+        path: 'partnerships/sows',
+        loadComponent: () =>
+          import('./features/partnerships/sows/sows-list.page').then((m) => m.SowsListPage),
+      },
+      {
+        path: 'partnerships/sows/new',
+        loadComponent: () =>
+          import('./features/partnerships/sows/sow-form.page').then((m) => m.SowFormPage),
+      },
+      {
+        path: 'partnerships/sows/:id/edit',
+        loadComponent: () =>
+          import('./features/partnerships/sows/sow-form.page').then((m) => m.SowFormPage),
+      },
+      {
+        path: 'partnerships/sows/:id/preview',
+        loadComponent: () =>
+          import('./features/partnerships/sows/sow-preview.page').then((m) => m.SowPreviewPage),
+      },
+      {
+        path: 'partnerships/sows/:id',
+        loadComponent: () =>
+          import('./features/partnerships/sows/sow-details.page').then((m) => m.SowDetailsPage),
+      },
+      {
+        path: 'partnerships/delivery',
+        loadComponent: () =>
+          import('./features/partnerships/delivery/deliveries-list.page').then(
+            (m) => m.DeliveriesListPage,
+          ),
+      },
+      {
+        path: 'partnerships/delivery/new',
+        loadComponent: () =>
+          import('./features/partnerships/delivery/delivery-form.page').then(
+            (m) => m.DeliveryFormPage,
+          ),
+      },
+      {
+        path: 'partnerships/delivery/:id/edit',
+        loadComponent: () =>
+          import('./features/partnerships/delivery/delivery-form.page').then(
+            (m) => m.DeliveryFormPage,
+          ),
+      },
+      {
+        path: 'partnerships/delivery/:id/preview',
+        loadComponent: () =>
+          import('./features/partnerships/delivery/delivery-preview.page').then(
+            (m) => m.DeliveryPreviewPage,
+          ),
+      },
+      {
+        path: 'partnerships/delivery/:id',
+        loadComponent: () =>
+          import('./features/partnerships/delivery/delivery-details.page').then(
+            (m) => m.DeliveryDetailsPage,
+          ),
+      },
+      {
+        path: 'partnerships/reports',
+        loadComponent: () =>
+          import('./features/partnerships/reports/reports-list.page').then(
+            (m) => m.ReportsListPage,
+          ),
+      },
+      {
+        path: 'partnerships/reports/new',
+        loadComponent: () =>
+          import('./features/partnerships/reports/report-form.page').then(
+            (m) => m.ReportFormPage,
+          ),
+      },
+      {
+        path: 'partnerships/reports/:id/edit',
+        loadComponent: () =>
+          import('./features/partnerships/reports/report-form.page').then(
+            (m) => m.ReportFormPage,
+          ),
+      },
+      {
+        path: 'partnerships/reports/:id/preview',
+        loadComponent: () =>
+          import('./features/partnerships/reports/report-preview.page').then(
+            (m) => m.ReportPreviewPage,
+          ),
+      },
+      {
+        path: 'partnerships/reports/:id',
+        loadComponent: () =>
+          import('./features/partnerships/reports/report-details.page').then(
+            (m) => m.ReportDetailsPage,
+          ),
+      },
+      {
         path: 'partnerships/contacts',
         loadComponent: () =>
           import('./features/partnerships/contacts-list.page').then((m) => m.ContactsListPage),

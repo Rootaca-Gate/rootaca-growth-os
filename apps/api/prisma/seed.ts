@@ -8,6 +8,11 @@ import { seedPlacementCatalog } from '../src/placement/catalog/seed-placement-ca
 import { seedRoadmapTemplates } from '../src/roadmap/catalog/seed-roadmap-templates';
 import { seedKpiCatalog } from '../src/kpi/catalog/seed-kpis';
 import { seedProjectCatalog } from '../src/projects/catalog/seed-projects';
+import { seedPartnershipPrograms } from '../src/partnerships/programs/seed-programs';
+import { seedPartnershipOfferings } from '../src/partnerships/offerings/seed-offerings';
+import { seedPartnershipProposals } from '../src/partnerships/proposals/seed-proposals';
+import { seedPartnershipSows } from '../src/partnerships/sows/seed-sows';
+import { seedPartnershipDeliveries } from '../src/partnerships/delivery/seed-deliveries';
 import { seedProgressReviews } from '../src/progress/seed-progress-reviews';
 import { DEV_SEED_USERS } from '../src/auth/dev-seed-users';
 import { createPrismaTcpAdapter } from '../src/prisma/prisma-adapter';
@@ -99,6 +104,11 @@ async function seed(): Promise<void> {
   await seedRoadmapTemplates(prisma);
   await seedKpiCatalog(prisma);
   await seedProjectCatalog(prisma);
+  await seedPartnershipPrograms(prisma);
+  await seedPartnershipOfferings(prisma);
+  await seedPartnershipProposals(prisma);
+  await seedPartnershipSows(prisma);
+  await seedPartnershipDeliveries(prisma);
   await seedProgressReviews(prisma);
 
   const [users, students] = await Promise.all([prisma.user.count(), prisma.student.count()]);

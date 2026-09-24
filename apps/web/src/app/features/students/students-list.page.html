@@ -6,64 +6,92 @@
 </app-page-header>
 
 @if (!inactiveOnly()) {
-<section class="ra-filters">
-  <mat-form-field appearance="outline">
-    <mat-label>{{ 'common.search' | t }}</mat-label>
-    <input matInput [formControl]="searchControl" [placeholder]="'students.searchPlaceholder' | t" />
-  </mat-form-field>
-  <mat-form-field appearance="outline">
-    <mat-label>{{ 'common.status' | t }}</mat-label>
-    <mat-select [formControl]="statusControl">
-      <mat-option value="">{{ 'common.allStatuses' | t }}</mat-option>
-      @for (status of statuses; track status) {
-        <mat-option [value]="status">{{ i18n.statusLabel(status) }}</mat-option>
+  <app-filter-bar>
+    <app-search-input
+      search
+      [formControl]="searchControl"
+      [placeholder]="'students.searchPlaceholder' | t"
+      [ariaLabel]="'common.search' | t"
+      [clearLabel]="'common.clearSearch' | t"
+    />
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'common.status' | t }}</mat-label>
+      <mat-select [formControl]="statusControl">
+        <mat-option value="">{{ 'common.allStatuses' | t }}</mat-option>
+        @for (status of statuses; track status) {
+          <mat-option [value]="status">{{ i18n.statusLabel(status) }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'common.level' | t }}</mat-label>
+      <mat-select [formControl]="levelControl">
+        <mat-option value="">{{ 'common.allLevels' | t }}</mat-option>
+        @for (level of levels; track level) {
+          <mat-option [value]="level">{{ i18n.levelLabel(level) }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'common.path' | t }}</mat-label>
+      <mat-select [formControl]="pathControl">
+        <mat-option value="">{{ 'common.allPaths' | t }}</mat-option>
+        @for (path of paths; track path) {
+          <mat-option [value]="path">{{ i18n.pathLabel(path) }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'common.sort' | t }}</mat-label>
+      <mat-select [formControl]="sortByControl">
+        @for (field of sortFields; track field) {
+          <mat-option [value]="field">{{ i18n.sortLabel(field) }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>{{ 'common.order' | t }}</mat-label>
+      <mat-select [formControl]="sortOrderControl">
+        <mat-option value="desc">{{ 'common.descending' | t }}</mat-option>
+        <mat-option value="asc">{{ 'common.ascending' | t }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </app-filter-bar>
+
+  @if (activeFilterChips().length) {
+    <div class="ra-filter-chips">
+      <span class="ra-filter-chips__label">{{ 'common.activeFilters' | t }}:</span>
+      @for (chip of activeFilterChips(); track chip.key) {
+        <app-filter-chip
+          [label]="chip.label"
+          [removeLabel]="'common.remove' | t"
+          (removed)="clearFilter(chip.key)"
+        />
       }
-    </mat-select>
-  </mat-form-field>
-  <mat-form-field appearance="outline">
-    <mat-label>{{ 'common.level' | t }}</mat-label>
-    <mat-select [formControl]="levelControl">
-      <mat-option value="">{{ 'common.allLevels' | t }}</mat-option>
-      @for (level of levels; track level) {
-        <mat-option [value]="level">{{ i18n.levelLabel(level) }}</mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
-  <mat-form-field appearance="outline">
-    <mat-label>{{ 'common.path' | t }}</mat-label>
-    <mat-select [formControl]="pathControl">
-      <mat-option value="">{{ 'common.allPaths' | t }}</mat-option>
-      @for (path of paths; track path) {
-        <mat-option [value]="path">{{ i18n.pathLabel(path) }}</mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
-  <mat-form-field appearance="outline">
-    <mat-label>{{ 'common.sort' | t }}</mat-label>
-    <mat-select [formControl]="sortByControl">
-      @for (field of sortFields; track field) {
-        <mat-option [value]="field">{{ i18n.sortLabel(field) }}</mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
-  <mat-form-field appearance="outline">
-    <mat-label>{{ 'common.order' | t }}</mat-label>
-    <mat-select [formControl]="sortOrderControl">
-      <mat-option value="desc">{{ 'common.descending' | t }}</mat-option>
-      <mat-option value="asc">{{ 'common.ascending' | t }}</mat-option>
-    </mat-select>
-  </mat-form-field>
-</section>
+      <button
+        mat-button
+        type="button"
+        class="ra-filter-chips__clear"
+        (click)="clearFilters()"
+      >
+        {{ 'common.clearFilters' | t }}
+      </button>
+    </div>
+  }
 }
 
 @if (loading()) {
   <p class="sr-only">{{ 'students.loading' | t }}</p>
-  <app-loading-skeleton [rows]="8" [label]="'students.loading' | t" />
+  <app-loading-skeleton variant="table" [label]="'students.loading' | t" />
 } @else if (errorMessage(); as message) {
   <app-error-state [title]="'students.loadError' | t" [message]="message" (retry)="load()" />
 } @else if (inactiveOnly()) {
   @if (inactiveStudents().length === 0) {
-    <app-empty-state [title]="'students.inactiveTitle' | t" [message]="'students.inactiveMessage' | t">
+    <app-empty-state
+      icon="person_off"
+      [title]="'students.inactiveTitle' | t"
+      [message]="'students.inactiveMessage' | t"
+    >
       <a mat-stroked-button routerLink="/students">{{ 'students.allStudents' | t }}</a>
     </app-empty-state>
   } @else {
@@ -81,12 +109,28 @@
   }
 } @else if (result().items.length === 0) {
   <app-empty-state
+    icon="search_off"
     [title]="'students.emptyTitle' | t"
-    [message]="'students.emptyMessage' | t"
+    [message]="hasActiveQuery() ? ('common.noMatchingResults' | t) : ('students.emptyMessage' | t)"
   >
-    <a mat-flat-button color="primary" routerLink="/students/new">{{ 'students.add' | t }}</a>
+    @if (hasActiveQuery()) {
+      <button mat-stroked-button type="button" (click)="clearFilters()">
+        {{ 'common.clearFilters' | t }}
+      </button>
+    } @else {
+      <a mat-flat-button color="primary" routerLink="/students/new">{{ 'students.add' | t }}</a>
+    }
   </app-empty-state>
 } @else {
+  <div class="ra-results-meta">
+    <h2 class="ra-results-title">
+      {{ hasActiveQuery() ? ('common.searchResults' | t) : ('students.title' | t) }}
+    </h2>
+    <p class="ra-results-count">
+      {{ 'common.resultsCount' | t: { count: result().total } }}
+    </p>
+  </div>
+
   <div class="ra-table-wrap desktop">
     <table>
       <thead>

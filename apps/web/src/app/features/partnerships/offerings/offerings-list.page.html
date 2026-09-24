@@ -1,0 +1,192 @@
+<app-page-header
+  [title]="'partnerships.offeringsTitle' | t"
+  [subtitle]="'partnerships.offeringsSubtitle' | t"
+>
+  @if (permissions.canWrite()) {
+    <a mat-flat-button color="primary" routerLink="/partnerships/offerings/new">{{
+      'partnerships.addOffering' | t
+    }}</a>
+  }
+</app-page-header>
+
+<app-filter-bar>
+  <app-search-input
+    search
+    [formControl]="searchControl"
+    [placeholder]="'partnerships.offeringSearchPlaceholder' | t"
+    [ariaLabel]="'common.search' | t"
+    [clearLabel]="'common.clearSearch' | t"
+  />
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.basedOnProgram' | t }}</mat-label>
+    <mat-select [formControl]="programControl">
+      <mat-option value="">{{ 'partnerships.allPrograms' | t }}</mat-option>
+      @for (item of programs(); track item.id) {
+        <mat-option [value]="item.id">{{ item.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.deliveryFormat' | t }}</mat-label>
+    <mat-select [formControl]="formatControl">
+      <mat-option value="">{{ 'partnerships.allFormats' | t }}</mat-option>
+      @for (item of deliveryFormats; track item) {
+        <mat-option [value]="item">{{ enumLabel('deliveryFormat', item) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.programLevel' | t }}</mat-label>
+    <mat-select [formControl]="levelControl">
+      <mat-option value="">{{ 'partnerships.allLevels' | t }}</mat-option>
+      @for (item of programLevels; track item) {
+        <mat-option [value]="item">{{ enumLabel('level', item) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.targetGradesFilter' | t }}</mat-label>
+    <input matInput [formControl]="gradesControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'common.status' | t }}</mat-label>
+    <mat-select [formControl]="statusControl">
+      <mat-option value="">{{ 'common.allStatuses' | t }}</mat-option>
+      @for (item of offeringStatuses; track item) {
+        <mat-option [value]="item">{{ offeringLabel('status', item) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <button mat-stroked-button type="button" (click)="clearFilters()">
+    {{ 'common.clearFilters' | t }}
+  </button>
+</app-filter-bar>
+
+@if (loading()) {
+  <app-loading-skeleton variant="table" [label]="'partnerships.offeringsLoading' | t" />
+} @else if (errorMessage(); as message) {
+  <app-error-state
+    [title]="'partnerships.offeringsLoadError' | t"
+    [message]="message"
+    (retry)="load()"
+  />
+} @else if (result().items.length === 0) {
+  <app-empty-state
+    icon="inventory_2"
+    [title]="'partnerships.offeringsEmptyTitle' | t"
+    [message]="'partnerships.offeringsEmptyMessage' | t"
+  >
+    @if (permissions.canWrite()) {
+      <a mat-flat-button color="primary" routerLink="/partnerships/offerings/new">{{
+        'partnerships.addOffering' | t
+      }}</a>
+    } @else {
+      <button mat-stroked-button type="button" (click)="clearFilters()">
+        {{ 'common.clearFilters' | t }}
+      </button>
+    }
+  </app-empty-state>
+} @else {
+  <div class="ra-results-meta">
+    <h2 class="ra-results-title">{{ 'partnerships.offeringsTitle' | t }}</h2>
+    <p class="ra-results-count">{{ 'common.resultsCount' | t: { count: result().total } }}</p>
+  </div>
+  <div class="ra-table-wrap offerings-table-wrap">
+    <table class="offerings-table">
+      <thead>
+        <tr>
+          <th>{{ 'partnerships.offering' | t }}</th>
+          <th>{{ 'partnerships.basedOnProgram' | t }}</th>
+          <th>{{ 'partnerships.deliveryFormat' | t }}</th>
+          <th>{{ 'partnerships.targetGrades' | t }}</th>
+          <th>{{ 'partnerships.programLevel' | t }}</th>
+          <th>{{ 'partnerships.duration' | t }}</th>
+          <th>{{ 'partnerships.numberOfSessions' | t }}</th>
+          <th>{{ 'common.status' | t }}</th>
+          <th>{{ 'common.actions' | t }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of result().items; track row.id) {
+          <tr>
+            <td>
+              <a class="offering-name" [routerLink]="['/partnerships/offerings', row.id]">{{
+                row.name
+              }}</a>
+              @if (row.sessionDurationMinutes != null) {
+                <div class="muted-cell">
+                  {{
+                    'partnerships.sessionMinutesShort'
+                      | t: { minutes: row.sessionDurationMinutes }
+                  }}
+                </div>
+              }
+            </td>
+            <td>
+              <a class="program-link" [routerLink]="['/partnerships/programs', row.programId]">{{
+                row.programName
+              }}</a>
+            </td>
+            <td>
+              <span class="type-chip">{{ enumLabel('deliveryFormat', row.deliveryFormat) }}</span>
+            </td>
+            <td>{{ gradesText(row) }}</td>
+            <td>{{ levelText(row) }}</td>
+            <td>{{ durationText(row) }}</td>
+            <td>{{ sessionsText(row) }}</td>
+            <td>
+              <span [class]="statusClass(row.status)">{{ offeringLabel('status', row.status) }}</span>
+            </td>
+            <td class="actions">
+              <a mat-button [routerLink]="['/partnerships/offerings', row.id]">{{
+                'common.view' | t
+              }}</a>
+              @if (permissions.canWrite()) {
+                <a mat-button [routerLink]="['/partnerships/offerings', row.id, 'edit']">{{
+                  'common.edit' | t
+                }}</a>
+                <button
+                  mat-button
+                  type="button"
+                  [disabled]="busyId() === row.id"
+                  (click)="duplicate(row, $event)"
+                >
+                  {{ 'partnerships.duplicateOffering' | t }}
+                </button>
+              }
+              <a mat-button [routerLink]="['/partnerships/offerings', row.id, 'preview']">{{
+                'partnerships.previewOffering' | t
+              }}</a>
+              <button
+                mat-button
+                type="button"
+                [disabled]="busyId() === row.id"
+                (click)="generatePdf(row, $event)"
+              >
+                {{ 'partnerships.generateOfferingPdf' | t }}
+              </button>
+              @if (permissions.canWrite() && row.status !== 'ARCHIVED') {
+                <button
+                  mat-button
+                  type="button"
+                  [disabled]="busyId() === row.id"
+                  (click)="archive(row, $event)"
+                >
+                  {{ 'partnerships.archiveOffering' | t }}
+                </button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <mat-paginator
+    [length]="result().total"
+    [pageIndex]="result().page - 1"
+    [pageSize]="result().pageSize"
+    [pageSizeOptions]="[10, 20, 50]"
+    [attr.aria-label]="'partnerships.offeringsTitle' | t"
+    (page)="onPage($event)"
+  />
+}

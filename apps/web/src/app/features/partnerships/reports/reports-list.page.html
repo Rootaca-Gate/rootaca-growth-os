@@ -1,0 +1,190 @@
+<app-page-header
+  [title]="'partnerships.reportsTitle' | t"
+  [subtitle]="'partnerships.reportsSubtitle' | t"
+>
+  @if (permissions.canWrite()) {
+    <a mat-flat-button color="primary" routerLink="/partnerships/reports/new">{{
+      'partnerships.reportsAdd' | t
+    }}</a>
+  }
+</app-page-header>
+
+<app-filter-bar>
+  <app-search-input
+    search
+    [formControl]="searchControl"
+    [placeholder]="'partnerships.reportsSearchPlaceholder' | t"
+    [ariaLabel]="'common.search' | t"
+    [clearLabel]="'common.clearSearch' | t"
+  />
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.school' | t }}</mat-label>
+    <mat-select [formControl]="institutionControl">
+      <mat-option value="">{{ 'partnerships.allInstitutions' | t }}</mat-option>
+      @for (item of institutions(); track item.id) {
+        <mat-option [value]="item.id">{{ item.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.reportsDelivery' | t }}</mat-label>
+    <mat-select [formControl]="deliveryControl">
+      <mat-option value="">{{ 'partnerships.reportsAllDeliveries' | t }}</mat-option>
+      @for (item of deliveries(); track item.id) {
+        <mat-option [value]="item.id">{{ item.deliveryNumber }} — {{ item.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.reportsType' | t }}</mat-label>
+    <mat-select [formControl]="typeControl">
+      <mat-option value="">{{ 'partnerships.reportsAllTypes' | t }}</mat-option>
+      @for (item of reportTypes; track item) {
+        <mat-option [value]="item">{{ reportLabel('type', item) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'common.status' | t }}</mat-label>
+    <mat-select [formControl]="statusControl">
+      <mat-option value="">{{ 'common.allStatuses' | t }}</mat-option>
+      @for (item of reportStatuses; track item) {
+        <mat-option [value]="item">{{ reportLabel('status', item) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.reportsPeriodFrom' | t }}</mat-label>
+    <input matInput type="date" [formControl]="dateFromControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.reportsPeriodTo' | t }}</mat-label>
+    <input matInput type="date" [formControl]="dateToControl" />
+  </mat-form-field>
+  <button mat-stroked-button type="button" (click)="clearFilters()">
+    {{ 'common.clearFilters' | t }}
+  </button>
+</app-filter-bar>
+
+@if (loading()) {
+  <app-loading-skeleton variant="table" [label]="'partnerships.reportsLoading' | t" />
+} @else if (errorMessage(); as message) {
+  <app-error-state
+    [title]="'partnerships.reportsLoadError' | t"
+    [message]="message"
+    (retry)="load()"
+  />
+} @else if (result().items.length === 0) {
+  <app-empty-state
+    icon="assessment"
+    [title]="'partnerships.reportsEmptyTitle' | t"
+    [message]="'partnerships.reportsEmptyMessage' | t"
+  >
+    @if (permissions.canWrite()) {
+      <a mat-flat-button color="primary" routerLink="/partnerships/reports/new">{{
+        'partnerships.reportsAdd' | t
+      }}</a>
+    }
+  </app-empty-state>
+} @else {
+  <div class="ra-results-meta">
+    <h2 class="ra-results-title">{{ 'partnerships.reportsTitle' | t }}</h2>
+    <p class="ra-results-count">{{ 'common.resultsCount' | t: { count: result().total } }}</p>
+  </div>
+  <div class="ra-table-wrap reports-table-wrap">
+    <table class="reports-table">
+      <thead>
+        <tr>
+          <th>{{ 'partnerships.reportsColReport' | t }}</th>
+          <th>{{ 'partnerships.school' | t }}</th>
+          <th>{{ 'partnerships.reportsType' | t }}</th>
+          <th>{{ 'partnerships.reportsDelivery' | t }}</th>
+          <th>{{ 'partnerships.reportsPeriod' | t }}</th>
+          <th>{{ 'common.status' | t }}</th>
+          <th>{{ 'common.updated' | t }}</th>
+          <th>{{ 'common.actions' | t }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of result().items; track row.id) {
+          <tr>
+            <td>
+              <a class="report-link" [routerLink]="['/partnerships/reports', row.id]">{{
+                row.reportNumber
+              }}</a>
+              <div class="report-title">{{ row.title }}</div>
+            </td>
+            <td>
+              <a class="muted-link" [routerLink]="['/partnerships/institutions', row.institutionId]">{{
+                row.institutionName
+              }}</a>
+            </td>
+            <td>{{ reportLabel('type', row.type) }}</td>
+            <td>
+              <a class="muted-link" [routerLink]="['/partnerships/delivery', row.deliveryId]">{{
+                row.deliveryNumber
+              }}</a>
+            </td>
+            <td>{{ periodText(row) }}</td>
+            <td>
+              <span [class]="statusClass(row.status)">{{ reportLabel('status', row.status) }}</span>
+            </td>
+            <td class="nowrap">{{ row.updatedAt | date: 'mediumDate' }}</td>
+            <td class="actions">
+              <a mat-button [routerLink]="['/partnerships/reports', row.id]">{{ 'common.view' | t }}</a>
+              @if (permissions.canWrite() && row.status !== 'PUBLISHED' && row.status !== 'ARCHIVED') {
+                <a mat-button [routerLink]="['/partnerships/reports', row.id, 'edit']">{{
+                  'common.edit' | t
+                }}</a>
+              }
+              <a mat-button [routerLink]="['/partnerships/reports', row.id, 'preview']">{{
+                'partnerships.reportsPreview' | t
+              }}</a>
+              @if (permissions.canWrite()) {
+                <button mat-button type="button" (click)="generatePdf(row, $event)">
+                  {{ 'partnerships.reportsGeneratePdf' | t }}
+                </button>
+                <button
+                  mat-button
+                  type="button"
+                  [disabled]="busyId() === row.id"
+                  (click)="duplicate(row, $event)"
+                >
+                  {{ 'partnerships.reportsDuplicate' | t }}
+                </button>
+                @if (canPublish(row)) {
+                  <button
+                    mat-button
+                    type="button"
+                    [disabled]="busyId() === row.id"
+                    (click)="publish(row, $event)"
+                  >
+                    {{ 'partnerships.reportsPublish' | t }}
+                  </button>
+                }
+                @if (row.status !== 'ARCHIVED') {
+                  <button
+                    mat-button
+                    type="button"
+                    [disabled]="busyId() === row.id"
+                    (click)="archive(row, $event)"
+                  >
+                    {{ 'partnerships.reportsArchive' | t }}
+                  </button>
+                }
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <mat-paginator
+    [length]="result().total"
+    [pageIndex]="result().page - 1"
+    [pageSize]="result().pageSize"
+    [pageSizeOptions]="[10, 20, 50]"
+    [attr.aria-label]="'partnerships.reportsTitle' | t"
+    (page)="onPage($event)"
+  />
+}

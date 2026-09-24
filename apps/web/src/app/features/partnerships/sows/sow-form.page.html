@@ -1,0 +1,679 @@
+@if (creating()) {
+  <app-loading-skeleton [rows]="6" [label]="'partnerships.sowsCreating' | t" />
+} @else if (loading()) {
+  <app-loading-skeleton [rows]="10" [label]="'partnerships.sowsLoading' | t" />
+} @else if (error(); as message) {
+  <app-error-state
+    [title]="'partnerships.sowsLoadError' | t"
+    [message]="message"
+    (retry)="editId ? load(editId) : null"
+  />
+  @if (locked() && editId) {
+    <div class="locked-actions">
+      <a mat-stroked-button [routerLink]="['/partnerships/sows', editId]">{{ 'common.back' | t }}</a>
+    </div>
+  }
+} @else if (!isEdit) {
+  <!-- NEW: choose a source proposal -->
+  <app-page-header
+    [title]="'partnerships.createSow' | t"
+    [subtitle]="'partnerships.sowSourceProposalHint' | t"
+  >
+    <button mat-stroked-button type="button" (click)="cancel()">{{ 'common.back' | t }}</button>
+  </app-page-header>
+
+  <section class="ra-card section">
+    <h2>{{ 'partnerships.sowSourceProposal' | t }}</h2>
+    <p class="hint-block">{{ 'partnerships.sowSourceProposalHint' | t }}</p>
+    <div class="add-row">
+      <mat-form-field appearance="outline" class="grow">
+        <mat-label>{{ 'partnerships.sowSourceProposal' | t }}</mat-label>
+        <mat-select [formControl]="sourceProposalControl">
+          @for (item of visibleProposals(); track item.id) {
+            <mat-option [value]="item.id"
+              >{{ item.proposalNumber }} · {{ item.title }} · {{ item.institutionName }}</mat-option
+            >
+          }
+        </mat-select>
+      </mat-form-field>
+      <button mat-stroked-button type="button" (click)="toggleAllProposals()">
+        {{ (showAllProposals() ? 'partnerships.sowShowAcceptedOnly' : 'partnerships.sowShowAllProposals') | t }}
+      </button>
+    </div>
+    @if (visibleProposals().length === 0) {
+      <p class="hint-block">{{ 'partnerships.sowNoProposals' | t }}</p>
+    }
+    <div class="wizard-actions">
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="!sourceProposalControl.value"
+        (click)="confirmSourceProposal()"
+      >
+        {{ 'partnerships.sowCreateFromProposal' | t }}
+      </button>
+    </div>
+  </section>
+} @else {
+  <app-page-header
+    [title]="'partnerships.editSow' | t"
+    [subtitle]="'partnerships.sowsSubtitle' | t"
+  >
+    <button mat-stroked-button type="button" (click)="cancel()">{{ 'common.back' | t }}</button>
+  </app-page-header>
+
+  @if (sowMeta(); as meta) {
+    <div class="meta-banner">
+      <span>{{ meta.sowNumber }}</span>
+      <span>{{ sowLabel('status', meta.status) }}</span>
+      <span>v{{ meta.version }}</span>
+    </div>
+  }
+
+  <nav class="ra-steps" aria-label="wizard">
+    @for (label of stepLabels; track label; let i = $index) {
+      <button
+        type="button"
+        class="ra-step"
+        [class.active]="step() === i + 1"
+        [class.done]="step() > i + 1"
+        (click)="goTo(i + 1)"
+      >
+        <span class="ra-step-num">{{ i + 1 }}</span>
+        <span class="ra-step-label">{{ label | t }}</span>
+      </button>
+    }
+  </nav>
+
+  <p class="ra-step-counter">
+    {{ 'partnerships.sowStepOf' | t: { current: step(), total: totalSteps } }}
+  </p>
+
+  <form class="form" [formGroup]="form" (ngSubmit)="save()">
+    @if (step() === 1) {
+      <section class="ra-card section">
+        <h2>{{ 'partnerships.sowStepBasics' | t }}</h2>
+        <div class="grid">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowTitle' | t }}</mat-label>
+            <input matInput formControlName="title" />
+            @if (form.controls.title.touched && form.controls.title.invalid) {
+              <mat-error>{{ 'partnerships.sowTitleRequired' | t }}</mat-error>
+            }
+          </mat-form-field>
+          @if (sowMeta(); as meta) {
+            <div class="readonly-field">
+              <span class="label">{{ 'partnerships.sowNumber' | t }}</span>
+              <strong>{{ meta.sowNumber }}</strong>
+            </div>
+            <div class="readonly-field">
+              <span class="label">{{ 'common.status' | t }}</span>
+              <strong>{{ sowLabel('status', meta.status) }}</strong>
+            </div>
+          }
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.sowDate' | t }}</mat-label>
+            <input matInput type="date" formControlName="sowDate" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.sowEffectiveDate' | t }}</mat-label>
+            <input matInput type="date" formControlName="effectiveDate" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.startDate' | t }}</mat-label>
+            <input matInput type="date" formControlName="startDate" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.endDate' | t }}</mat-label>
+            <input matInput type="date" formControlName="endDate" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.preparedBy' | t }}</mat-label>
+            <input matInput formControlName="preparedBy" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.sowApprovedBy' | t }}</mat-label>
+            <input matInput formControlName="approvedBy" />
+          </mat-form-field>
+        </div>
+      </section>
+    }
+
+    @if (step() === 2) {
+      <section class="ra-card section">
+        <h2>{{ 'partnerships.sowStepParties' | t }}</h2>
+        <div class="readonly-field provider-field">
+          <span class="label">{{ 'partnerships.sowProvider' | t }}</span>
+          <strong>{{ 'partnerships.pdfOrganization' | t }}</strong>
+          <span class="muted">{{ 'partnerships.sowProviderFixed' | t }}</span>
+        </div>
+        <h3>{{ 'partnerships.sowClient' | t }}</h3>
+        <div class="grid">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowClientName' | t }}</mat-label>
+            <input matInput formControlName="clientName" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowClientAddress' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="clientAddress"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.primaryContact' | t }}</mat-label>
+            <input matInput formControlName="primaryContactName" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.sowContactEmail' | t }}</mat-label>
+            <input matInput formControlName="primaryContactEmail" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.sowContactPhone' | t }}</mat-label>
+            <input matInput formControlName="primaryContactPhone" />
+          </mat-form-field>
+        </div>
+      </section>
+    }
+
+    @if (step() === 3) {
+      <section class="ra-card section">
+        <h2>{{ 'partnerships.sowStepScope' | t }}</h2>
+        <div class="grid">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowPurpose' | t }}</mat-label>
+            <textarea matInput rows="4" formControlName="purpose"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowTargetStudents' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="targetStudents"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowDeliveryModel' | t }}</mat-label>
+            <textarea matInput rows="3" formControlName="deliveryModelNotes"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowActivities' | t }}</mat-label>
+            <textarea matInput rows="3" formControlName="activitiesNotes"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowProjects' | t }}</mat-label>
+            <textarea matInput rows="3" formControlName="projectsNotes"></textarea>
+          </mat-form-field>
+        </div>
+
+        @if (scopeOfferings().length) {
+          <h3>{{ 'partnerships.sowScopeOfferings' | t }}</h3>
+          <p class="hint-block">{{ 'partnerships.sowScopeOfferingsHint' | t }}</p>
+          <div class="list">
+            @for (line of scopeOfferings(); track line.id) {
+              <article class="offering-card">
+                <div class="offering-card-head">
+                  <div>
+                    <h4>{{ line.offeringName }}</h4>
+                    <p class="muted">{{ line.programName }}</p>
+                  </div>
+                  <span class="type-chip">{{
+                    programLabel('deliveryFormat', line.deliveryFormat)
+                  }}</span>
+                </div>
+                <dl class="facts compact">
+                  <div>
+                    <dt>{{ 'partnerships.targetGrades' | t }}</dt>
+                    <dd>{{ blankDisplayFn(line.targetGrades) }}</dd>
+                  </div>
+                  <div>
+                    <dt>{{ 'partnerships.programLevel' | t }}</dt>
+                    <dd>{{ programLabel('level', line.recommendedLevel) }}</dd>
+                  </div>
+                  <div>
+                    <dt>{{ 'partnerships.duration' | t }}</dt>
+                    <dd>{{ durationText(line) }}</dd>
+                  </div>
+                  <div>
+                    <dt>{{ 'partnerships.numberOfSessions' | t }}</dt>
+                    <dd>{{ blankDisplayFn(line.numberOfSessions?.toString()) }}</dd>
+                  </div>
+                  <div>
+                    <dt>{{ 'partnerships.deliveryMode' | t }}</dt>
+                    <dd>{{ offeringLabel('deliveryMode', line.deliveryMode) }}</dd>
+                  </div>
+                  <div>
+                    <dt>{{ 'partnerships.groupSizeMin' | t }}</dt>
+                    <dd>{{ groupSizeText(line) }}</dd>
+                  </div>
+                </dl>
+              </article>
+            }
+          </div>
+        }
+      </section>
+    }
+
+    @if (step() === 4) {
+      <section class="ra-card section">
+        <div class="section-head">
+          <h2>{{ 'partnerships.sowScopeInclusions' | t }}</h2>
+          <button mat-stroked-button type="button" (click)="addScopeIn()">
+            {{ 'partnerships.sowAddScopeItem' | t }}
+          </button>
+        </div>
+        <div class="list" formArrayName="scopeIn">
+          @for (group of scopeIn.controls; track $index; let i = $index) {
+            <div class="list-row stack-row" [formGroupName]="i">
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>{{ 'partnerships.sowScopeItem' | t }}</mat-label>
+                <textarea matInput rows="2" formControlName="text"></textarea>
+              </mat-form-field>
+              <button mat-button type="button" (click)="removeScopeIn(i)">{{ 'common.remove' | t }}</button>
+            </div>
+          }
+        </div>
+
+        <div class="section-head">
+          <h2>{{ 'partnerships.sowScopeExclusions' | t }}</h2>
+          <button mat-stroked-button type="button" (click)="addScopeOut()">
+            {{ 'partnerships.sowAddScopeItem' | t }}
+          </button>
+        </div>
+        <div class="list" formArrayName="scopeOut">
+          @for (group of scopeOut.controls; track $index; let i = $index) {
+            <div class="list-row stack-row" [formGroupName]="i">
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>{{ 'partnerships.sowScopeItem' | t }}</mat-label>
+                <textarea matInput rows="2" formControlName="text"></textarea>
+              </mat-form-field>
+              <button mat-button type="button" (click)="removeScopeOut(i)">{{ 'common.remove' | t }}</button>
+            </div>
+          }
+        </div>
+
+        <div class="section-head">
+          <h2>{{ 'partnerships.sowDeliverables' | t }}</h2>
+          <button mat-stroked-button type="button" (click)="addDeliverable()">
+            {{ 'partnerships.sowAddDeliverable' | t }}
+          </button>
+        </div>
+        <div class="list" formArrayName="deliverables">
+          @for (group of deliverables.controls; track $index; let i = $index) {
+            <div class="offering-card" [formGroupName]="i">
+              <div class="grid">
+                <mat-form-field appearance="outline" class="full">
+                  <mat-label>{{ 'partnerships.sowDeliverableName' | t }}</mat-label>
+                  <input matInput formControlName="name" />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="full">
+                  <mat-label>{{ 'common.description' | t }}</mat-label>
+                  <textarea matInput rows="2" formControlName="description"></textarea>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'partnerships.sowOwner' | t }}</mat-label>
+                  <input matInput formControlName="owner" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'partnerships.sowDueDate' | t }}</mat-label>
+                  <input matInput type="date" formControlName="dueDate" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'common.status' | t }}</mat-label>
+                  <mat-select formControlName="status">
+                    @for (item of deliverableStatuses; track item) {
+                      <mat-option [value]="item">{{ sowLabel('deliverableStatus', item) }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="full">
+                  <mat-label>{{ 'partnerships.sowAcceptanceCriteria' | t }}</mat-label>
+                  <textarea matInput rows="2" formControlName="acceptanceCriteria"></textarea>
+                </mat-form-field>
+              </div>
+              <button mat-button type="button" color="warn" (click)="removeDeliverable(i)">
+                {{ 'partnerships.sowRemoveDeliverable' | t }}
+              </button>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    @if (step() === 5) {
+      <section class="ra-card section">
+        <div class="section-head">
+          <h2>{{ 'partnerships.sowMilestones' | t }}</h2>
+          <button mat-stroked-button type="button" (click)="addMilestone()">
+            {{ 'partnerships.sowAddMilestone' | t }}
+          </button>
+        </div>
+        <div class="list" formArrayName="milestones">
+          @for (group of milestones.controls; track $index; let i = $index) {
+            <div class="offering-card" [formGroupName]="i">
+              <div class="grid">
+                <mat-form-field appearance="outline" class="full">
+                  <mat-label>{{ 'partnerships.sowMilestone' | t }}</mat-label>
+                  <input matInput formControlName="name" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'partnerships.startDate' | t }}</mat-label>
+                  <input matInput type="date" formControlName="startDate" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'partnerships.endDate' | t }}</mat-label>
+                  <input matInput type="date" formControlName="endDate" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'partnerships.sowOwner' | t }}</mat-label>
+                  <input matInput formControlName="owner" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'common.status' | t }}</mat-label>
+                  <mat-select formControlName="status">
+                    @for (item of milestoneStatuses; track item) {
+                      <mat-option [value]="item">{{ sowLabel('milestoneStatus', item) }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="full">
+                  <mat-label>{{ 'common.description' | t }}</mat-label>
+                  <textarea matInput rows="2" formControlName="description"></textarea>
+                </mat-form-field>
+              </div>
+              <button mat-button type="button" color="warn" (click)="removeMilestone(i)">
+                {{ 'partnerships.sowRemoveMilestone' | t }}
+              </button>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    @if (step() === 6) {
+      <section class="ra-card section">
+        <div class="section-head">
+          <h2>{{ 'partnerships.sowResponsibilities' | t }}</h2>
+          <button mat-stroked-button type="button" (click)="addResponsibility()">
+            {{ 'partnerships.sowAddResponsibility' | t }}
+          </button>
+        </div>
+        <div class="list" formArrayName="responsibilities">
+          @for (group of responsibilities.controls; track $index; let i = $index) {
+            <div class="list-row" [formGroupName]="i">
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'partnerships.sowActivity' | t }}</mat-label>
+                <input matInput formControlName="activity" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'partnerships.sowRootacaRole' | t }}</mat-label>
+                <input matInput formControlName="rootacaRole" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'partnerships.sowSchoolRole' | t }}</mat-label>
+                <input matInput formControlName="schoolRole" />
+              </mat-form-field>
+              <button mat-button type="button" (click)="removeResponsibility(i)">
+                {{ 'common.remove' | t }}
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="section-head">
+          <h3>{{ 'partnerships.sowTeamRootaca' | t }}</h3>
+          <button mat-stroked-button type="button" (click)="addRootacaMember()">
+            {{ 'partnerships.sowAddTeamMember' | t }}
+          </button>
+        </div>
+        <p class="hint-block">{{ 'partnerships.sowTeamNameHint' | t }}</p>
+        <div class="list" formArrayName="rootacaTeam">
+          @for (group of rootacaTeam.controls; track $index; let i = $index) {
+            <div class="list-row" [formGroupName]="i">
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'partnerships.sowRole' | t }}</mat-label>
+                <input matInput formControlName="role" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'partnerships.sowName' | t }}</mat-label>
+                <input matInput formControlName="name" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'partnerships.primaryContact' | t }}</mat-label>
+                <input matInput formControlName="contact" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>{{ 'partnerships.sowResponsibility' | t }}</mat-label>
+                <textarea matInput rows="2" formControlName="responsibility"></textarea>
+              </mat-form-field>
+              <button mat-button type="button" (click)="removeRootacaMember(i)">
+                {{ 'common.remove' | t }}
+              </button>
+            </div>
+          }
+        </div>
+
+        <div class="section-head">
+          <h3>{{ 'partnerships.sowTeamSchool' | t }}</h3>
+          <button mat-stroked-button type="button" (click)="addSchoolMember()">
+            {{ 'partnerships.sowAddTeamMember' | t }}
+          </button>
+        </div>
+        <div class="list" formArrayName="schoolTeam">
+          @for (group of schoolTeam.controls; track $index; let i = $index) {
+            <div class="list-row" [formGroupName]="i">
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'partnerships.sowRole' | t }}</mat-label>
+                <input matInput formControlName="role" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'partnerships.sowName' | t }}</mat-label>
+                <input matInput formControlName="name" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'partnerships.primaryContact' | t }}</mat-label>
+                <input matInput formControlName="contact" />
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="full">
+                <mat-label>{{ 'partnerships.sowResponsibility' | t }}</mat-label>
+                <textarea matInput rows="2" formControlName="responsibility"></textarea>
+              </mat-form-field>
+              <button mat-button type="button" (click)="removeSchoolMember(i)">
+                {{ 'common.remove' | t }}
+              </button>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    @if (step() === 7) {
+      <section class="ra-card section">
+        <h2>{{ 'partnerships.sowRequirements' | t }}</h2>
+        <div class="grid">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowEquipmentRequirements' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="equipmentRequirements"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowInternetRequirements' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="internetRequirements"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowClassroomLabRequirements' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="classroomLabRequirements"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowStudentDevicesRequirements' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="studentDevicesRequirements"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowSoftwareRequirements' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="softwareRequirements"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowAccountsAccessRequirements' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="accountsAccessRequirements"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowFacultyLiaisonRequirements' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="facultyLiaisonRequirements"></textarea>
+          </mat-form-field>
+        </div>
+
+        <h3>{{ 'partnerships.sowAttendance' | t }}</h3>
+        <div class="grid">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowAttendanceExpectations' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="attendanceExpectations"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowMinimumParticipation' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="minimumParticipation"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowStudentReplacementRules' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="studentReplacementRules"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowMakeupSessionRules' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="makeupSessionRules"></textarea>
+          </mat-form-field>
+        </div>
+
+        <div class="section-head">
+          <h3>{{ 'partnerships.sowAssessment' | t }}</h3>
+          <button mat-stroked-button type="button" (click)="addAssessmentItem()">
+            {{ 'partnerships.sowAddAssessmentItem' | t }}
+          </button>
+        </div>
+        <div class="grid">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowAssessmentNotes' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="assessmentNotes"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowReporting' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="reportingNotes"></textarea>
+          </mat-form-field>
+        </div>
+        <div class="list" formArrayName="assessmentItems">
+          @for (group of assessmentItems.controls; track $index; let i = $index) {
+            <div class="list-row" [formGroupName]="i">
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'partnerships.sowAssessmentName' | t }}</mat-label>
+                <input matInput formControlName="name" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'partnerships.sowResponsibleParty' | t }}</mat-label>
+                <input matInput formControlName="responsibleParty" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'partnerships.sowFrequency' | t }}</mat-label>
+                <input matInput formControlName="frequency" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'partnerships.sowFormat' | t }}</mat-label>
+                <input matInput formControlName="format" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'partnerships.sowDueDate' | t }}</mat-label>
+                <input matInput type="date" formControlName="dueDate" />
+              </mat-form-field>
+              <button mat-button type="button" (click)="removeAssessmentItem(i)">
+                {{ 'common.remove' | t }}
+              </button>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    @if (step() === 8) {
+      <section class="ra-card section">
+        <h2>{{ 'partnerships.termsAndConditions' | t }}</h2>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'partnerships.termsAndConditions' | t }}</mat-label>
+          <textarea matInput rows="5" formControlName="termsAndConditions"></textarea>
+        </mat-form-field>
+
+        <h3>{{ 'partnerships.sowSignatures' | t }}</h3>
+        <div class="grid">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.sowRootacaSignatoryName' | t }}</mat-label>
+            <input matInput formControlName="rootacaSignatoryName" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.sowRootacaSignatoryTitle' | t }}</mat-label>
+            <input matInput formControlName="rootacaSignatoryTitle" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.sowSchoolSignatoryName' | t }}</mat-label>
+            <input matInput formControlName="schoolSignatoryName" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.sowSchoolSignatoryTitle' | t }}</mat-label>
+            <input matInput formControlName="schoolSignatoryTitle" />
+          </mat-form-field>
+        </div>
+
+        @if (commercial(); as ref) {
+          <h3>{{ 'partnerships.sowCommercialReference' | t }}</h3>
+          <p class="hint-block">{{ 'partnerships.sowCommercialReferenceNote' | t }}</p>
+          <dl class="facts">
+            <div>
+              <dt>{{ 'partnerships.sowPdfProposalNo' | t }}</dt>
+              <dd>{{ blankDisplayFn(ref.proposalNumber) }}</dd>
+            </div>
+            <div>
+              <dt>{{ 'partnerships.sowAgreedValue' | t }}</dt>
+              <dd>
+                @if (ref.agreedValue != null) {
+                  {{ ref.currency ? ref.currency + ' ' : '' }}{{ ref.agreedValue }}
+                } @else {
+                  {{ 'partnerships.noValue' | t }}
+                }
+              </dd>
+            </div>
+            <div class="full">
+              <dt>{{ 'partnerships.paymentTerms' | t }}</dt>
+              <dd>{{ blankDisplayFn(ref.paymentTerms) }}</dd>
+            </div>
+          </dl>
+        }
+
+        <h3>{{ 'partnerships.reviewSow' | t }}</h3>
+        <dl class="review">
+          <div>
+            <dt>{{ 'partnerships.sowTitle' | t }}</dt>
+            <dd>{{ form.controls.title.value || ('partnerships.noValue' | t) }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.sowDeliverables' | t }}</dt>
+            <dd>{{ deliverables.length }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.sowMilestones' | t }}</dt>
+            <dd>{{ milestones.length }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.sowResponsibilities' | t }}</dt>
+            <dd>{{ responsibilities.length }}</dd>
+          </div>
+        </dl>
+      </section>
+    }
+
+    <div class="wizard-actions">
+      @if (step() > 1) {
+        <button mat-stroked-button type="button" (click)="prev()">{{ 'common.back' | t }}</button>
+      }
+      @if (step() < totalSteps) {
+        <button mat-flat-button color="primary" type="button" (click)="next()">
+          {{ 'common.next' | t }}
+        </button>
+      }
+      <span class="spacer"></span>
+      <button mat-stroked-button type="button" [disabled]="submitting()" (click)="save()">
+        {{ 'partnerships.sowSave' | t }}
+      </button>
+      <button mat-stroked-button type="button" [disabled]="submitting()" (click)="preview()">
+        {{ 'partnerships.previewSow' | t }}
+      </button>
+    </div>
+  </form>
+}

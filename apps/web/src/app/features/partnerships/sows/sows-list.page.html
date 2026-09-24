@@ -1,0 +1,199 @@
+<app-page-header
+  [title]="'partnerships.sowsTitle' | t"
+  [subtitle]="'partnerships.sowsSubtitle' | t"
+>
+  @if (permissions.canWrite()) {
+    <a mat-flat-button color="primary" routerLink="/partnerships/sows/new">{{
+      'partnerships.addSow' | t
+    }}</a>
+  }
+</app-page-header>
+
+<app-filter-bar>
+  <app-search-input
+    search
+    [formControl]="searchControl"
+    [placeholder]="'partnerships.sowSearchPlaceholder' | t"
+    [ariaLabel]="'common.search' | t"
+    [clearLabel]="'common.clearSearch' | t"
+  />
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.school' | t }}</mat-label>
+    <mat-select [formControl]="institutionControl">
+      <mat-option value="">{{ 'partnerships.allInstitutions' | t }}</mat-option>
+      @for (item of institutions(); track item.id) {
+        <mat-option [value]="item.id">{{ item.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'common.status' | t }}</mat-label>
+    <mat-select [formControl]="statusControl">
+      <mat-option value="">{{ 'common.allStatuses' | t }}</mat-option>
+      @for (item of sowStatuses; track item) {
+        <mat-option [value]="item">{{ sowLabel('status', item) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.sowStartFrom' | t }}</mat-label>
+    <input matInput type="date" [formControl]="startDateFromControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.sowStartTo' | t }}</mat-label>
+    <input matInput type="date" [formControl]="startDateToControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.sowEndFrom' | t }}</mat-label>
+    <input matInput type="date" [formControl]="endDateFromControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.sowEndTo' | t }}</mat-label>
+    <input matInput type="date" [formControl]="endDateToControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.createdFrom' | t }}</mat-label>
+    <input matInput type="date" [formControl]="createdFromControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.createdTo' | t }}</mat-label>
+    <input matInput type="date" [formControl]="createdToControl" />
+  </mat-form-field>
+  <button mat-stroked-button type="button" (click)="clearFilters()">
+    {{ 'common.clearFilters' | t }}
+  </button>
+</app-filter-bar>
+
+@if (loading()) {
+  <app-loading-skeleton variant="table" [label]="'partnerships.sowsLoading' | t" />
+} @else if (errorMessage(); as message) {
+  <app-error-state
+    [title]="'partnerships.sowsLoadError' | t"
+    [message]="message"
+    (retry)="load()"
+  />
+} @else if (result().items.length === 0) {
+  <app-empty-state
+    icon="description"
+    [title]="'partnerships.sowsEmptyTitle' | t"
+    [message]="'partnerships.sowsEmptyMessage' | t"
+  >
+    @if (permissions.canWrite()) {
+      <a mat-flat-button color="primary" routerLink="/partnerships/sows/new">{{
+        'partnerships.addSow' | t
+      }}</a>
+    } @else {
+      <button mat-stroked-button type="button" (click)="clearFilters()">
+        {{ 'common.clearFilters' | t }}
+      </button>
+    }
+  </app-empty-state>
+} @else {
+  <div class="ra-results-meta">
+    <h2 class="ra-results-title">{{ 'partnerships.sowsTitle' | t }}</h2>
+    <p class="ra-results-count">{{ 'common.resultsCount' | t: { count: result().total } }}</p>
+  </div>
+  <div class="ra-table-wrap sows-table-wrap">
+    <table class="sows-table">
+      <thead>
+        <tr>
+          <th>{{ 'partnerships.sowNumber' | t }}</th>
+          <th>{{ 'partnerships.school' | t }}</th>
+          <th>{{ 'partnerships.sowTitle' | t }}</th>
+          <th>{{ 'partnerships.proposal' | t }}</th>
+          <th>{{ 'partnerships.startDate' | t }}</th>
+          <th>{{ 'partnerships.endDate' | t }}</th>
+          <th>{{ 'common.status' | t }}</th>
+          <th>{{ 'common.actions' | t }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of result().items; track row.id) {
+          <tr>
+            <td>
+              <a class="sow-number" [routerLink]="['/partnerships/sows', row.id]">{{
+                row.sowNumber
+              }}</a>
+              <div class="muted-cell">v{{ row.version }}</div>
+            </td>
+            <td>
+              <a
+                class="school-link"
+                [routerLink]="['/partnerships/institutions', row.institutionId]"
+                >{{ row.institutionName }}</a
+              >
+            </td>
+            <td>
+              <a class="sow-title" [routerLink]="['/partnerships/sows', row.id]">{{ row.title }}</a>
+            </td>
+            <td>
+              @if (row.proposalNumber) {
+                <a class="school-link" [routerLink]="['/partnerships/proposals', row.proposalId]">{{
+                  row.proposalNumber
+                }}</a>
+              } @else {
+                {{ 'partnerships.noValue' | t }}
+              }
+            </td>
+            <td>
+              {{ row.startDate ? (row.startDate | date: 'mediumDate') : ('partnerships.noValue' | t) }}
+            </td>
+            <td>
+              {{ row.endDate ? (row.endDate | date: 'mediumDate') : ('partnerships.noValue' | t) }}
+            </td>
+            <td>
+              <span [class]="statusClass(row.status)">{{ sowLabel('status', row.status) }}</span>
+            </td>
+            <td class="actions">
+              <a mat-button [routerLink]="['/partnerships/sows', row.id]">{{ 'common.view' | t }}</a>
+              @if (permissions.canWrite() && canEdit(row)) {
+                <a mat-button [routerLink]="['/partnerships/sows', row.id, 'edit']">{{
+                  'common.edit' | t
+                }}</a>
+              }
+              @if (permissions.canWrite()) {
+                <button
+                  mat-button
+                  type="button"
+                  [disabled]="busyId() === row.id"
+                  (click)="duplicate(row, $event)"
+                >
+                  {{ 'partnerships.duplicateSow' | t }}
+                </button>
+              }
+              <a mat-button [routerLink]="['/partnerships/sows', row.id, 'preview']">{{
+                'partnerships.previewSow' | t
+              }}</a>
+              <button
+                mat-button
+                type="button"
+                [disabled]="busyId() === row.id"
+                (click)="generatePdf(row, $event)"
+              >
+                {{ 'partnerships.generateSowPdf' | t }}
+              </button>
+              @if (permissions.canWrite()) {
+                <button
+                  mat-button
+                  type="button"
+                  [disabled]="busyId() === row.id"
+                  (click)="archive(row, $event)"
+                >
+                  {{ 'partnerships.archiveSow' | t }}
+                </button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <mat-paginator
+    [length]="result().total"
+    [pageIndex]="result().page - 1"
+    [pageSize]="result().pageSize"
+    [pageSizeOptions]="[10, 20, 50]"
+    [attr.aria-label]="'partnerships.sowsTitle' | t"
+    (page)="onPage($event)"
+  />
+}

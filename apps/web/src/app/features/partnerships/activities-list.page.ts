@@ -37,7 +37,7 @@ import { partnershipErrorMessage } from './partnership.util';
   template: `
     <app-page-header [title]="'partnerships.activitiesTitle' | t" [subtitle]="'partnerships.activitiesSubtitle' | t" />
     <section class="ra-filters">
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>{{ 'partnerships.activityType' | t }}</mat-label>
         <mat-select [formControl]="typeControl">
           <mat-option value="">{{ 'common.none' | t }}</mat-option>
@@ -46,15 +46,21 @@ import { partnershipErrorMessage } from './partnership.util';
           }
         </mat-select>
       </mat-form-field>
-      <mat-form-field appearance="outline"><mat-label>{{ 'partnerships.statusFrom' | t }}</mat-label><input matInput type="date" [formControl]="dateFromControl" /></mat-form-field>
-      <mat-form-field appearance="outline"><mat-label>{{ 'partnerships.statusTo' | t }}</mat-label><input matInput type="date" [formControl]="dateToControl" /></mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ 'partnerships.statusFrom' | t }}</mat-label>
+        <input matInput type="date" [formControl]="dateFromControl" />
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ 'partnerships.statusTo' | t }}</mat-label>
+        <input matInput type="date" [formControl]="dateToControl" />
+      </mat-form-field>
     </section>
     @if (loading()) {
-      <app-loading-skeleton [rows]="6" [label]="'partnerships.loading' | t" />
+      <app-loading-skeleton variant="table" [label]="'partnerships.loading' | t" />
     } @else if (errorMessage(); as message) {
       <app-error-state [title]="'partnerships.loadError' | t" [message]="message" (retry)="load()" />
     } @else if (result().items.length === 0) {
-      <app-empty-state [title]="'partnerships.activitiesEmptyTitle' | t" [message]="'partnerships.activitiesEmptyMessage' | t" />
+      <app-empty-state icon="event_note" [title]="'partnerships.activitiesEmptyTitle' | t" [message]="'partnerships.activitiesEmptyMessage' | t" />
     } @else {
       <div class="ra-table-wrap">
         <table>

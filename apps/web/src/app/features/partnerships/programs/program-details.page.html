@@ -1,0 +1,380 @@
+@if (loading()) {
+  <app-loading-skeleton [rows]="14" [label]="'partnerships.programsLoading' | t" />
+} @else if (error(); as message) {
+  <app-error-state
+    [title]="'partnerships.programsLoadError' | t"
+    [message]="message"
+    (retry)="reload()"
+  />
+} @else if (program(); as current) {
+  <header class="profile-header">
+    <div class="eyebrow">{{ 'partnerships.schoolPartnershipProgram' | t }}</div>
+    <div class="header-row">
+      <div class="titles">
+        <h1>{{ current.name }}</h1>
+        <div class="meta-row">
+          <span class="type-chip">{{ enumLabel('programType', current.programType) }}</span>
+          <span [class]="statusClass(current.status)">
+            {{ 'common.status' | t }}: {{ enumLabel('status', current.status) }}
+          </span>
+        </div>
+        <div class="dates">
+          <span>{{ 'common.updated' | t }}: {{ current.updatedAt | date: 'medium' }}</span>
+          <span>{{ 'common.created' | t }}: {{ current.createdAt | date: 'medium' }}</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-stroked-button type="button" (click)="back()">{{ 'common.back' | t }}</button>
+        @if (permissions.canWrite()) {
+          <a mat-stroked-button [routerLink]="['/partnerships/programs', current.id, 'edit']">{{
+            'common.edit' | t
+          }}</a>
+          <button mat-stroked-button type="button" (click)="duplicate()">
+            {{ 'partnerships.duplicateProgram' | t }}
+          </button>
+        }
+        <a mat-stroked-button [routerLink]="['/partnerships/programs', current.id, 'preview']">{{
+          'partnerships.previewProgram' | t
+        }}</a>
+        @if (permissions.canWrite() && current.status !== 'ARCHIVED') {
+          <button mat-stroked-button type="button" [disabled]="archiving()" (click)="archive()">
+            {{ 'partnerships.archiveProgram' | t }}
+          </button>
+        }
+      </div>
+    </div>
+  </header>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.programSectionOverview' | t }}</h2>
+    <dl class="facts">
+      <div>
+        <dt>{{ 'partnerships.programName' | t }}</dt>
+        <dd>{{ current.name }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.programType' | t }}</dt>
+        <dd>{{ enumLabel('programType', current.programType) }}</dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.shortDescription' | t }}</dt>
+        <dd>{{ displayText(current.shortDescription) }}</dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.schoolValue' | t }}</dt>
+        <dd>{{ displayText(current.schoolValue) }}</dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.studentValue' | t }}</dt>
+        <dd>{{ displayText(current.studentValue) }}</dd>
+      </div>
+      @if (permissions.canWrite()) {
+        <div class="full internal">
+          <dt>{{ 'partnerships.internalNotes' | t }}</dt>
+          <dd>{{ displayText(current.internalNotes) }}</dd>
+        </div>
+      }
+    </dl>
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.programSectionAudience' | t }}</h2>
+    <dl class="facts">
+      <div>
+        <dt>{{ 'partnerships.targetAge' | t }}</dt>
+        <dd>{{ displayText(current.targetAge) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.targetGrades' | t }}</dt>
+        <dd>{{ displayText(current.targetGrades) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.programLevel' | t }}</dt>
+        <dd>{{ enumLabel('level', current.recommendedLevel) }}</dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.recommendedStudentProfile' | t }}</dt>
+        <dd>{{ displayText(current.recommendedStudentProfile) }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.programSectionObjectives' | t }}</h2>
+    @if (current.objectives.length === 0) {
+      <p class="empty">{{ 'partnerships.programNoneAdmin' | t }}</p>
+    } @else {
+      <div class="numbered-grid">
+        @for (item of current.objectives; track item.id; let i = $index) {
+          <article class="item-card">
+            <span class="num">{{ i + 1 }}</span>
+            <div>
+              <h3>{{ item.title }}</h3>
+              @if (item.description) {
+                <p>{{ item.description }}</p>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.programSectionCurriculum' | t }}</h2>
+    @if (current.curriculumModules.length === 0) {
+      <p class="empty">{{ 'partnerships.programNoneAdmin' | t }}</p>
+    } @else {
+      <div class="numbered-grid">
+        @for (item of current.curriculumModules; track item.id; let i = $index) {
+          <article class="item-card">
+            <span class="num">{{ i + 1 }}</span>
+            <div>
+              <h3>{{ item.title }}</h3>
+              @if (item.description) {
+                <p>{{ item.description }}</p>
+              }
+              @if (tags(item.skillsDeveloped).length) {
+                <div class="tags">
+                  @for (tag of tags(item.skillsDeveloped); track tag) {
+                    <span class="tag">{{ tag }}</span>
+                  }
+                </div>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.programSectionActivities' | t }}</h2>
+    @if (current.activities.length === 0) {
+      <p class="empty">{{ 'partnerships.programNoneAdmin' | t }}</p>
+    } @else {
+      <div class="stack-cards">
+        @for (item of current.activities; track item.id) {
+          <article class="item-card block">
+            <h3>{{ item.name }}</h3>
+            @if (item.description) {
+              <p>{{ item.description }}</p>
+            }
+            @if (tags(item.skillsDeveloped).length) {
+              <div class="tags">
+                @for (tag of tags(item.skillsDeveloped); track tag) {
+                  <span class="tag">{{ tag }}</span>
+                }
+              </div>
+            }
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.programSectionProjects' | t }}</h2>
+    <h3 class="subhead">{{ 'partnerships.sampleProjects' | t }}</h3>
+    @if (current.sampleProjects.length === 0) {
+      <p class="empty">{{ 'partnerships.sampleProjectsEmpty' | t }}</p>
+    } @else {
+      <div class="stack-cards">
+        @for (item of current.sampleProjects; track item.id) {
+          <article class="item-card block">
+            <h3>{{ item.name }}</h3>
+            @if (item.description) {
+              <p>{{ item.description }}</p>
+            }
+            @if (item.expectedOutput) {
+              <p class="meta">
+                <strong>{{ 'partnerships.expectedOutput' | t }}:</strong> {{ item.expectedOutput }}
+              </p>
+            }
+            @if (tags(item.skills).length) {
+              <div class="tags">
+                @for (tag of tags(item.skills); track tag) {
+                  <span class="tag">{{ tag }}</span>
+                }
+              </div>
+            }
+          </article>
+        }
+      </div>
+    }
+
+    <h3 class="subhead">{{ 'partnerships.finalProject' | t }}</h3>
+    <article class="item-card block">
+      <h3>{{ displayText(current.finalProjectName) }}</h3>
+      <p>{{ displayText(current.finalProjectDescription) }}</p>
+      <p class="meta">
+        <strong>{{ 'partnerships.expectedOutput' | t }}:</strong>
+        {{ displayText(current.finalProjectExpectedOutput) }}
+      </p>
+      <p class="meta">
+        <strong>{{ 'partnerships.evaluationMethod' | t }}:</strong>
+        {{ displayText(current.finalProjectEvaluationMethod) }}
+      </p>
+      @if (tags(current.finalProjectSkills).length) {
+        <div class="tags">
+          @for (tag of tags(current.finalProjectSkills); track tag) {
+            <span class="tag">{{ tag }}</span>
+          }
+        </div>
+      }
+    </article>
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.programSectionAssessment' | t }}</h2>
+    @if (current.assessmentMethods.length === 0) {
+      <p class="empty">{{ 'partnerships.programNoneAdmin' | t }}</p>
+    } @else {
+      <div class="numbered-grid">
+        @for (item of current.assessmentMethods; track item.id; let i = $index) {
+          <article class="item-card" [class.disabled]="!item.enabled">
+            <span class="num">{{ i + 1 }}</span>
+            <div>
+              <h3>
+                {{ item.label }}
+                @if (!item.enabled) {
+                  <span class="soft-badge">{{ 'partnerships.disabled' | t }}</span>
+                }
+                @if (item.weight != null) {
+                  <span class="soft-badge">{{ item.weight }}%</span>
+                }
+              </h3>
+              @if (item.description) {
+                <p>{{ item.description }}</p>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.programSectionDelivery' | t }}</h2>
+    @if (current.deliveryFormats.length === 0) {
+      <p class="empty">{{ 'partnerships.notConfigured' | t }}</p>
+    } @else {
+      <div class="tags">
+        @for (format of current.deliveryFormats; track format) {
+          <span class="tag">{{ enumLabel('deliveryFormat', format) }}</span>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.programSectionRequirements' | t }}</h2>
+    <h3 class="subhead">{{ 'partnerships.equipmentRequirements' | t }}</h3>
+    @if (requirementsOf('EQUIPMENT').length === 0) {
+      <p class="empty">{{ 'partnerships.programNoneAdmin' | t }}</p>
+    } @else {
+      <div class="stack-cards">
+        @for (item of requirementsOf('EQUIPMENT'); track item.id) {
+          <article class="item-card block">
+            <h3>
+              {{ item.label }}
+              <span class="soft-badge">{{
+                enumLabel('requirementPriority', item.priority)
+              }}</span>
+            </h3>
+            @if (item.description) {
+              <p>{{ item.description }}</p>
+            }
+          </article>
+        }
+      </div>
+    }
+    <h3 class="subhead">{{ 'partnerships.schoolRequirements' | t }}</h3>
+    @if (requirementsOf('SCHOOL').length === 0) {
+      <p class="empty">{{ 'partnerships.programNoneAdmin' | t }}</p>
+    } @else {
+      <div class="stack-cards">
+        @for (item of requirementsOf('SCHOOL'); track item.id) {
+          <article class="item-card block">
+            <h3>
+              {{ item.label }}
+              <span class="soft-badge">{{
+                enumLabel('requirementPriority', item.priority)
+              }}</span>
+            </h3>
+            @if (item.description) {
+              <p>{{ item.description }}</p>
+            }
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.programSectionOutcomes' | t }}</h2>
+    @if (current.outcomes.length === 0) {
+      <p class="empty">{{ 'partnerships.programNoneAdmin' | t }}</p>
+    } @else {
+      <div class="numbered-grid">
+        @for (item of current.outcomes; track item.id; let i = $index) {
+          <article class="item-card">
+            <span class="num">{{ i + 1 }}</span>
+            <div>
+              <h3>{{ item.title }}</h3>
+              @if (item.description) {
+                <p>{{ item.description }}</p>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.programSectionDocuments' | t }}</h2>
+    @if (current.documents.length === 0) {
+      <p class="empty">{{ 'partnerships.documentsEmpty' | t }}</p>
+    } @else {
+      <div class="docs-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>{{ 'partnerships.documentName' | t }}</th>
+              <th>{{ 'partnerships.documentType' | t }}</th>
+              <th>{{ 'partnerships.documentVersion' | t }}</th>
+              <th>{{ 'partnerships.documentUploaded' | t }}</th>
+              <th>{{ 'common.status' | t }}</th>
+              <th>{{ 'partnerships.documentFile' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of current.documents; track item.id) {
+              <tr>
+                <td>{{ item.title }}</td>
+                <td>{{ enumLabel('documentType', item.documentType) }}</td>
+                <td>{{ item.version }}</td>
+                <td>{{ item.uploadedAt | date: 'mediumDate' }}</td>
+                <td>
+                  <span [class]="statusClass(item.status)">{{
+                    enumLabel('documentStatus', item.status)
+                  }}</span>
+                </td>
+                <td>
+                  @if (item.url) {
+                    <a [href]="item.url" target="_blank" rel="noopener noreferrer">{{
+                      'common.open' | t
+                    }}</a>
+                  } @else {
+                    {{ 'partnerships.notConfigured' | t }}
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+}

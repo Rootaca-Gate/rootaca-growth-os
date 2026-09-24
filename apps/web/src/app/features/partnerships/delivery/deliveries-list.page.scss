@@ -1,0 +1,125 @@
+.deliveries-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1080px;
+}
+
+.deliveries-table th,
+.deliveries-table td {
+  padding: 0.75rem 0.85rem;
+  text-align: start;
+  vertical-align: top;
+  border-bottom: 1px solid var(--ra-border);
+}
+
+.deliveries-table th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ra-muted);
+  white-space: nowrap;
+}
+
+.delivery-number,
+.delivery-title {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.delivery-number:hover,
+.delivery-title:hover {
+  color: var(--ra-accent);
+}
+
+.school-link {
+  color: var(--ra-muted);
+  text-decoration: none;
+  font-size: var(--ra-body-sm);
+}
+
+.school-link:hover {
+  color: var(--ra-accent);
+  text-decoration: underline;
+}
+
+.muted-cell {
+  color: var(--ra-muted);
+  font-size: var(--ra-body-sm);
+  white-space: nowrap;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.progress-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 140px;
+}
+
+.progress-track {
+  flex: 1 1 auto;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--ra-border);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--ra-success, #1b6b4a);
+}
+
+.progress-value {
+  font-size: var(--ra-body-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.status-preparing {
+  background: #eef1ef;
+  color: var(--ra-muted);
+}
+
+.status-active {
+  background: var(--ra-success-soft);
+  color: var(--ra-success);
+}
+
+.status-paused {
+  background: color-mix(in srgb, #0ea5e9 14%, transparent);
+  color: #0369a1;
+}
+
+.status-completed {
+  background: color-mix(in srgb, #1b6b4a 14%, transparent);
+  color: #145c3d;
+}
+
+.status-cancelled {
+  background: var(--ra-warning-soft);
+  color: var(--ra-warning);
+}
+
+.actions {
+  white-space: nowrap;
+}
+
+.actions a,
+.actions button {
+  min-width: 0;
+}

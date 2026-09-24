@@ -40,9 +40,50 @@ nav {
   overflow: auto;
 }
 
-nav .ra-kicker {
-  margin: 16px 12px 8px;
+.nav-section {
+  display: grid;
+  gap: 2px;
+}
+
+.section-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  margin-top: 10px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
   color: var(--ra-sidebar-muted);
+  cursor: pointer;
+  text-align: start;
+}
+
+.section-toggle:hover {
+  background: color-mix(in srgb, white 6%, transparent);
+  color: var(--ra-sidebar-text);
+}
+
+.section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.chevron {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  opacity: 0.75;
+}
+
+.section-items {
+  display: grid;
+  gap: 2px;
 }
 
 nav a {
@@ -56,6 +97,13 @@ nav a {
   text-decoration: none;
 }
 
+nav a mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  color: var(--ra-sidebar-muted);
+}
+
 nav a.active,
 nav a:hover {
   background: color-mix(in srgb, white 10%, transparent);
@@ -65,32 +113,36 @@ nav a.active {
   background: var(--ra-sidebar-active);
 }
 
+nav a.active mat-icon {
+  color: var(--ra-sidebar-text);
+}
+
 .sidebar-footer {
   padding: 16px;
   border-top: 1px solid color-mix(in srgb, white 10%, transparent);
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
-.user strong,
-.user span {
-  display: block;
-}
-
-.user span,
-.sidebar-footer a,
-.sidebar-footer button {
+.footer-email,
+.footer-action {
   color: var(--ra-sidebar-muted);
   font-size: 0.88rem;
-}
-
-.sidebar-footer a,
-.sidebar-footer button {
   background: none;
   border: 0;
   padding: 0;
   text-align: start;
   cursor: pointer;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.footer-action {
+  color: var(--ra-sidebar-text);
+}
+
+.footer-email:hover,
+.footer-action:hover {
   color: var(--ra-sidebar-text);
 }
 
@@ -109,12 +161,16 @@ nav a.active {
 
 main {
   box-sizing: border-box;
-  padding: 28px 32px 48px;
+  padding: var(--ra-page-pad) var(--ra-page-pad) 48px;
   max-width: 1280px;
 }
 
 @media (max-width: 1024px) {
+  .sidebar {
+    width: min(88vw, var(--ra-sidebar-width));
+  }
+
   main {
-    padding: 20px 16px 40px;
+    padding: var(--ra-page-pad-sm) var(--ra-page-pad-sm) 40px;
   }
 }

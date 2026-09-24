@@ -29,7 +29,7 @@ import { partnershipErrorMessage } from './partnership.util';
   template: `
     <app-page-header [title]="'partnerships.followUpsTitle' | t" [subtitle]="'partnerships.followUpsSubtitle' | t" />
     @if (loading()) {
-      <app-loading-skeleton [rows]="6" [label]="'partnerships.loading' | t" />
+      <app-loading-skeleton variant="cards" [rows]="4" [label]="'partnerships.loading' | t" />
     } @else if (error(); as message) {
       <app-error-state [title]="'partnerships.loadError' | t" [message]="message" (retry)="load()" />
     } @else {

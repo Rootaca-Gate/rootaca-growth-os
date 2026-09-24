@@ -1,0 +1,211 @@
+<app-page-header
+  [title]="'partnerships.proposalsTitle' | t"
+  [subtitle]="'partnerships.proposalsSubtitle' | t"
+>
+  @if (permissions.canWrite()) {
+    <a mat-flat-button color="primary" routerLink="/partnerships/proposals/new">{{
+      'partnerships.addProposal' | t
+    }}</a>
+  }
+</app-page-header>
+
+<app-filter-bar>
+  <app-search-input
+    search
+    [formControl]="searchControl"
+    [placeholder]="'partnerships.proposalSearchPlaceholder' | t"
+    [ariaLabel]="'common.search' | t"
+    [clearLabel]="'common.clearSearch' | t"
+  />
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.school' | t }}</mat-label>
+    <mat-select [formControl]="institutionControl">
+      <mat-option value="">{{ 'partnerships.allInstitutions' | t }}</mat-option>
+      @for (item of institutions(); track item.id) {
+        <mat-option [value]="item.id">{{ item.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'common.status' | t }}</mat-label>
+    <mat-select [formControl]="statusControl">
+      <mat-option value="">{{ 'common.allStatuses' | t }}</mat-option>
+      @for (item of proposalStatuses; track item) {
+        <mat-option [value]="item">{{ proposalLabel('status', item) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.createdFrom' | t }}</mat-label>
+    <input matInput type="date" [formControl]="createdFromControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.createdTo' | t }}</mat-label>
+    <input matInput type="date" [formControl]="createdToControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.validUntilFrom' | t }}</mat-label>
+    <input matInput type="date" [formControl]="validUntilFromControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.validUntilTo' | t }}</mat-label>
+    <input matInput type="date" [formControl]="validUntilToControl" />
+  </mat-form-field>
+  <button mat-stroked-button type="button" (click)="clearFilters()">
+    {{ 'common.clearFilters' | t }}
+  </button>
+</app-filter-bar>
+
+@if (loading()) {
+  <app-loading-skeleton variant="table" [label]="'partnerships.proposalsLoading' | t" />
+} @else if (errorMessage(); as message) {
+  <app-error-state
+    [title]="'partnerships.proposalsLoadError' | t"
+    [message]="message"
+    (retry)="load()"
+  />
+} @else if (result().items.length === 0) {
+  <app-empty-state
+    icon="request_quote"
+    [title]="'partnerships.proposalsEmptyTitle' | t"
+    [message]="'partnerships.proposalsEmptyMessage' | t"
+  >
+    @if (permissions.canWrite()) {
+      <a mat-flat-button color="primary" routerLink="/partnerships/proposals/new">{{
+        'partnerships.addProposal' | t
+      }}</a>
+    } @else {
+      <button mat-stroked-button type="button" (click)="clearFilters()">
+        {{ 'common.clearFilters' | t }}
+      </button>
+    }
+  </app-empty-state>
+} @else {
+  <div class="ra-results-meta">
+    <h2 class="ra-results-title">{{ 'partnerships.proposalsTitle' | t }}</h2>
+    <p class="ra-results-count">{{ 'common.resultsCount' | t: { count: result().total } }}</p>
+  </div>
+  <div class="ra-table-wrap proposals-table-wrap">
+    <table class="proposals-table">
+      <thead>
+        <tr>
+          <th>{{ 'partnerships.proposalNumber' | t }}</th>
+          <th>{{ 'partnerships.school' | t }}</th>
+          <th>{{ 'partnerships.proposalTitle' | t }}</th>
+          <th>{{ 'partnerships.offeringsColumn' | t }}</th>
+          <th>{{ 'partnerships.totalValue' | t }}</th>
+          <th>{{ 'common.status' | t }}</th>
+          <th>{{ 'common.created' | t }}</th>
+          <th>{{ 'partnerships.validUntil' | t }}</th>
+          <th>{{ 'common.actions' | t }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of result().items; track row.id) {
+          <tr>
+            <td>
+              <a class="proposal-number" [routerLink]="['/partnerships/proposals', row.id]">{{
+                row.proposalNumber
+              }}</a>
+              <div class="muted-cell">v{{ row.version }}</div>
+            </td>
+            <td>
+              <a
+                class="school-link"
+                [routerLink]="['/partnerships/institutions', row.institutionId]"
+                >{{ row.institutionName }}</a
+              >
+            </td>
+            <td>
+              <a class="proposal-title" [routerLink]="['/partnerships/proposals', row.id]">{{
+                row.title
+              }}</a>
+            </td>
+            <td>{{ offeringsText(row) }}</td>
+            <td class="money">{{ totalText(row) }}</td>
+            <td>
+              <span [class]="statusClass(row.status)">{{
+                proposalLabel('status', row.status)
+              }}</span>
+            </td>
+            <td>{{ row.createdAt | date: 'mediumDate' }}</td>
+            <td>
+              {{
+                row.validUntil
+                  ? (row.validUntil | date: 'mediumDate')
+                  : ('partnerships.noValue' | t)
+              }}
+            </td>
+            <td class="actions">
+              <a mat-button [routerLink]="['/partnerships/proposals', row.id]">{{
+                'common.view' | t
+              }}</a>
+              @if (permissions.canWrite() && canEdit(row)) {
+                <a mat-button [routerLink]="['/partnerships/proposals', row.id, 'edit']">{{
+                  'common.edit' | t
+                }}</a>
+              }
+              @if (permissions.canWrite()) {
+                <button
+                  mat-button
+                  type="button"
+                  [disabled]="busyId() === row.id"
+                  (click)="duplicate(row, $event)"
+                >
+                  {{ 'partnerships.duplicateProposal' | t }}
+                </button>
+              }
+              <a mat-button [routerLink]="['/partnerships/proposals', row.id, 'preview']">{{
+                'partnerships.previewProposal' | t
+              }}</a>
+              <button
+                mat-button
+                type="button"
+                [disabled]="busyId() === row.id"
+                (click)="generatePdf(row, $event)"
+              >
+                {{ 'partnerships.generateProposalPdf' | t }}
+              </button>
+              @if (permissions.canWrite() && row.status === 'DRAFT') {
+                <button
+                  mat-button
+                  type="button"
+                  [disabled]="busyId() === row.id"
+                  (click)="send(row, $event)"
+                >
+                  {{ 'partnerships.sendProposal' | t }}
+                </button>
+              }
+              <button
+                mat-button
+                type="button"
+                [disabled]="busyId() === row.id"
+                (click)="share(row, $event)"
+              >
+                {{ 'partnerships.shareProposal' | t }}
+              </button>
+              @if (permissions.canWrite() && row.status !== 'ARCHIVED') {
+                <button
+                  mat-button
+                  type="button"
+                  [disabled]="busyId() === row.id"
+                  (click)="archive(row, $event)"
+                >
+                  {{ 'partnerships.archiveProposal' | t }}
+                </button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <mat-paginator
+    [length]="result().total"
+    [pageIndex]="result().page - 1"
+    [pageSize]="result().pageSize"
+    [pageSizeOptions]="[10, 20, 50]"
+    [attr.aria-label]="'partnerships.proposalsTitle' | t"
+    (page)="onPage($event)"
+  />
+}

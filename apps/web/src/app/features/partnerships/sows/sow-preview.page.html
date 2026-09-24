@@ -1,0 +1,39 @@
+@if (loading()) {
+  <app-loading-skeleton variant="table" [label]="'partnerships.sowsLoading' | t" />
+} @else if (error(); as message) {
+  <app-error-state
+    [title]="'partnerships.sowsLoadError' | t"
+    [message]="message"
+    (retry)="reload()"
+  />
+} @else if (sow(); as current) {
+  <div class="preview-toolbar no-print">
+    <div class="preview-toolbar-copy">
+      <h1>{{ 'partnerships.previewSow' | t }}</h1>
+      <p>{{ current.sowNumber }} · {{ current.title }} · {{ current.institutionName }}</p>
+    </div>
+    <div class="preview-toolbar-actions">
+      <a mat-stroked-button [routerLink]="['/partnerships/sows', current.id]">{{
+        'common.back' | t
+      }}</a>
+      <button mat-stroked-button type="button" (click)="openPrintPreview()">
+        {{ 'partnerships.previewPdf' | t }}
+      </button>
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="downloading()"
+        (click)="downloadPdf()"
+      >
+        {{ downloading() ? ('partnerships.pdfDownloading' | t) : ('partnerships.downloadPdf' | t) }}
+      </button>
+    </div>
+  </div>
+
+  @if (previewUrl(); as url) {
+    <div class="preview-frame-wrap">
+      <iframe class="preview-frame" [src]="url" title="ROOTACA SOW PDF Preview"></iframe>
+    </div>
+  }
+}

@@ -1,37 +1,31 @@
 .tech-filters {
-  padding: 14px 16px;
-  margin-block-end: 16px;
-  display: grid;
-  gap: 10px;
+  padding: var(--ra-card-pad, 22px);
+  margin-block-end: 20px;
+}
+
+.tech-filters .ra-kicker {
+  margin-block-end: 12px;
 }
 
 .checks {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 4px 12px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th,
-td {
-  padding: 12px 14px;
-  text-align: start;
-  border-bottom: 1px solid var(--ra-border);
-  font-size: 0.9rem;
-}
-
-a {
-  color: inherit;
-  font-weight: 650;
-  text-decoration: none;
+  gap: 8px 12px;
+  margin-block-end: 16px;
 }
 
 .actions {
   white-space: nowrap;
+}
+
+.ra-table-wrap a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ra-table-wrap a:hover {
+  color: var(--ra-accent);
 }
 
 @media (max-width: 900px) {

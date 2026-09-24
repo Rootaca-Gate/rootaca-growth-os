@@ -1,0 +1,565 @@
+@if (loading()) {
+  <app-loading-skeleton [rows]="14" [label]="'partnerships.sowsLoading' | t" />
+} @else if (error(); as message) {
+  <app-error-state
+    [title]="'partnerships.sowsLoadError' | t"
+    [message]="message"
+    (retry)="reload()"
+  />
+} @else if (sow(); as current) {
+  <header class="profile-header">
+    <div class="eyebrow">{{ 'partnerships.statementOfWork' | t }}</div>
+    <div class="header-row">
+      <div class="titles">
+        <div class="relationship">
+          @for (link of relationshipChain(); track $index; let last = $last) {
+            @if (link.routerLink) {
+              <a class="rel-link" [routerLink]="link.routerLink">{{ link.value }}</a>
+            } @else {
+              <span class="rel-node">{{ link.value }}</span>
+            }
+            @if (!last) {
+              <span class="rel-arrow" aria-hidden="true">↓</span>
+            }
+          }
+        </div>
+        <h1>{{ current.title }}</h1>
+        <div class="meta-row">
+          <span class="soft-badge">{{ current.sowNumber }}</span>
+          <span [class]="statusClass(current.status)">
+            {{ 'common.status' | t }}: {{ sowLabel('status', current.status) }}
+          </span>
+          <span class="soft-badge">v{{ current.version }}</span>
+          @if (current.isLocked) {
+            <span class="lock-badge">{{ 'partnerships.sowsLockedHint' | t }}</span>
+          }
+        </div>
+        <div class="dates">
+          <span>{{ 'partnerships.sowDate' | t }}: {{ current.sowDate | date: 'mediumDate' }}</span>
+          <span>
+            {{ 'partnerships.startDate' | t }}:
+            {{ current.startDate ? (current.startDate | date: 'mediumDate') : ('partnerships.noValue' | t) }}
+          </span>
+          <span>
+            {{ 'partnerships.endDate' | t }}:
+            {{ current.endDate ? (current.endDate | date: 'mediumDate') : ('partnerships.noValue' | t) }}
+          </span>
+          <span>{{ 'common.updated' | t }}: {{ current.updatedAt | date: 'medium' }}</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-stroked-button type="button" (click)="back()">{{ 'common.back' | t }}</button>
+        @if (permissions.canWrite() && canEdit(current)) {
+          <a mat-stroked-button [routerLink]="['/partnerships/sows', current.id, 'edit']">{{
+            'common.edit' | t
+          }}</a>
+        }
+        <a mat-stroked-button [routerLink]="['/partnerships/sows', current.id, 'preview']">{{
+          'partnerships.previewSow' | t
+        }}</a>
+        <button mat-stroked-button type="button" (click)="generatePdf()">
+          {{ 'partnerships.previewPdf' | t }}
+        </button>
+        @if (permissions.canWrite() && current.status === 'ACTIVE') {
+          <a
+            mat-flat-button
+            color="primary"
+            [routerLink]="['/partnerships/delivery/new']"
+            [queryParams]="{ sowId: current.id }"
+          >
+            {{ 'partnerships.createDeliveryPlan' | t }}
+          </a>
+        }
+        @if (permissions.canWrite()) {
+          <button mat-stroked-button type="button" [disabled]="busy()" (click)="duplicate()">
+            {{ 'partnerships.duplicateSow' | t }}
+          </button>
+        }
+        @if (permissions.canWrite() && !current.archivedAt) {
+          <button mat-stroked-button type="button" [disabled]="busy()" (click)="archive()">
+            {{ 'partnerships.archiveSow' | t }}
+          </button>
+        }
+      </div>
+    </div>
+  </header>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.sowSectionParties' | t }}</h2>
+    <div class="party-grid">
+      <div class="party-block">
+        <h3>{{ 'partnerships.sowProvider' | t }}</h3>
+        <dl class="facts">
+          <div class="full">
+            <dt>{{ 'partnerships.sowProviderName' | t }}</dt>
+            <dd>{{ 'partnerships.pdfOrganization' | t }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.sowSignatoryName' | t }}</dt>
+            <dd>{{ display(current.rootacaSignatoryName) }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.sowSignatoryTitle' | t }}</dt>
+            <dd>{{ display(current.rootacaSignatoryTitle) }}</dd>
+          </div>
+        </dl>
+      </div>
+      <div class="party-block">
+        <h3>{{ 'partnerships.sowClient' | t }}</h3>
+        <dl class="facts">
+          <div class="full">
+            <dt>{{ 'partnerships.school' | t }}</dt>
+            <dd>
+              <a [routerLink]="['/partnerships/institutions', current.institutionId]">{{
+                current.clientName || current.institutionName
+              }}</a>
+            </dd>
+          </div>
+          <div class="full">
+            <dt>{{ 'partnerships.sowClientAddress' | t }}</dt>
+            <dd>{{ display(current.clientAddress) }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.primaryContact' | t }}</dt>
+            <dd>{{ display(current.primaryContactName) }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.sowContactEmail' | t }}</dt>
+            <dd>{{ display(current.primaryContactEmail) }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.sowContactPhone' | t }}</dt>
+            <dd>{{ display(current.primaryContactPhone) }}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.sowSectionBasics' | t }}</h2>
+    <dl class="facts">
+      <div>
+        <dt>{{ 'partnerships.preparedBy' | t }}</dt>
+        <dd>{{ display(current.preparedBy) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.sowApprovedBy' | t }}</dt>
+        <dd>{{ display(current.approvedBy) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.sowEffectiveDate' | t }}</dt>
+        <dd>
+          {{ current.effectiveDate ? (current.effectiveDate | date: 'mediumDate') : ('partnerships.noValue' | t) }}
+        </dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.sowPurpose' | t }}</dt>
+        <dd class="prose">{{ display(current.purpose) }}</dd>
+      </div>
+      @if (current.targetStudents) {
+        <div class="full">
+          <dt>{{ 'partnerships.sowTargetStudents' | t }}</dt>
+          <dd class="prose">{{ current.targetStudents }}</dd>
+        </div>
+      }
+    </dl>
+  </section>
+
+  @if (current.scopeOfferings.length) {
+    <section class="profile-card">
+      <h2>{{ 'partnerships.sowScopeOfferings' | t }}</h2>
+      <div class="offering-list">
+        @for (line of current.scopeOfferings; track line.id) {
+          <article class="offering-card">
+            <div class="offering-card-head">
+              <div>
+                <h3>{{ line.offeringName }}</h3>
+                <p class="muted">{{ line.programName }}</p>
+              </div>
+              <span class="type-chip">{{
+                programLabel('deliveryFormat', line.deliveryFormat)
+              }}</span>
+            </div>
+            <dl class="facts compact">
+              <div>
+                <dt>{{ 'partnerships.targetGrades' | t }}</dt>
+                <dd>{{ display(line.targetGrades) }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'partnerships.programLevel' | t }}</dt>
+                <dd>{{ programLabel('level', line.recommendedLevel) }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'partnerships.duration' | t }}</dt>
+                <dd>{{ durationText(line) }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'partnerships.numberOfSessions' | t }}</dt>
+                <dd>{{ display(line.numberOfSessions?.toString()) }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'partnerships.deliveryMode' | t }}</dt>
+                <dd>{{ offeringLabel('deliveryMode', line.deliveryMode) }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'partnerships.groupSizeMin' | t }}</dt>
+                <dd>{{ groupSizeText(line) }}</dd>
+              </div>
+            </dl>
+          </article>
+        }
+      </div>
+    </section>
+  }
+
+  @if (inScopeItems(current).length || outScopeItems(current).length) {
+    <section class="profile-card">
+      <h2>{{ 'partnerships.sowSectionScope' | t }}</h2>
+      @if (inScopeItems(current).length) {
+        <h3 class="sub">{{ 'partnerships.sowScopeInclusions' | t }}</h3>
+        <ul class="scope-list">
+          @for (item of inScopeItems(current); track item.id) {
+            <li>{{ item.text }}</li>
+          }
+        </ul>
+      }
+      @if (outScopeItems(current).length) {
+        <h3 class="sub">{{ 'partnerships.sowScopeExclusions' | t }}</h3>
+        <ul class="scope-list out">
+          @for (item of outScopeItems(current); track item.id) {
+            <li>{{ item.text }}</li>
+          }
+        </ul>
+      }
+    </section>
+  }
+
+  @if (current.deliverables.length) {
+    <section class="profile-card">
+      <h2>{{ 'partnerships.sowDeliverables' | t }}</h2>
+      <div class="ra-table-wrap">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th>{{ 'partnerships.sowDeliverableName' | t }}</th>
+              <th>{{ 'partnerships.sowOwner' | t }}</th>
+              <th>{{ 'partnerships.sowDueDate' | t }}</th>
+              <th>{{ 'partnerships.sowAcceptanceCriteria' | t }}</th>
+              <th>{{ 'common.status' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of current.deliverables; track d.id) {
+              <tr>
+                <td>
+                  <strong>{{ d.name }}</strong>
+                  @if (d.description) {
+                    <div class="muted">{{ d.description }}</div>
+                  }
+                </td>
+                <td>{{ display(d.owner) }}</td>
+                <td>{{ d.dueDate ? (d.dueDate | date: 'mediumDate') : ('partnerships.noValue' | t) }}</td>
+                <td>{{ display(d.acceptanceCriteria) }}</td>
+                <td><span class="soft-badge">{{ sowLabel('deliverableStatus', d.status) }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  @if (current.milestones.length) {
+    <section class="profile-card">
+      <h2>{{ 'partnerships.sowMilestones' | t }}</h2>
+      <ol class="timeline">
+        @for (m of current.milestones; track m.id) {
+          <li>
+            <span class="tl-dot" aria-hidden="true"></span>
+            <div class="tl-body">
+              <div class="tl-head">
+                <strong>{{ m.name }}</strong>
+                <span class="tl-range">
+                  {{ m.startDate ? (m.startDate | date: 'mediumDate') : '' }}
+                  @if (m.startDate && m.endDate) { → }
+                  {{ m.endDate ? (m.endDate | date: 'mediumDate') : '' }}
+                </span>
+              </div>
+              @if (m.description) {
+                <p>{{ m.description }}</p>
+              }
+              <div class="tl-meta">
+                @if (m.owner) {
+                  <span class="soft-badge">{{ 'partnerships.sowOwner' | t }}: {{ m.owner }}</span>
+                }
+                <span class="soft-badge">{{ sowLabel('milestoneStatus', m.status) }}</span>
+              </div>
+            </div>
+          </li>
+        }
+      </ol>
+    </section>
+  }
+
+  @if (current.responsibilities.length) {
+    <section class="profile-card">
+      <h2>{{ 'partnerships.sowResponsibilities' | t }}</h2>
+      <div class="ra-table-wrap">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th>{{ 'partnerships.sowActivity' | t }}</th>
+              <th>{{ 'partnerships.sowRootacaRole' | t }}</th>
+              <th>{{ 'partnerships.sowSchoolRole' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of current.responsibilities; track r.id) {
+              <tr>
+                <td><strong>{{ r.activity }}</strong></td>
+                <td>{{ display(r.rootacaRole) }}</td>
+                <td>{{ display(r.schoolRole) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  @if (current.teamMembers.length) {
+    <section class="profile-card">
+      <h2>{{ 'partnerships.sowTeam' | t }}</h2>
+      <div class="ra-table-wrap">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th>{{ 'partnerships.sowRole' | t }}</th>
+              <th>{{ 'partnerships.sowName' | t }}</th>
+              <th>{{ 'partnerships.sowResponsibility' | t }}</th>
+              <th>{{ 'partnerships.primaryContact' | t }}</th>
+              <th>{{ 'partnerships.sowParty' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (member of current.teamMembers; track member.id) {
+              <tr>
+                <td><strong>{{ member.role }}</strong></td>
+                <td>{{ display(member.name) }}</td>
+                <td>{{ display(member.responsibility) }}</td>
+                <td>{{ display(member.contact) }}</td>
+                <td><span class="soft-badge">{{ sowLabel('party', member.party) }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  @if (current.assessmentItems.length || current.assessmentNotes || current.reportingNotes) {
+    <section class="profile-card">
+      <h2>{{ 'partnerships.sowAssessment' | t }}</h2>
+      @if (current.assessmentNotes) {
+        <p class="prose">{{ current.assessmentNotes }}</p>
+      }
+      @if (current.assessmentItems.length) {
+        <div class="ra-table-wrap">
+          <table class="matrix-table">
+            <thead>
+              <tr>
+                <th>{{ 'partnerships.sowAssessmentName' | t }}</th>
+                <th>{{ 'partnerships.sowResponsibleParty' | t }}</th>
+                <th>{{ 'partnerships.sowFrequency' | t }}</th>
+                <th>{{ 'partnerships.sowFormat' | t }}</th>
+                <th>{{ 'partnerships.sowDueDate' | t }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (a of current.assessmentItems; track a.id) {
+                <tr>
+                  <td><strong>{{ a.name }}</strong></td>
+                  <td>{{ display(a.responsibleParty) }}</td>
+                  <td>{{ display(a.frequency) }}</td>
+                  <td>{{ display(a.format) }}</td>
+                  <td>{{ a.dueDate ? (a.dueDate | date: 'mediumDate') : ('partnerships.noValue' | t) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+      @if (current.reportingNotes) {
+        <h3 class="sub">{{ 'partnerships.sowReporting' | t }}</h3>
+        <p class="prose">{{ current.reportingNotes }}</p>
+      }
+    </section>
+  }
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.sowCommercialReference' | t }}</h2>
+    <dl class="facts">
+      <div>
+        <dt>{{ 'partnerships.sowPdfProposalNo' | t }}</dt>
+        <dd>{{ display(current.proposalNumberSnapshot) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.sowAgreedValue' | t }}</dt>
+        <dd class="money">
+          @if (current.agreedValueSnapshot != null) {
+            {{ current.currencySnapshot ? current.currencySnapshot + ' ' : '' }}{{ current.agreedValueSnapshot | number: '1.2-2' }}
+          } @else {
+            {{ 'partnerships.noValue' | t }}
+          }
+        </dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.paymentTerms' | t }}</dt>
+        <dd class="prose">{{ display(current.paymentTermsSnapshot) }}</dd>
+      </div>
+    </dl>
+    <p class="ref-note">{{ 'partnerships.sowCommercialReferenceNote' | t }}</p>
+  </section>
+
+  @if (current.termsAndConditions) {
+    <section class="profile-card">
+      <h2>{{ 'partnerships.termsAndConditions' | t }}</h2>
+      <p class="prose">{{ current.termsAndConditions }}</p>
+    </section>
+  }
+
+  @if (permissions.canWrite() && nextStatuses().length) {
+    <section class="profile-card">
+      <h2>{{ 'partnerships.changeStatus' | t }}</h2>
+      <div class="status-row">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'common.status' | t }}</mat-label>
+          <mat-select [formControl]="statusControl">
+            @for (item of nextStatuses(); track item) {
+              <mat-option [value]="item">{{ sowLabel('status', item) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="busy() || !statusControl.value"
+          (click)="changeStatus()"
+        >
+          {{ 'partnerships.changeStatus' | t }}
+        </button>
+      </div>
+    </section>
+  }
+
+  <section class="profile-card">
+    <div class="section-head">
+      <h2>{{ 'partnerships.sowChangeRequests' | t }}</h2>
+      @if (permissions.canWrite()) {
+        <button mat-stroked-button type="button" (click)="toggleChangeRequestForm()">
+          {{ 'partnerships.sowCreateChangeRequest' | t }}
+        </button>
+      }
+    </div>
+
+    @if (showChangeRequestForm() && permissions.canWrite()) {
+      <form class="cr-form" [formGroup]="changeRequestForm" (ngSubmit)="submitChangeRequest()">
+        <div class="grid">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.sowRequestedBy' | t }}</mat-label>
+            <input matInput formControlName="requestedBy" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.sowChangeImpact' | t }}</mat-label>
+            <mat-select formControlName="impact">
+              @for (item of impacts; track item) {
+                <mat-option [value]="item">{{ sowLabel('changeImpact', item) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.sowChangeDescription' | t }}</mat-label>
+            <textarea matInput rows="3" formControlName="description"></textarea>
+            @if (changeRequestForm.controls.description.touched && changeRequestForm.controls.description.invalid) {
+              <mat-error>{{ 'partnerships.sowChangeDescriptionRequired' | t }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="cr-actions">
+          <button mat-stroked-button type="button" (click)="toggleChangeRequestForm()">
+            {{ 'common.cancel' | t }}
+          </button>
+          <button mat-flat-button color="primary" type="submit" [disabled]="busy()">
+            {{ 'partnerships.sowSubmitChangeRequest' | t }}
+          </button>
+        </div>
+      </form>
+    }
+
+    @if (current.changeRequests.length === 0) {
+      <p class="empty">{{ 'partnerships.sowNoChangeRequests' | t }}</p>
+    } @else {
+      <ul class="cr-list">
+        @for (cr of current.changeRequests; track cr.id) {
+          <li class="cr-item">
+            <div class="cr-head">
+              <strong>{{ cr.changeRequestNumber }}</strong>
+              <span class="soft-badge">{{ sowLabel('changeImpact', cr.impact) }}</span>
+              <span class="soft-badge">{{ sowLabel('changeStatus', cr.approvalStatus) }}</span>
+              <span class="cr-date">{{ cr.requestDate | date: 'mediumDate' }}</span>
+            </div>
+            <p class="cr-desc">{{ cr.description }}</p>
+            @if (cr.requestedBy) {
+              <p class="muted">{{ 'partnerships.sowRequestedBy' | t }}: {{ cr.requestedBy }}</p>
+            }
+            @if (cr.changeSummary) {
+              <p class="muted">{{ 'partnerships.sowChangeSummary' | t }}: {{ cr.changeSummary }}</p>
+            }
+            @if (cr.resultingVersion) {
+              <p class="muted">{{ 'partnerships.version' | t }}: v{{ cr.resultingVersion }}</p>
+            }
+            @if (permissions.canWrite() && cr.approvalStatus === 'PENDING') {
+              <div class="cr-decide">
+                <button
+                  mat-flat-button
+                  color="primary"
+                  type="button"
+                  [disabled]="busy()"
+                  (click)="decideChangeRequest(cr.id, 'APPROVED')"
+                >
+                  {{ 'partnerships.sowApproveCr' | t }}
+                </button>
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="busy()"
+                  (click)="decideChangeRequest(cr.id, 'REJECTED')"
+                >
+                  {{ 'partnerships.sowRejectCr' | t }}
+                </button>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  @if (current.versions.length) {
+    <section class="profile-card">
+      <h2>{{ 'partnerships.sowSectionVersions' | t }}</h2>
+      <ul class="version-list">
+        @for (version of current.versions; track version.id) {
+          <li>
+            <strong>v{{ version.version }}</strong>
+            <span>{{ version.createdAt | date: 'medium' }}</span>
+            @if (version.changeSummary) {
+              <span class="muted">{{ version.changeSummary }}</span>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  }
+}

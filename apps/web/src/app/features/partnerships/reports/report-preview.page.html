@@ -1,0 +1,30 @@
+@if (loading()) {
+  <app-loading-skeleton [rows]="10" [label]="'partnerships.reportsLoading' | t" />
+} @else if (error(); as message) {
+  <app-error-state
+    [title]="'partnerships.reportsLoadError' | t"
+    [message]="message"
+    (retry)="reload()"
+  />
+} @else if (report(); as current) {
+  <header class="preview-header">
+    <div>
+      <h1>{{ 'partnerships.reportsPreview' | t }}</h1>
+      <p class="muted">{{ current.reportNumber }} — {{ current.title }}</p>
+    </div>
+    <div class="actions">
+      <a mat-stroked-button [routerLink]="['/partnerships/reports', current.id]">{{
+        'common.back' | t
+      }}</a>
+      <button mat-stroked-button type="button" (click)="openPrintPreview()">
+        {{ 'partnerships.previewPdf' | t }}
+      </button>
+      <button mat-flat-button color="primary" type="button" [disabled]="downloading()" (click)="downloadPdf()">
+        {{ 'partnerships.reportsGeneratePdf' | t }}
+      </button>
+    </div>
+  </header>
+  @if (previewUrl(); as url) {
+    <iframe class="preview-frame" [src]="url" [title]="current.title"></iframe>
+  }
+}

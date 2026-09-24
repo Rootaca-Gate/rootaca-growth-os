@@ -12,8 +12,10 @@ import { DirectionService } from '../../core/direction.service';
 import { TPipe } from '../../core/i18n/t.pipe';
 import { EmptyState } from '../../shared/empty-state';
 import { ErrorState } from '../../shared/error-state';
+import { FilterBar } from '../../shared/filter-bar';
 import { LoadingSkeleton } from '../../shared/loading-skeleton';
 import { PageHeader } from '../../shared/page-header';
+import { SearchInput } from '../../shared/search-input';
 import { Contact, Paginated } from './partnership.models';
 import { PartnershipsApi } from './partnerships.api';
 import { partnershipErrorMessage } from './partnership.util';
@@ -32,24 +34,43 @@ import { partnershipErrorMessage } from './partnership.util';
     EmptyState,
     ErrorState,
     LoadingSkeleton,
+    FilterBar,
+    SearchInput,
     TPipe,
   ],
   template: `
     <app-page-header [title]="'partnerships.contactsTitle' | t" [subtitle]="'partnerships.contactsSubtitle' | t" />
-    <section class="ra-filters">
-      <mat-form-field appearance="outline"><mat-label>{{ 'common.search' | t }}</mat-label><input matInput [formControl]="searchControl" /></mat-form-field>
-      <mat-form-field appearance="outline"><mat-label>{{ 'partnerships.jobTitle' | t }}</mat-label><input matInput [formControl]="jobTitleControl" /></mat-form-field>
+    <app-filter-bar>
+      <app-search-input
+        search
+        [formControl]="searchControl"
+        [placeholder]="'common.search' | t"
+        [ariaLabel]="'common.search' | t"
+        [clearLabel]="'common.clearSearch' | t"
+      />
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>{{ 'partnerships.jobTitle' | t }}</mat-label>
+        <input matInput [formControl]="jobTitleControl" />
+      </mat-form-field>
       <mat-checkbox [formControl]="decisionMakerControl">{{ 'partnerships.decisionMaker' | t }}</mat-checkbox>
       <mat-checkbox [formControl]="hasEmailControl">{{ 'partnerships.hasEmail' | t }}</mat-checkbox>
       <mat-checkbox [formControl]="hasPhoneControl">{{ 'partnerships.hasPhone' | t }}</mat-checkbox>
-    </section>
+    </app-filter-bar>
     @if (loading()) {
-      <app-loading-skeleton [rows]="6" [label]="'partnerships.loading' | t" />
+      <app-loading-skeleton variant="table" [label]="'partnerships.loading' | t" />
     } @else if (errorMessage(); as message) {
       <app-error-state [title]="'partnerships.loadError' | t" [message]="message" (retry)="load()" />
     } @else if (result().items.length === 0) {
-      <app-empty-state [title]="'partnerships.contactsEmptyTitle' | t" [message]="'partnerships.contactsEmptyMessage' | t" />
+      <app-empty-state
+        icon="contacts"
+        [title]="'partnerships.contactsEmptyTitle' | t"
+        [message]="'partnerships.contactsEmptyMessage' | t"
+      />
     } @else {
+      <div class="ra-results-meta">
+        <h2 class="ra-results-title">{{ 'partnerships.contactsTitle' | t }}</h2>
+        <p class="ra-results-count">{{ 'common.resultsCount' | t: { count: result().total } }}</p>
+      </div>
       <div class="ra-table-wrap">
         <table>
           <thead>
@@ -74,18 +95,24 @@ import { partnershipErrorMessage } from './partnership.util';
                 <td>{{ row.phone || row.mobile || '—' }}</td>
                 <td>{{ row.isDecisionMaker ? '✓' : '' }}</td>
                 <td>{{ row.isPrimary ? '✓' : '' }}</td>
-                <td><a mat-button [routerLink]="['/partnerships/institutions', row.institutionId]">{{ 'partnerships.openInstitution' | t }}</a></td>
+                <td>
+                  <a mat-button [routerLink]="['/partnerships/institutions', row.institutionId]">{{
+                    'partnerships.openInstitution' | t
+                  }}</a>
+                </td>
               </tr>
             }
           </tbody>
         </table>
       </div>
-      <mat-paginator [length]="result().total" [pageIndex]="result().page - 1" [pageSize]="result().pageSize" [pageSizeOptions]="[10, 20, 50]" (page)="onPage($event)" />
+      <mat-paginator
+        [length]="result().total"
+        [pageIndex]="result().page - 1"
+        [pageSize]="result().pageSize"
+        [pageSizeOptions]="[10, 20, 50]"
+        (page)="onPage($event)"
+      />
     }
-  `,
-  styles: `
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 12px 14px; text-align: start; border-bottom: 1px solid var(--ra-border); font-size: 0.9rem; }
   `,
 })
 export class ContactsListPage {
@@ -98,7 +125,13 @@ export class ContactsListPage {
   readonly hasPhoneControl = new FormControl(false, { nonNullable: true });
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
-  readonly result = signal<Paginated<Contact>>({ items: [], total: 0, page: 1, pageSize: 20, pageCount: 0 });
+  readonly result = signal<Paginated<Contact>>({
+    items: [],
+    total: 0,
+    page: 1,
+    pageSize: 20,
+    pageCount: 0,
+  });
 
   constructor() {
     this.searchControl.valueChanges.pipe(debounceTime(300), takeUntilDestroyed()).subscribe(() => this.load(1));
@@ -135,7 +168,11 @@ export class ContactsListPage {
   }
 
   onPage(event: PageEvent): void {
-    this.result.update((current) => ({ ...current, page: event.pageIndex + 1, pageSize: event.pageSize }));
+    this.result.update((current) => ({
+      ...current,
+      page: event.pageIndex + 1,
+      pageSize: event.pageSize,
+    }));
     this.load(event.pageIndex + 1);
   }
 }

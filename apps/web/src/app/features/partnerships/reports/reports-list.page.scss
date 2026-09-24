@@ -1,0 +1,80 @@
+.reports-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1100px;
+}
+
+.reports-table th,
+.reports-table td {
+  padding: 0.75rem 0.85rem;
+  text-align: start;
+  vertical-align: top;
+  border-bottom: 1px solid var(--ra-border);
+}
+
+.reports-table th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ra-muted);
+  white-space: nowrap;
+}
+
+.report-link {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.report-link:hover {
+  color: var(--ra-accent);
+}
+
+.report-title {
+  font-size: var(--ra-body-sm);
+  color: var(--ra-muted);
+  margin-top: 0.15rem;
+}
+
+.muted-link {
+  color: var(--ra-muted);
+  text-decoration: none;
+  font-size: var(--ra-body-sm);
+}
+
+.muted-link:hover {
+  color: var(--ra-accent);
+}
+
+.actions {
+  white-space: nowrap;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-draft {
+  background: color-mix(in srgb, var(--ra-muted) 15%, transparent);
+}
+
+.status-review {
+  background: color-mix(in srgb, #f59e0b 20%, transparent);
+}
+
+.status-published {
+  background: color-mix(in srgb, var(--ra-accent) 18%, transparent);
+}
+
+.status-archived {
+  background: color-mix(in srgb, var(--ra-muted) 25%, transparent);
+}

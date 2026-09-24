@@ -1,0 +1,307 @@
+@if (loading()) {
+  <app-loading-skeleton [rows]="14" [label]="'partnerships.reportsLoading' | t" />
+} @else if (error(); as message) {
+  <app-error-state
+    [title]="'partnerships.reportsLoadError' | t"
+    [message]="message"
+    (retry)="reload()"
+  />
+} @else if (report(); as current) {
+  <header class="profile-header">
+    <div class="eyebrow">{{ 'partnerships.reportsTitle' | t }}</div>
+    <div class="header-row">
+      <div class="titles">
+        <h1>{{ current.title }}</h1>
+        <div class="meta-row">
+          <span class="soft-badge">{{ current.reportNumber }}</span>
+          <span [class]="statusClass(current.status)">
+            {{ 'common.status' | t }}: {{ reportLabel('status', current.status) }}
+          </span>
+          <span class="soft-badge">v{{ current.version }}</span>
+        </div>
+        <div class="dates">
+          <span>{{ 'partnerships.school' | t }}: {{ current.institutionName }}</span>
+          <span>{{ 'partnerships.reportsType' | t }}: {{ reportLabel('type', current.type) }}</span>
+          <span>{{ 'partnerships.reportsPeriod' | t }}: {{ period(current) }}</span>
+          <span>{{ 'common.updated' | t }}: {{ current.updatedAt | date: 'medium' }}</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-stroked-button type="button" (click)="back()">{{ 'common.back' | t }}</button>
+        @if (permissions.canWrite() && current.status !== 'PUBLISHED' && current.status !== 'ARCHIVED') {
+          <a mat-stroked-button [routerLink]="['/partnerships/reports', current.id, 'edit']">{{
+            'common.edit' | t
+          }}</a>
+        }
+        <a mat-stroked-button [routerLink]="['/partnerships/reports', current.id, 'preview']">{{
+          'partnerships.reportsPreview' | t
+        }}</a>
+        <button mat-stroked-button type="button" (click)="generatePdf()">
+          {{ 'partnerships.reportsGeneratePdf' | t }}
+        </button>
+        @if (permissions.canWrite()) {
+          @if (current.status === 'DRAFT' || current.status === 'IN_REVIEW') {
+            <button mat-stroked-button type="button" [disabled]="busy()" (click)="refreshSnapshot()">
+              {{ 'partnerships.reportsRefreshSnapshot' | t }}
+            </button>
+          }
+          <button mat-stroked-button type="button" [disabled]="busy()" (click)="duplicate()">
+            {{ 'partnerships.reportsDuplicate' | t }}
+          </button>
+          @if (current.status === 'IN_REVIEW') {
+            <button mat-flat-button color="primary" type="button" [disabled]="busy()" (click)="publish()">
+              {{ 'partnerships.reportsPublish' | t }}
+            </button>
+          }
+          @if (current.status !== 'ARCHIVED') {
+            <button mat-stroked-button type="button" [disabled]="busy()" (click)="archive()">
+              {{ 'partnerships.reportsArchive' | t }}
+            </button>
+          }
+        }
+      </div>
+    </div>
+  </header>
+
+  @if (current.publishValidation && !current.publishValidation.ok) {
+    <section class="validation-panel">
+      <h2>{{ 'partnerships.reportsPublishValidation' | t }}</h2>
+      <ul>
+        @for (err of current.publishValidation.errors; track err) {
+          <li class="err">{{ err }}</li>
+        }
+        @for (warn of current.publishValidation.warnings; track warn) {
+          <li class="warn">{{ warn }}</li>
+        }
+      </ul>
+    </section>
+  }
+
+  <section class="kpi-grid">
+    <article class="kpi-card">
+      <span class="kpi-value">{{ count(current.kpis?.students ?? null) }}</span>
+      <span class="kpi-label">{{ 'partnerships.reportsKpiStudents' | t }}</span>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-value">{{ count(current.kpis?.groups ?? null) }}</span>
+      <span class="kpi-label">{{ 'partnerships.reportsKpiGroups' | t }}</span>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-value">{{ sessionsText(current.kpis) }}</span>
+      <span class="kpi-label">{{ 'partnerships.reportsKpiSessions' | t }}</span>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-value">{{ pct(current.kpis?.attendancePercent ?? null) }}</span>
+      <span class="kpi-label">{{ 'partnerships.reportsKpiAttendance' | t }}</span>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-value">{{ pct(current.kpis?.completionPercent ?? null) }}</span>
+      <span class="kpi-label">{{ 'partnerships.reportsKpiCompletion' | t }}</span>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-value">{{ pct(current.kpis?.progressPercent ?? null) }}</span>
+      <span class="kpi-label">{{ 'partnerships.reportsKpiProgress' | t }}</span>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-value">{{ count(current.kpis?.projects ?? null) }}</span>
+      <span class="kpi-label">{{ 'partnerships.reportsKpiProjects' | t }}</span>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-value">{{ deliverablesText(current.kpis) }}</span>
+      <span class="kpi-label">{{ 'partnerships.reportsKpiDeliverables' | t }}</span>
+    </article>
+  </section>
+
+  <section class="panel">
+    <h2>{{ 'partnerships.reportsExecutiveSummary' | t }}</h2>
+    <p>{{ blank(current.executiveSummary) }}</p>
+  </section>
+
+  <section class="panel">
+    <h2>{{ 'partnerships.reportsStudentsSection' | t }}</h2>
+    @if (snapshot()?.students?.length) {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ 'partnerships.reportsStudentName' | t }}</th>
+            <th>{{ 'partnerships.reportsGroup' | t }}</th>
+            <th>{{ 'partnerships.reportsKpiAttendance' | t }}</th>
+            <th>{{ 'partnerships.reportsTrackStatus' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of snapshot()!.students; track row.studentId) {
+            <tr>
+              <td>{{ row.studentName }}</td>
+              <td>{{ row.groupName }}</td>
+              <td>{{ pct(row.attendancePercent) }}</td>
+              <td>{{ reportLabel('trackStatus', row.trackStatus) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <app-empty-state
+        icon="groups"
+        [title]="'partnerships.reportsStudentsEmpty' | t"
+        [message]="'partnerships.reportsStudentsEmptyMessage' | t"
+      />
+    }
+  </section>
+
+  <section class="panel">
+    <h2>{{ 'partnerships.reportsGroupsSection' | t }}</h2>
+    @if (snapshot()?.groups?.length) {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ 'partnerships.reportsGroup' | t }}</th>
+            <th>{{ 'partnerships.reportsKpiStudents' | t }}</th>
+            <th>{{ 'partnerships.reportsSessions' | t }}</th>
+            <th>{{ 'partnerships.reportsKpiAttendance' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of snapshot()!.groups; track row.groupId) {
+            <tr>
+              <td>{{ row.groupName }}</td>
+              <td>{{ row.studentsCount }}</td>
+              <td>{{ row.sessionsCompleted }} / {{ row.sessionsTotal }}</td>
+              <td>{{ pct(row.attendancePercent) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <app-empty-state
+        icon="groups"
+        [title]="'partnerships.reportsGroupsEmpty' | t"
+        [message]="'partnerships.reportsGroupsEmptyMessage' | t"
+      />
+    }
+  </section>
+
+  <section class="panel">
+    <h2>{{ 'partnerships.reportsAssessmentSection' | t }}</h2>
+    @if (snapshot()?.assessment?.available) {
+      <p>{{ 'partnerships.reportsAssessmentAvailable' | t }}</p>
+    } @else {
+      <app-empty-state
+        icon="assignment"
+        [title]="'partnerships.reportsAssessmentEmpty' | t"
+        [message]="snapshot()?.assessment?.emptyReason || ('partnerships.reportsAssessmentEmptyMessage' | t)"
+      />
+    }
+  </section>
+
+  <section class="panel">
+    <h2>{{ 'partnerships.reportsProjectsSection' | t }}</h2>
+    @if (snapshot()?.projects?.length) {
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>{{ 'partnerships.reportsProjectName' | t }}</th>
+            <th>{{ 'common.status' | t }}</th>
+            <th>{{ 'partnerships.reportsCompletion' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of snapshot()!.projects; track row.id) {
+            <tr>
+              <td>{{ row.name }}</td>
+              <td>{{ row.status }}</td>
+              <td>{{ pct(row.completionPercent) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    } @else {
+      <app-empty-state
+        icon="school"
+        [title]="'partnerships.reportsProjectsEmpty' | t"
+        [message]="'partnerships.reportsProjectsEmptyMessage' | t"
+      />
+    }
+  </section>
+
+  <section class="panel">
+    <h2>{{ 'partnerships.reportsChallengesSection' | t }}</h2>
+    @if (snapshot()?.challenges?.length) {
+      <ul class="challenge-list">
+        @for (row of snapshot()!.challenges; track row.id) {
+          <li><strong>{{ row.title }}</strong> — {{ row.kind }} ({{ row.status }})</li>
+        }
+      </ul>
+    } @else {
+      <app-empty-state
+        icon="warning"
+        [title]="'partnerships.reportsChallengesEmpty' | t"
+        [message]="'partnerships.reportsChallengesEmptyMessage' | t"
+      />
+    }
+  </section>
+
+  <section class="panel">
+    <h2>{{ 'partnerships.reportsRecommendations' | t }}</h2>
+    @if (current.recommendations.length) {
+      <ul class="rec-list">
+        @for (rec of current.recommendations; track rec.id) {
+          <li>
+            {{ rec.text || ('partnerships.noValue' | t) }}
+            <span class="muted"> — {{ reportLabel('priority', rec.priority) }}</span>
+            @if (rec.isInternal) {
+              <span class="internal-badge">{{ 'partnerships.reportsInternal' | t }}</span>
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <app-empty-state
+        icon="lightbulb"
+        [title]="'partnerships.reportsRecommendationsEmpty' | t"
+        [message]="'partnerships.reportsRecommendationsEmptyMessage' | t"
+      />
+    }
+  </section>
+
+  <section class="panel cta-row">
+    <button mat-flat-button color="primary" type="button" (click)="createFollowOn('renewal')">
+      {{ 'partnerships.deliveryCreateRenewal' | t }}
+    </button>
+    <button mat-stroked-button type="button" (click)="createFollowOn('expansion')">
+      {{ 'partnerships.deliveryCreateExpansion' | t }}
+    </button>
+  </section>
+
+  <section class="panel">
+    <h2>{{ 'partnerships.reportsVersionHistory' | t }}</h2>
+    @if (current.versions.length) {
+      <ul class="log-list">
+        @for (v of current.versions; track v.id) {
+          <li>
+            v{{ v.version }} — {{ v.changeNote }}
+            <span class="muted">{{ v.createdAt | date: 'medium' }}</span>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="muted">{{ 'partnerships.reportsNoVersions' | t }}</p>
+    }
+  </section>
+
+  <section class="panel">
+    <h2>{{ 'partnerships.reportsActivityLog' | t }}</h2>
+    @if (current.activityLogs.length) {
+      <ul class="log-list">
+        @for (log of current.activityLogs; track log.id) {
+          <li>
+            {{ log.summary }}
+            <span class="muted">{{ log.createdAt | date: 'medium' }}</span>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="muted">{{ 'partnerships.reportsNoActivity' | t }}</p>
+    }
+  </section>
+}

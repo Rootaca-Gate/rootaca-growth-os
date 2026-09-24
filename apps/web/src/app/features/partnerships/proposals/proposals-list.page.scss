@@ -1,0 +1,102 @@
+.proposals-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1180px;
+}
+
+.proposals-table th,
+.proposals-table td {
+  padding: 0.75rem 0.85rem;
+  text-align: start;
+  vertical-align: top;
+  border-bottom: 1px solid var(--ra-border);
+}
+
+.proposals-table th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ra-muted);
+  white-space: nowrap;
+}
+
+.proposal-number,
+.proposal-title {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.proposal-number:hover,
+.proposal-title:hover {
+  color: var(--ra-accent);
+}
+
+.school-link {
+  color: var(--ra-muted);
+  text-decoration: none;
+  font-size: var(--ra-body-sm);
+}
+
+.school-link:hover {
+  color: var(--ra-accent);
+  text-decoration: underline;
+}
+
+.money {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.muted-cell {
+  color: var(--ra-muted);
+  font-size: var(--ra-body-sm);
+  white-space: nowrap;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.status-draft {
+  background: #eef1ef;
+  color: var(--ra-muted);
+}
+
+.status-sent,
+.status-viewed,
+.status-under-review {
+  background: color-mix(in srgb, #0ea5e9 14%, transparent);
+  color: #0369a1;
+}
+
+.status-accepted {
+  background: var(--ra-success-soft);
+  color: var(--ra-success);
+}
+
+.status-rejected,
+.status-expired {
+  background: var(--ra-warning-soft);
+  color: var(--ra-warning);
+}
+
+.status-archived {
+  background: #eef1ef;
+  color: var(--ra-muted);
+}
+
+.actions {
+  white-space: nowrap;
+}
+
+.actions a,
+.actions button {
+  min-width: 0;
+}

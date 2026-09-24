@@ -1,0 +1,203 @@
+<app-page-header
+  [title]="'partnerships.deliveryTitle' | t"
+  [subtitle]="'partnerships.deliverySubtitle' | t"
+>
+  @if (permissions.canWrite()) {
+    <a mat-flat-button color="primary" routerLink="/partnerships/delivery/new">{{
+      'partnerships.addDelivery' | t
+    }}</a>
+  }
+</app-page-header>
+
+<app-filter-bar>
+  <app-search-input
+    search
+    [formControl]="searchControl"
+    [placeholder]="'partnerships.deliverySearchPlaceholder' | t"
+    [ariaLabel]="'common.search' | t"
+    [clearLabel]="'common.clearSearch' | t"
+  />
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.school' | t }}</mat-label>
+    <mat-select [formControl]="institutionControl">
+      <mat-option value="">{{ 'partnerships.allInstitutions' | t }}</mat-option>
+      @for (item of institutions(); track item.id) {
+        <mat-option [value]="item.id">{{ item.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.deliverySow' | t }}</mat-label>
+    <mat-select [formControl]="sowControl">
+      <mat-option value="">{{ 'partnerships.deliveryAllSows' | t }}</mat-option>
+      @for (item of sows(); track item.id) {
+        <mat-option [value]="item.id">{{ item.sowNumber }} — {{ item.title }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'common.status' | t }}</mat-label>
+    <mat-select [formControl]="statusControl">
+      <mat-option value="">{{ 'common.allStatuses' | t }}</mat-option>
+      @for (item of deliveryStatuses; track item) {
+        <mat-option [value]="item">{{ deliveryLabel('status', item) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.deliveryStartFrom' | t }}</mat-label>
+    <input matInput type="date" [formControl]="startDateFromControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.deliveryStartTo' | t }}</mat-label>
+    <input matInput type="date" [formControl]="startDateToControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.deliveryEndFrom' | t }}</mat-label>
+    <input matInput type="date" [formControl]="endDateFromControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.deliveryEndTo' | t }}</mat-label>
+    <input matInput type="date" [formControl]="endDateToControl" />
+  </mat-form-field>
+  <button mat-stroked-button type="button" (click)="clearFilters()">
+    {{ 'common.clearFilters' | t }}
+  </button>
+</app-filter-bar>
+
+@if (loading()) {
+  <app-loading-skeleton variant="table" [label]="'partnerships.deliveryLoading' | t" />
+} @else if (errorMessage(); as message) {
+  <app-error-state
+    [title]="'partnerships.deliveryLoadError' | t"
+    [message]="message"
+    (retry)="load()"
+  />
+} @else if (result().items.length === 0) {
+  <app-empty-state
+    icon="rocket_launch"
+    [title]="'partnerships.deliveryEmptyTitle' | t"
+    [message]="'partnerships.deliveryEmptyMessage' | t"
+  >
+    @if (permissions.canWrite()) {
+      <a mat-flat-button color="primary" routerLink="/partnerships/delivery/new">{{
+        'partnerships.addDelivery' | t
+      }}</a>
+    } @else {
+      <button mat-stroked-button type="button" (click)="clearFilters()">
+        {{ 'common.clearFilters' | t }}
+      </button>
+    }
+  </app-empty-state>
+} @else {
+  <div class="ra-results-meta">
+    <h2 class="ra-results-title">{{ 'partnerships.deliveryTitle' | t }}</h2>
+    <p class="ra-results-count">{{ 'common.resultsCount' | t: { count: result().total } }}</p>
+  </div>
+  <div class="ra-table-wrap deliveries-table-wrap">
+    <table class="deliveries-table">
+      <thead>
+        <tr>
+          <th>{{ 'partnerships.deliveryNumber' | t }}</th>
+          <th>{{ 'partnerships.school' | t }}</th>
+          <th>{{ 'partnerships.deliveryName' | t }}</th>
+          <th>{{ 'partnerships.deliverySow' | t }}</th>
+          <th>{{ 'partnerships.deliveryProgress' | t }}</th>
+          <th>{{ 'partnerships.deliverySessionsCol' | t }}</th>
+          <th>{{ 'common.status' | t }}</th>
+          <th>{{ 'common.actions' | t }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of result().items; track row.id) {
+          <tr>
+            <td>
+              <a class="delivery-number" [routerLink]="['/partnerships/delivery', row.id]">{{
+                row.deliveryNumber
+              }}</a>
+              @if (row.archivedAt) {
+                <div class="muted-cell">{{ 'partnerships.deliveryArchivedBadge' | t }}</div>
+              }
+            </td>
+            <td>
+              <a
+                class="school-link"
+                [routerLink]="['/partnerships/institutions', row.institutionId]"
+                >{{ row.institutionName }}</a
+              >
+            </td>
+            <td>
+              <a class="delivery-title" [routerLink]="['/partnerships/delivery', row.id]">{{
+                row.name
+              }}</a>
+            </td>
+            <td>
+              @if (row.sowNumber) {
+                <a class="school-link" [routerLink]="['/partnerships/sows', row.sowId]">{{
+                  row.sowNumber
+                }}</a>
+              } @else {
+                {{ 'partnerships.noValue' | t }}
+              }
+            </td>
+            <td>
+              <div class="progress-cell">
+                <div class="progress-track" aria-hidden="true">
+                  <div class="progress-fill" [style.width.%]="row.overallPercent"></div>
+                </div>
+                <span class="progress-value">{{ progressText(row.overallPercent) }}</span>
+              </div>
+            </td>
+            <td class="nowrap">{{ row.sessionsCompleted }} / {{ row.sessionsTotal }}</td>
+            <td>
+              <span [class]="statusClass(row.status)">{{
+                deliveryLabel('status', row.status)
+              }}</span>
+            </td>
+            <td class="actions">
+              <a mat-button [routerLink]="['/partnerships/delivery', row.id]">{{
+                'common.view' | t
+              }}</a>
+              @if (permissions.canWrite()) {
+                <a mat-button [routerLink]="['/partnerships/delivery', row.id, 'edit']">{{
+                  'common.edit' | t
+                }}</a>
+              }
+              <a mat-button [routerLink]="['/partnerships/delivery', row.id, 'preview']">{{
+                'partnerships.previewDelivery' | t
+              }}</a>
+              @if (permissions.canWrite()) {
+                <button
+                  mat-button
+                  type="button"
+                  [disabled]="busyId() === row.id"
+                  (click)="duplicate(row, $event)"
+                >
+                  {{ 'partnerships.duplicateDelivery' | t }}
+                </button>
+                @if (!row.archivedAt) {
+                  <button
+                    mat-button
+                    type="button"
+                    [disabled]="busyId() === row.id"
+                    (click)="archive(row, $event)"
+                  >
+                    {{ 'partnerships.archiveDelivery' | t }}
+                  </button>
+                }
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <mat-paginator
+    [length]="result().total"
+    [pageIndex]="result().page - 1"
+    [pageSize]="result().pageSize"
+    [pageSizeOptions]="[10, 20, 50]"
+    [attr.aria-label]="'partnerships.deliveryTitle' | t"
+    (page)="onPage($event)"
+  />
+}

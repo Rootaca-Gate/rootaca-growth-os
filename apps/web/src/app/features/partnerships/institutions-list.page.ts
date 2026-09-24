@@ -13,8 +13,10 @@ import { DirectionService } from '../../core/direction.service';
 import { TPipe } from '../../core/i18n/t.pipe';
 import { EmptyState } from '../../shared/empty-state';
 import { ErrorState } from '../../shared/error-state';
+import { FilterBar } from '../../shared/filter-bar';
 import { LoadingSkeleton } from '../../shared/loading-skeleton';
 import { PageHeader } from '../../shared/page-header';
+import { SearchInput } from '../../shared/search-input';
 import {
   CURRICULA,
   EDUCATION_LEVELS,
@@ -45,6 +47,8 @@ import { partnershipErrorMessage } from './partnership.util';
     EmptyState,
     ErrorState,
     LoadingSkeleton,
+    FilterBar,
+    SearchInput,
     TPipe,
   ],
   templateUrl: './institutions-list.page.html',

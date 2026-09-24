@@ -1,0 +1,397 @@
+@if (loading()) {
+  <app-loading-skeleton [rows]="10" [label]="'partnerships.programsLoading' | t" />
+} @else if (error(); as message) {
+  <app-error-state
+    [title]="'partnerships.programsLoadError' | t"
+    [message]="message"
+    (retry)="editId ? load(editId) : null"
+  />
+} @else {
+  <app-page-header
+    [title]="(isEdit ? 'partnerships.editProgram' : 'partnerships.createProgram') | t"
+    [subtitle]="'partnerships.programsSubtitle' | t"
+  >
+    <button mat-stroked-button type="button" (click)="cancel()">{{ 'common.back' | t }}</button>
+  </app-page-header>
+
+  <form class="form" [formGroup]="form" (ngSubmit)="submit()">
+    <section class="ra-card section">
+      <h2>{{ 'partnerships.programSectionOverview' | t }}</h2>
+      <div class="grid">
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'partnerships.programName' | t }}</mat-label>
+          <input matInput formControlName="name" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'partnerships.shortDescription' | t }}</mat-label>
+          <textarea matInput rows="2" formControlName="shortDescription"></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.programType' | t }}</mat-label>
+          <mat-select formControlName="programType">
+            @for (item of programTypes; track item) {
+              <mat-option [value]="item">{{ enumLabel('programType', item) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'common.status' | t }}</mat-label>
+          <mat-select formControlName="status">
+            @for (item of programStatuses; track item) {
+              <mat-option [value]="item">{{ enumLabel('status', item) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.displayOrder' | t }}</mat-label>
+          <input matInput type="number" formControlName="displayOrder" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'partnerships.internalNotes' | t }}</mat-label>
+          <textarea matInput rows="3" formControlName="internalNotes"></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'partnerships.schoolValue' | t }}</mat-label>
+          <textarea matInput rows="3" formControlName="schoolValue"></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'partnerships.studentValue' | t }}</mat-label>
+          <textarea matInput rows="3" formControlName="studentValue"></textarea>
+        </mat-form-field>
+      </div>
+    </section>
+
+    <section class="ra-card section">
+      <h2>{{ 'partnerships.programSectionAudience' | t }}</h2>
+      <div class="grid">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.targetAge' | t }}</mat-label>
+          <input matInput formControlName="targetAge" placeholder="TBD" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.targetGrades' | t }}</mat-label>
+          <input matInput formControlName="targetGrades" placeholder="TBD" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'partnerships.programLevel' | t }}</mat-label>
+          <mat-select formControlName="recommendedLevel">
+            <mat-option value="">{{ 'common.none' | t }}</mat-option>
+            @for (item of programLevels; track item) {
+              <mat-option [value]="item">{{ enumLabel('level', item) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'partnerships.recommendedStudentProfile' | t }}</mat-label>
+          <textarea matInput rows="3" formControlName="recommendedStudentProfile"></textarea>
+        </mat-form-field>
+      </div>
+    </section>
+
+    <section class="ra-card section">
+      <div class="section-head">
+        <h2>{{ 'partnerships.programSectionObjectives' | t }}</h2>
+        <button mat-stroked-button type="button" (click)="addObjective()">{{ 'common.add' | t }}</button>
+      </div>
+      <div class="list" formArrayName="objectives">
+        @for (group of objectives.controls; track $index; let i = $index) {
+          <div class="list-row" [formGroupName]="i">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'common.titleField' | t }}</mat-label>
+              <input matInput formControlName="title" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="grow">
+              <mat-label>{{ 'common.description' | t }}</mat-label>
+              <textarea matInput rows="2" formControlName="description"></textarea>
+            </mat-form-field>
+            <button mat-stroked-button type="button" (click)="removeObjective(i)">{{ 'common.remove' | t }}</button>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="ra-card section">
+      <div class="section-head">
+        <h2>{{ 'partnerships.programSectionOutcomes' | t }}</h2>
+        <button mat-stroked-button type="button" (click)="addOutcome()">{{ 'common.add' | t }}</button>
+      </div>
+      <div class="list" formArrayName="outcomes">
+        @for (group of outcomes.controls; track $index; let i = $index) {
+          <div class="list-row" [formGroupName]="i">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'common.titleField' | t }}</mat-label>
+              <input matInput formControlName="title" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="grow">
+              <mat-label>{{ 'common.description' | t }}</mat-label>
+              <textarea matInput rows="2" formControlName="description"></textarea>
+            </mat-form-field>
+            <button mat-stroked-button type="button" (click)="removeOutcome(i)">{{ 'common.remove' | t }}</button>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="ra-card section">
+      <div class="section-head">
+        <h2>{{ 'partnerships.programSectionCurriculum' | t }}</h2>
+        <button mat-stroked-button type="button" (click)="addCurriculumModule()">{{ 'common.add' | t }}</button>
+      </div>
+      <div class="list" formArrayName="curriculumModules">
+        @for (group of curriculumModules.controls; track $index; let i = $index) {
+          <div class="list-row" [formGroupName]="i">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'common.titleField' | t }}</mat-label>
+              <input matInput formControlName="title" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="grow">
+              <mat-label>{{ 'common.description' | t }}</mat-label>
+              <textarea matInput rows="2" formControlName="description"></textarea>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="grow">
+              <mat-label>{{ 'partnerships.skillsDeveloped' | t }}</mat-label>
+              <textarea matInput rows="2" formControlName="skillsDeveloped"></textarea>
+            </mat-form-field>
+            <button mat-stroked-button type="button" (click)="removeCurriculumModule(i)">{{ 'common.remove' | t }}</button>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="ra-card section">
+      <div class="section-head">
+        <h2>{{ 'partnerships.programSectionActivities' | t }}</h2>
+        <button mat-stroked-button type="button" (click)="addActivity()">{{ 'common.add' | t }}</button>
+      </div>
+      <div class="list" formArrayName="activities">
+        @for (group of activities.controls; track $index; let i = $index) {
+          <div class="list-row stack-row" [formGroupName]="i">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'partnerships.activityName' | t }}</mat-label>
+              <input matInput formControlName="name" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="grow">
+              <mat-label>{{ 'common.description' | t }}</mat-label>
+              <textarea matInput rows="2" formControlName="description"></textarea>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="grow">
+              <mat-label>{{ 'partnerships.skillsDeveloped' | t }}</mat-label>
+              <textarea matInput rows="2" formControlName="skillsDeveloped"></textarea>
+            </mat-form-field>
+            <button mat-stroked-button type="button" (click)="removeActivity(i)">{{ 'common.remove' | t }}</button>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="ra-card section">
+      <div class="section-head">
+        <h2>{{ 'partnerships.programSectionProjects' | t }}</h2>
+        <button mat-stroked-button type="button" (click)="addSampleProject()">{{ 'common.add' | t }}</button>
+      </div>
+      <h3>{{ 'partnerships.sampleProjects' | t }}</h3>
+      <div class="list" formArrayName="sampleProjects">
+        @for (group of sampleProjects.controls; track $index; let i = $index) {
+          <div class="list-row stack-row" [formGroupName]="i">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'partnerships.projectName' | t }}</mat-label>
+              <input matInput formControlName="name" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="grow">
+              <mat-label>{{ 'common.description' | t }}</mat-label>
+              <textarea matInput rows="2" formControlName="description"></textarea>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'partnerships.skills' | t }}</mat-label>
+              <input matInput formControlName="skills" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="grow">
+              <mat-label>{{ 'partnerships.expectedOutput' | t }}</mat-label>
+              <textarea matInput rows="2" formControlName="expectedOutput"></textarea>
+            </mat-form-field>
+            <button mat-stroked-button type="button" (click)="removeSampleProject(i)">{{ 'common.remove' | t }}</button>
+          </div>
+        }
+      </div>
+      <h3>{{ 'partnerships.finalProject' | t }}</h3>
+      <div class="grid">
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'partnerships.finalProjectName' | t }}</mat-label>
+          <input matInput formControlName="finalProjectName" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'common.description' | t }}</mat-label>
+          <textarea matInput rows="2" formControlName="finalProjectDescription"></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'partnerships.expectedOutput' | t }}</mat-label>
+          <textarea matInput rows="2" formControlName="finalProjectExpectedOutput"></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'partnerships.finalProjectSkills' | t }}</mat-label>
+          <textarea matInput rows="2" formControlName="finalProjectSkills"></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>{{ 'partnerships.evaluationMethod' | t }}</mat-label>
+          <textarea matInput rows="2" formControlName="finalProjectEvaluationMethod"></textarea>
+        </mat-form-field>
+      </div>
+    </section>
+
+    <section class="ra-card section">
+      <div class="section-head">
+        <h2>{{ 'partnerships.programSectionAssessment' | t }}</h2>
+        <div class="head-actions">
+          <button mat-stroked-button type="button" (click)="resetAssessmentDefaults()">
+            {{ 'partnerships.resetAssessmentDefaults' | t }}
+          </button>
+          <button mat-stroked-button type="button" (click)="addAssessment()">{{ 'common.add' | t }}</button>
+        </div>
+      </div>
+      <div class="list" formArrayName="assessmentMethods">
+        @for (group of assessmentMethods.controls; track $index; let i = $index) {
+          <div class="list-row stack-row" [formGroupName]="i">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'partnerships.assessmentKey' | t }}</mat-label>
+              <input matInput formControlName="key" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'common.titleField' | t }}</mat-label>
+              <input matInput formControlName="label" />
+            </mat-form-field>
+            <mat-checkbox formControlName="enabled">{{ 'partnerships.enabled' | t }}</mat-checkbox>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'partnerships.assessmentWeight' | t }}</mat-label>
+              <input matInput type="number" formControlName="weight" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>{{ 'common.description' | t }}</mat-label>
+              <textarea matInput rows="2" formControlName="description"></textarea>
+            </mat-form-field>
+            <button mat-stroked-button type="button" (click)="removeAssessment(i)">{{ 'common.remove' | t }}</button>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="ra-card section" [formGroup]="deliveryFormatSelection">
+      <h2>{{ 'partnerships.programSectionDelivery' | t }}</h2>
+      <div class="checks">
+        @for (format of deliveryFormats; track format) {
+          <mat-checkbox [formControlName]="format">{{ enumLabel('deliveryFormat', format) }}</mat-checkbox>
+        }
+      </div>
+    </section>
+
+    <section class="ra-card section">
+      <h2>{{ 'partnerships.programSectionRequirements' | t }}</h2>
+      <div class="section-head">
+        <h3>{{ 'partnerships.equipmentRequirements' | t }}</h3>
+        <button mat-stroked-button type="button" (click)="addEquipmentRequirement()">{{ 'common.add' | t }}</button>
+      </div>
+      <div class="list" formArrayName="equipmentRequirements">
+        @for (group of equipmentRequirements.controls; track $index; let i = $index) {
+          <div class="list-row" [formGroupName]="i">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'partnerships.priority' | t }}</mat-label>
+              <mat-select formControlName="priority">
+                @for (item of requirementPriorities; track item) {
+                  <mat-option [value]="item">{{ enumLabel('requirementPriority', item) }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'common.titleField' | t }}</mat-label>
+              <input matInput formControlName="label" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="grow">
+              <mat-label>{{ 'common.description' | t }}</mat-label>
+              <textarea matInput rows="2" formControlName="description"></textarea>
+            </mat-form-field>
+            <button mat-stroked-button type="button" (click)="removeEquipmentRequirement(i)">{{ 'common.remove' | t }}</button>
+          </div>
+        }
+      </div>
+      <div class="section-head">
+        <h3>{{ 'partnerships.schoolRequirements' | t }}</h3>
+        <button mat-stroked-button type="button" (click)="addSchoolRequirement()">{{ 'common.add' | t }}</button>
+      </div>
+      <div class="list" formArrayName="schoolRequirements">
+        @for (group of schoolRequirements.controls; track $index; let i = $index) {
+          <div class="list-row" [formGroupName]="i">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'partnerships.priority' | t }}</mat-label>
+              <mat-select formControlName="priority">
+                @for (item of requirementPriorities; track item) {
+                  <mat-option [value]="item">{{ enumLabel('requirementPriority', item) }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'common.titleField' | t }}</mat-label>
+              <input matInput formControlName="label" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="grow">
+              <mat-label>{{ 'common.description' | t }}</mat-label>
+              <textarea matInput rows="2" formControlName="description"></textarea>
+            </mat-form-field>
+            <button mat-stroked-button type="button" (click)="removeSchoolRequirement(i)">{{ 'common.remove' | t }}</button>
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="ra-card section">
+      <div class="section-head">
+        <h2>{{ 'partnerships.programSectionDocuments' | t }}</h2>
+        <button mat-stroked-button type="button" (click)="addDocument()">{{ 'common.add' | t }}</button>
+      </div>
+      <div class="list" formArrayName="documents">
+        @for (group of documents.controls; track $index; let i = $index) {
+          <div class="list-row stack-row" [formGroupName]="i">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'partnerships.documentType' | t }}</mat-label>
+              <mat-select formControlName="documentType">
+                @for (item of documentTypes; track item) {
+                  <mat-option [value]="item">{{ enumLabel('documentType', item) }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'common.titleField' | t }}</mat-label>
+              <input matInput formControlName="title" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'partnerships.documentVersion' | t }}</mat-label>
+              <input matInput formControlName="version" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'common.status' | t }}</mat-label>
+              <mat-select formControlName="status">
+                @for (item of programDocumentStatuses; track item) {
+                  <mat-option [value]="item">{{ enumLabel('documentStatus', item) }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="grow">
+              <mat-label>{{ 'partnerships.documentUrl' | t }}</mat-label>
+              <input matInput formControlName="url" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="grow">
+              <mat-label>{{ 'common.notes' | t }}</mat-label>
+              <textarea matInput rows="2" formControlName="notes"></textarea>
+            </mat-form-field>
+            <button mat-stroked-button type="button" (click)="removeDocument(i)">{{ 'common.remove' | t }}</button>
+          </div>
+        }
+      </div>
+    </section>
+
+    <div class="actions">
+      <button mat-stroked-button type="button" (click)="cancel()">{{ 'common.cancel' | t }}</button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+        {{ (isEdit ? 'common.save' : 'partnerships.createProgram') | t }}
+      </button>
+    </div>
+  </form>
+}

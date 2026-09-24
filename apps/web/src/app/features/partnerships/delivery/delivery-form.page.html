@@ -1,0 +1,733 @@
+@if (creating()) {
+  <app-loading-skeleton [rows]="6" [label]="'partnerships.deliveryCreating' | t" />
+} @else if (loading()) {
+  <app-loading-skeleton [rows]="10" [label]="'partnerships.deliveryLoading' | t" />
+} @else if (error(); as message) {
+  <app-error-state
+    [title]="'partnerships.deliveryLoadError' | t"
+    [message]="message"
+    (retry)="editId ? load(editId) : null"
+  />
+  @if (editId) {
+    <div class="locked-actions">
+      <a mat-stroked-button [routerLink]="['/partnerships/delivery', editId]">{{ 'common.back' | t }}</a>
+    </div>
+  }
+} @else if (!isEdit) {
+  <!-- NEW: choose a source active SOW -->
+  <app-page-header
+    [title]="'partnerships.createDelivery' | t"
+    [subtitle]="'partnerships.deliverySourceSowHint' | t"
+  >
+    <button mat-stroked-button type="button" (click)="cancel()">{{ 'common.back' | t }}</button>
+  </app-page-header>
+
+  <section class="ra-card section">
+    <h2>{{ 'partnerships.deliverySelectSource' | t }}</h2>
+    <p class="hint-block">{{ 'partnerships.deliverySourceSowHint' | t }}</p>
+    <div class="add-row">
+      <mat-form-field appearance="outline" class="grow">
+        <mat-label>{{ 'partnerships.deliverySourceSow' | t }}</mat-label>
+        <mat-select [formControl]="sourceSowControl">
+          @for (item of visibleSows(); track item.id) {
+            <mat-option [value]="item.id"
+              >{{ item.sowNumber }} · {{ item.title }} · {{ item.institutionName }}</mat-option
+            >
+          }
+        </mat-select>
+      </mat-form-field>
+      <button mat-stroked-button type="button" (click)="toggleAllSows()">
+        {{ (showAllSows() ? 'partnerships.deliveryShowActiveOnly' : 'partnerships.deliveryShowAllSows') | t }}
+      </button>
+    </div>
+    @if (visibleSows().length === 0) {
+      <p class="hint-block">{{ 'partnerships.deliveryNoSows' | t }}</p>
+    }
+    <div class="wizard-actions">
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="!sourceSowControl.value"
+        (click)="confirmSourceSow()"
+      >
+        {{ 'partnerships.deliveryCreateFromSow' | t }}
+      </button>
+    </div>
+  </section>
+} @else {
+  <app-page-header
+    [title]="'partnerships.editDelivery' | t"
+    [subtitle]="'partnerships.deliverySubtitle' | t"
+  >
+    <button mat-stroked-button type="button" (click)="cancel()">{{ 'common.back' | t }}</button>
+  </app-page-header>
+
+  @if (deliveryMeta(); as meta) {
+    <div class="meta-banner">
+      <span>{{ meta.deliveryNumber }}</span>
+      <span>{{ deliveryLabel('status', meta.status) }}</span>
+      <span>{{ meta.sowNumber }}</span>
+    </div>
+  }
+
+  <form class="form" [formGroup]="form" (ngSubmit)="save()">
+    <mat-tab-group animationDuration="200ms" [dynamicHeight]="true">
+      <!-- Basics -->
+      <mat-tab [label]="'partnerships.deliveryFormBasics' | t">
+        <section class="ra-card section">
+          <div class="grid">
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>{{ 'partnerships.deliveryEditName' | t }}</mat-label>
+              <input matInput formControlName="name" />
+              @if (form.controls.name.touched && form.controls.name.invalid) {
+                <mat-error>{{ 'partnerships.deliveryNameRequired' | t }}</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'partnerships.deliveryStartDate' | t }}</mat-label>
+              <input matInput type="date" formControlName="startDate" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'partnerships.deliveryEndDate' | t }}</mat-label>
+              <input matInput type="date" formControlName="endDate" />
+            </mat-form-field>
+          </div>
+          <mat-checkbox formControlName="finalReportRequired">
+            {{ 'partnerships.deliveryFinalReportRequired' | t }}
+          </mat-checkbox>
+        </section>
+      </mat-tab>
+
+      <!-- Phases -->
+      <mat-tab [label]="'partnerships.deliveryPhases' | t">
+        <section class="ra-card section">
+          <div class="section-head">
+            <h2>{{ 'partnerships.deliveryPhases' | t }}</h2>
+            <button mat-stroked-button type="button" (click)="addPhase()">
+              {{ 'partnerships.deliveryAddPhase' | t }}
+            </button>
+          </div>
+          @if (phases.length === 0) {
+            <p class="hint-block">{{ 'partnerships.deliveryNoPhases' | t }}</p>
+          }
+          <div class="list" formArrayName="phases">
+            @for (group of phases.controls; track $index; let i = $index) {
+              <div class="offering-card" [formGroupName]="i">
+                <div class="grid">
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldName' | t }}</mat-label>
+                    <input matInput formControlName="name" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldStartDate' | t }}</mat-label>
+                    <input matInput type="date" formControlName="startDate" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldEndDate' | t }}</mat-label>
+                    <input matInput type="date" formControlName="endDate" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldOwner' | t }}</mat-label>
+                    <input matInput formControlName="owner" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldStatus' | t }}</mat-label>
+                    <mat-select formControlName="status">
+                      @for (item of phaseStatuses; track item) {
+                        <mat-option [value]="item">{{ deliveryLabel('phaseStatus', item) }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldDescription' | t }}</mat-label>
+                    <textarea matInput rows="2" formControlName="description"></textarea>
+                  </mat-form-field>
+                </div>
+                <button mat-button type="button" color="warn" (click)="removeAt(phases, i)">
+                  {{ 'partnerships.deliveryRemove' | t }}
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+      </mat-tab>
+
+      <!-- Milestones -->
+      <mat-tab [label]="'partnerships.deliveryMilestones' | t">
+        <section class="ra-card section">
+          <div class="section-head">
+            <h2>{{ 'partnerships.deliveryMilestones' | t }}</h2>
+            <button mat-stroked-button type="button" (click)="addMilestone()">
+              {{ 'partnerships.deliveryAddMilestone' | t }}
+            </button>
+          </div>
+          @if (milestones.length === 0) {
+            <p class="hint-block">{{ 'partnerships.deliveryNoMilestones' | t }}</p>
+          }
+          <div class="list" formArrayName="milestones">
+            @for (group of milestones.controls; track $index; let i = $index) {
+              <div class="offering-card" [formGroupName]="i">
+                <div class="grid">
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldName' | t }}</mat-label>
+                    <input matInput formControlName="name" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldPhase' | t }}</mat-label>
+                    <mat-select formControlName="phaseRef">
+                      <mat-option [value]="''">{{ 'partnerships.deliveryFieldNone' | t }}</mat-option>
+                      @for (phase of existingPhases(); track phase.id) {
+                        <mat-option [value]="phase.id">{{ phase.name }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldStartDate' | t }}</mat-label>
+                    <input matInput type="date" formControlName="startDate" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldEndDate' | t }}</mat-label>
+                    <input matInput type="date" formControlName="endDate" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldOwner' | t }}</mat-label>
+                    <input matInput formControlName="owner" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldStatus' | t }}</mat-label>
+                    <mat-select formControlName="status">
+                      @for (item of milestoneStatuses; track item) {
+                        <mat-option [value]="item">{{ deliveryLabel('milestoneStatus', item) }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldDescription' | t }}</mat-label>
+                    <textarea matInput rows="2" formControlName="description"></textarea>
+                  </mat-form-field>
+                </div>
+                <mat-checkbox formControlName="requiredForCompletion">
+                  {{ 'partnerships.deliveryFieldRequiredForCompletion' | t }}
+                </mat-checkbox>
+                <button mat-button type="button" color="warn" (click)="removeAt(milestones, i)">
+                  {{ 'partnerships.deliveryRemove' | t }}
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+      </mat-tab>
+
+      <!-- Tasks -->
+      <mat-tab [label]="'partnerships.deliveryTasks' | t">
+        <section class="ra-card section">
+          <div class="section-head">
+            <h2>{{ 'partnerships.deliveryTasks' | t }}</h2>
+            <button mat-stroked-button type="button" (click)="addTask()">
+              {{ 'partnerships.deliveryAddTask' | t }}
+            </button>
+          </div>
+          @if (tasks.length === 0) {
+            <p class="hint-block">{{ 'partnerships.deliveryNoTasks' | t }}</p>
+          }
+          <div class="list" formArrayName="tasks">
+            @for (group of tasks.controls; track $index; let i = $index) {
+              <div class="offering-card" [formGroupName]="i">
+                <div class="grid">
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldTitle' | t }}</mat-label>
+                    <input matInput formControlName="title" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldPhase' | t }}</mat-label>
+                    <mat-select formControlName="phaseRef">
+                      <mat-option [value]="''">{{ 'partnerships.deliveryFieldNone' | t }}</mat-option>
+                      @for (phase of existingPhases(); track phase.id) {
+                        <mat-option [value]="phase.id">{{ phase.name }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldMilestone' | t }}</mat-label>
+                    <mat-select formControlName="milestoneRef">
+                      <mat-option [value]="''">{{ 'partnerships.deliveryFieldNone' | t }}</mat-option>
+                      @for (ms of existingMilestones(); track ms.id) {
+                        <mat-option [value]="ms.id">{{ ms.name }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldOwner' | t }}</mat-label>
+                    <input matInput formControlName="owner" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldPriority' | t }}</mat-label>
+                    <mat-select formControlName="priority">
+                      @for (item of taskPriorities; track item) {
+                        <mat-option [value]="item">{{ deliveryLabel('taskPriority', item) }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldStatus' | t }}</mat-label>
+                    <mat-select formControlName="status">
+                      @for (item of taskStatuses; track item) {
+                        <mat-option [value]="item">{{ deliveryLabel('taskStatus', item) }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldStartDate' | t }}</mat-label>
+                    <input matInput type="date" formControlName="startDate" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldDueDate' | t }}</mat-label>
+                    <input matInput type="date" formControlName="dueDate" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldDescription' | t }}</mat-label>
+                    <textarea matInput rows="2" formControlName="description"></textarea>
+                  </mat-form-field>
+                </div>
+                <button mat-button type="button" color="warn" (click)="removeAt(tasks, i)">
+                  {{ 'partnerships.deliveryRemove' | t }}
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+      </mat-tab>
+
+      <!-- Team -->
+      <mat-tab [label]="'partnerships.deliveryTeam' | t">
+        <section class="ra-card section">
+          <div class="section-head">
+            <h2>{{ 'partnerships.deliveryTeam' | t }}</h2>
+            <button mat-stroked-button type="button" (click)="addTeamMember()">
+              {{ 'partnerships.deliveryAddTeamMember' | t }}
+            </button>
+          </div>
+          @if (teamMembers.length === 0) {
+            <p class="hint-block">{{ 'partnerships.deliveryNoTeam' | t }}</p>
+          }
+          <div class="list" formArrayName="teamMembers">
+            @for (group of teamMembers.controls; track $index; let i = $index) {
+              <div class="offering-card" [formGroupName]="i">
+                <div class="grid">
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldRole' | t }}</mat-label>
+                    <input matInput formControlName="role" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldName' | t }}</mat-label>
+                    <input matInput formControlName="name" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldAvailability' | t }}</mat-label>
+                    <input matInput formControlName="availability" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldResponsibilities' | t }}</mat-label>
+                    <textarea matInput rows="2" formControlName="responsibilities"></textarea>
+                  </mat-form-field>
+                </div>
+                <button mat-button type="button" color="warn" (click)="removeAt(teamMembers, i)">
+                  {{ 'partnerships.deliveryRemove' | t }}
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+      </mat-tab>
+
+      <!-- Deliverables -->
+      <mat-tab [label]="'partnerships.deliveryDeliverables' | t">
+        <section class="ra-card section">
+          <div class="section-head">
+            <h2>{{ 'partnerships.deliveryDeliverables' | t }}</h2>
+            <button mat-stroked-button type="button" (click)="addDeliverable()">
+              {{ 'partnerships.deliveryAddDeliverable' | t }}
+            </button>
+          </div>
+          @if (deliverables.length === 0) {
+            <p class="hint-block">{{ 'partnerships.deliveryNoDeliverables' | t }}</p>
+          }
+          <div class="list" formArrayName="deliverables">
+            @for (group of deliverables.controls; track $index; let i = $index) {
+              <div class="offering-card" [formGroupName]="i">
+                <div class="grid">
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldName' | t }}</mat-label>
+                    <input matInput formControlName="name" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldOwner' | t }}</mat-label>
+                    <input matInput formControlName="owner" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldDueDate' | t }}</mat-label>
+                    <input matInput type="date" formControlName="dueDate" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldStatus' | t }}</mat-label>
+                    <mat-select formControlName="status">
+                      @for (item of deliverableStatuses; track item) {
+                        <mat-option [value]="item">{{ deliveryLabel('deliverableStatus', item) }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldDescription' | t }}</mat-label>
+                    <textarea matInput rows="2" formControlName="description"></textarea>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldAcceptanceCriteria' | t }}</mat-label>
+                    <textarea matInput rows="2" formControlName="acceptanceCriteria"></textarea>
+                  </mat-form-field>
+                </div>
+                <mat-checkbox formControlName="requiredForCompletion">
+                  {{ 'partnerships.deliveryFieldRequiredForCompletion' | t }}
+                </mat-checkbox>
+                <button mat-button type="button" color="warn" (click)="removeAt(deliverables, i)">
+                  {{ 'partnerships.deliveryRemove' | t }}
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+      </mat-tab>
+
+      <!-- Issues -->
+      <mat-tab [label]="'partnerships.deliveryIssues' | t">
+        <section class="ra-card section">
+          <div class="section-head">
+            <h2>{{ 'partnerships.deliveryIssues' | t }}</h2>
+            <button mat-stroked-button type="button" (click)="addIssue()">
+              {{ 'partnerships.deliveryAddIssue' | t }}
+            </button>
+          </div>
+          @if (issues.length === 0) {
+            <p class="hint-block">{{ 'partnerships.deliveryNoIssues' | t }}</p>
+          }
+          <div class="list" formArrayName="issues">
+            @for (group of issues.controls; track $index; let i = $index) {
+              <div class="offering-card" [formGroupName]="i">
+                <div class="grid">
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldTitle' | t }}</mat-label>
+                    <input matInput formControlName="title" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldCategory' | t }}</mat-label>
+                    <input matInput formControlName="category" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldSeverity' | t }}</mat-label>
+                    <mat-select formControlName="severity">
+                      @for (item of issueSeverities; track item) {
+                        <mat-option [value]="item">{{ deliveryLabel('issueSeverity', item) }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldOwner' | t }}</mat-label>
+                    <input matInput formControlName="owner" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldDueDate' | t }}</mat-label>
+                    <input matInput type="date" formControlName="dueDate" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldStatus' | t }}</mat-label>
+                    <mat-select formControlName="status">
+                      @for (item of issueStatuses; track item) {
+                        <mat-option [value]="item">{{ deliveryLabel('issueStatus', item) }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldDescription' | t }}</mat-label>
+                    <textarea matInput rows="2" formControlName="description"></textarea>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldResolution' | t }}</mat-label>
+                    <textarea matInput rows="2" formControlName="resolution"></textarea>
+                  </mat-form-field>
+                </div>
+                <button mat-button type="button" color="warn" (click)="removeAt(issues, i)">
+                  {{ 'partnerships.deliveryRemove' | t }}
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+      </mat-tab>
+
+      <!-- RAID -->
+      <mat-tab [label]="'partnerships.deliveryRaid' | t">
+        <section class="ra-card section">
+          <div class="section-head">
+            <h2>{{ 'partnerships.deliveryRaid' | t }}</h2>
+            <button mat-stroked-button type="button" (click)="addRaid()">
+              {{ 'partnerships.deliveryAddRaid' | t }}
+            </button>
+          </div>
+          @if (raidItems.length === 0) {
+            <p class="hint-block">{{ 'partnerships.deliveryNoRaid' | t }}</p>
+          }
+          <div class="list" formArrayName="raidItems">
+            @for (group of raidItems.controls; track $index; let i = $index) {
+              <div class="offering-card" [formGroupName]="i">
+                <div class="grid">
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldType' | t }}</mat-label>
+                    <mat-select formControlName="type">
+                      @for (item of raidTypes; track item) {
+                        <mat-option [value]="item">{{ deliveryLabel('raidType', item) }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldTitle' | t }}</mat-label>
+                    <input matInput formControlName="title" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldOwner' | t }}</mat-label>
+                    <input matInput formControlName="owner" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldImpact' | t }}</mat-label>
+                    <input matInput formControlName="impact" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldProbability' | t }}</mat-label>
+                    <input matInput formControlName="probability" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldDueDate' | t }}</mat-label>
+                    <input matInput type="date" formControlName="dueDate" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldStatus' | t }}</mat-label>
+                    <mat-select formControlName="status">
+                      @for (item of raidStatuses; track item) {
+                        <mat-option [value]="item">{{ deliveryLabel('raidStatus', item) }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldDescription' | t }}</mat-label>
+                    <textarea matInput rows="2" formControlName="description"></textarea>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldMitigation' | t }}</mat-label>
+                    <textarea matInput rows="2" formControlName="mitigation"></textarea>
+                  </mat-form-field>
+                </div>
+                <button mat-button type="button" color="warn" (click)="removeAt(raidItems, i)">
+                  {{ 'partnerships.deliveryRemove' | t }}
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+      </mat-tab>
+
+      <!-- Communications -->
+      <mat-tab [label]="'partnerships.deliveryCommunications' | t">
+        <section class="ra-card section">
+          <div class="section-head">
+            <h2>{{ 'partnerships.deliveryCommunications' | t }}</h2>
+            <button mat-stroked-button type="button" (click)="addCommunication()">
+              {{ 'partnerships.deliveryAddCommunication' | t }}
+            </button>
+          </div>
+          @if (communications.length === 0) {
+            <p class="hint-block">{{ 'partnerships.deliveryNoCommunications' | t }}</p>
+          }
+          <div class="list" formArrayName="communications">
+            @for (group of communications.controls; track $index; let i = $index) {
+              <div class="offering-card" [formGroupName]="i">
+                <div class="grid">
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldType' | t }}</mat-label>
+                    <mat-select formControlName="type">
+                      @for (item of commTypes; track item) {
+                        <mat-option [value]="item">{{ deliveryLabel('commType', item) }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldOccurredAt' | t }}</mat-label>
+                    <input matInput type="date" formControlName="occurredAt" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldFollowUpDate' | t }}</mat-label>
+                    <input matInput type="date" formControlName="followUpDate" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldOwner' | t }}</mat-label>
+                    <input matInput formControlName="owner" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldSubject' | t }}</mat-label>
+                    <input matInput formControlName="subject" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldParticipants' | t }}</mat-label>
+                    <input matInput formControlName="participants" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldSummary' | t }}</mat-label>
+                    <textarea matInput rows="2" formControlName="summary"></textarea>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldActionItems' | t }}</mat-label>
+                    <textarea matInput rows="2" formControlName="actionItems"></textarea>
+                  </mat-form-field>
+                </div>
+                <button mat-button type="button" color="warn" (click)="removeAt(communications, i)">
+                  {{ 'partnerships.deliveryRemove' | t }}
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+      </mat-tab>
+
+      <!-- Checkpoints -->
+      <mat-tab [label]="'partnerships.deliveryCheckpoints' | t">
+        <section class="ra-card section">
+          <div class="section-head">
+            <h2>{{ 'partnerships.deliveryCheckpoints' | t }}</h2>
+            <button mat-stroked-button type="button" (click)="addCheckpoint()">
+              {{ 'partnerships.deliveryAddCheckpoint' | t }}
+            </button>
+          </div>
+          @if (checkpoints.length === 0) {
+            <p class="hint-block">{{ 'partnerships.deliveryNoCheckpoints' | t }}</p>
+          }
+          <div class="list" formArrayName="checkpoints">
+            @for (group of checkpoints.controls; track $index; let i = $index) {
+              <div class="offering-card" [formGroupName]="i">
+                <div class="grid">
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldKind' | t }}</mat-label>
+                    <mat-select formControlName="kind">
+                      @for (item of checkpointKinds; track item) {
+                        <mat-option [value]="item">{{ deliveryLabel('checkpointKind', item) }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldName' | t }}</mat-label>
+                    <input matInput formControlName="name" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldCheckpointDate' | t }}</mat-label>
+                    <input matInput type="date" formControlName="checkpointDate" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldStatus' | t }}</mat-label>
+                    <mat-select formControlName="status">
+                      @for (item of checkpointStatuses; track item) {
+                        <mat-option [value]="item">{{ deliveryLabel('checkpointStatus', item) }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldParticipants' | t }}</mat-label>
+                    <input matInput formControlName="participants" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldDiscussion' | t }}</mat-label>
+                    <textarea matInput rows="2" formControlName="discussion"></textarea>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldDecisions' | t }}</mat-label>
+                    <textarea matInput rows="2" formControlName="decisions"></textarea>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldActionItems' | t }}</mat-label>
+                    <textarea matInput rows="2" formControlName="actionItems"></textarea>
+                  </mat-form-field>
+                </div>
+                <button mat-button type="button" color="warn" (click)="removeAt(checkpoints, i)">
+                  {{ 'partnerships.deliveryRemove' | t }}
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+      </mat-tab>
+
+      <!-- Documents -->
+      <mat-tab [label]="'partnerships.deliveryDocuments' | t">
+        <section class="ra-card section">
+          <div class="section-head">
+            <h2>{{ 'partnerships.deliveryDocuments' | t }}</h2>
+            <button mat-stroked-button type="button" (click)="addDocument()">
+              {{ 'partnerships.deliveryAddDocument' | t }}
+            </button>
+          </div>
+          @if (documents.length === 0) {
+            <p class="hint-block">{{ 'partnerships.deliveryNoDocuments' | t }}</p>
+          }
+          <div class="list" formArrayName="documents">
+            @for (group of documents.controls; track $index; let i = $index) {
+              <div class="offering-card" [formGroupName]="i">
+                <div class="grid">
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldName' | t }}</mat-label>
+                    <input matInput formControlName="name" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldType' | t }}</mat-label>
+                    <mat-select formControlName="type">
+                      @for (item of documentTypes; track item) {
+                        <mat-option [value]="item">{{ deliveryLabel('documentType', item) }}</mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldVersion' | t }}</mat-label>
+                    <input matInput formControlName="version" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'partnerships.deliveryFieldUploadedBy' | t }}</mat-label>
+                    <input matInput formControlName="uploadedBy" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldFileUrl' | t }}</mat-label>
+                    <input matInput formControlName="fileUrl" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="full">
+                    <mat-label>{{ 'partnerships.deliveryFieldNotes' | t }}</mat-label>
+                    <textarea matInput rows="2" formControlName="notes"></textarea>
+                  </mat-form-field>
+                </div>
+                <button mat-button type="button" color="warn" (click)="removeAt(documents, i)">
+                  {{ 'partnerships.deliveryRemove' | t }}
+                </button>
+              </div>
+            }
+          </div>
+        </section>
+      </mat-tab>
+    </mat-tab-group>
+
+    <div class="wizard-actions">
+      <button mat-stroked-button type="button" (click)="cancel()">{{ 'common.cancel' | t }}</button>
+      <span class="spacer"></span>
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
+        [disabled]="submitting()"
+      >
+        {{ (submitting() ? 'partnerships.deliveryFormSaving' : 'common.save') | t }}
+      </button>
+    </div>
+  </form>
+}

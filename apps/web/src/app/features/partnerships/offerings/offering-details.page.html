@@ -1,0 +1,379 @@
+@if (loading()) {
+  <app-loading-skeleton [rows]="14" [label]="'partnerships.offeringsLoading' | t" />
+} @else if (error(); as message) {
+  <app-error-state
+    [title]="'partnerships.offeringsLoadError' | t"
+    [message]="message"
+    (retry)="reload()"
+  />
+} @else if (offering(); as current) {
+  <header class="profile-header">
+    <div class="eyebrow">{{ 'partnerships.schoolPartnershipOffering' | t }}</div>
+    <div class="header-row">
+      <div class="titles">
+        <div class="relationship">
+          <a class="rel-program" [routerLink]="['/partnerships/programs', current.program.id]">
+            {{ current.program.name }}
+          </a>
+          <span class="rel-arrow" aria-hidden="true">→</span>
+          <span class="rel-offering">{{ current.name }}</span>
+        </div>
+        <h1>{{ current.name }}</h1>
+        <div class="meta-row">
+          <span class="type-chip">{{ enumLabel('deliveryFormat', current.deliveryFormat) }}</span>
+          <span [class]="statusClass(current.status)">
+            {{ 'common.status' | t }}: {{ offeringLabel('status', current.status) }}
+          </span>
+          <span class="soft-badge">{{ 'partnerships.offeringInheritsBadge' | t }}</span>
+        </div>
+        <div class="dates">
+          <span>{{ 'common.updated' | t }}: {{ current.updatedAt | date: 'medium' }}</span>
+          <span>{{ 'common.created' | t }}: {{ current.createdAt | date: 'medium' }}</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-stroked-button type="button" (click)="back()">{{ 'common.back' | t }}</button>
+        @if (permissions.canWrite()) {
+          <a mat-stroked-button [routerLink]="['/partnerships/offerings', current.id, 'edit']">{{
+            'common.edit' | t
+          }}</a>
+          <button mat-stroked-button type="button" (click)="duplicate()">
+            {{ 'partnerships.duplicateOffering' | t }}
+          </button>
+        }
+        <a mat-stroked-button [routerLink]="['/partnerships/offerings', current.id, 'preview']">{{
+          'partnerships.previewOffering' | t
+        }}</a>
+        <button mat-stroked-button type="button" (click)="generatePdf()">
+          {{ 'partnerships.previewPdf' | t }}
+        </button>
+        @if (permissions.canWrite() && current.status !== 'ARCHIVED') {
+          <button mat-stroked-button type="button" [disabled]="archiving()" (click)="archive()">
+            {{ 'partnerships.archiveOffering' | t }}
+          </button>
+        }
+      </div>
+    </div>
+  </header>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.offeringSectionOverview' | t }}</h2>
+    <dl class="facts">
+      <div>
+        <dt>{{ 'partnerships.offeringName' | t }}</dt>
+        <dd>{{ current.name }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.basedOnProgram' | t }}</dt>
+        <dd>
+          <a [routerLink]="['/partnerships/programs', current.program.id]">{{
+            current.program.name
+          }}</a>
+        </dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.shortDescription' | t }}</dt>
+        <dd>{{ displayText(current.resolved.shortDescription) }}</dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.schoolValue' | t }}</dt>
+        <dd>{{ displayText(current.resolved.schoolValue) }}</dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.studentValue' | t }}</dt>
+        <dd>{{ displayText(current.resolved.studentValue) }}</dd>
+      </div>
+      @if (permissions.canWrite()) {
+        <div class="full internal">
+          <dt>{{ 'partnerships.internalNotes' | t }} · {{ 'partnerships.internalOnly' | t }}</dt>
+          <dd>{{ displayText(current.internalNotes) }}</dd>
+        </div>
+        <div class="full internal">
+          <dt>{{ 'partnerships.commercialNotes' | t }}</dt>
+          <dd>{{ displayText(current.commercialNotes) }}</dd>
+        </div>
+      }
+    </dl>
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.offeringSectionAudience' | t }}</h2>
+    <dl class="facts">
+      <div>
+        <dt>
+          {{ 'partnerships.targetAge' | t }}
+          @if (current.targetAge == null) {
+            <span class="inherit-badge">{{ 'partnerships.inheritedFromProgram' | t }}</span>
+          }
+        </dt>
+        <dd>{{ displayText(current.resolved.targetAge) }}</dd>
+      </div>
+      <div>
+        <dt>
+          {{ 'partnerships.targetGrades' | t }}
+          @if (current.targetGrades == null) {
+            <span class="inherit-badge">{{ 'partnerships.inheritedFromProgram' | t }}</span>
+          }
+        </dt>
+        <dd>{{ displayText(current.resolved.targetGrades) }}</dd>
+      </div>
+      <div>
+        <dt>
+          {{ 'partnerships.programLevel' | t }}
+          @if (current.recommendedLevel == null) {
+            <span class="inherit-badge">{{ 'partnerships.inheritedFromProgram' | t }}</span>
+          }
+        </dt>
+        <dd>{{ enumLabel('level', current.resolved.recommendedLevel) }}</dd>
+      </div>
+      <div class="full">
+        <dt>
+          {{ 'partnerships.learnerProfile' | t }}
+          @if (current.learnerProfile == null) {
+            <span class="inherit-badge">{{ 'partnerships.inheritedFromProgram' | t }}</span>
+          }
+        </dt>
+        <dd>{{ displayText(current.resolved.learnerProfile) }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.offeringSectionDelivery' | t }}</h2>
+    <dl class="facts">
+      <div>
+        <dt>{{ 'partnerships.deliveryFormat' | t }}</dt>
+        <dd>{{ enumLabel('deliveryFormat', current.deliveryFormat) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.deliveryMode' | t }}</dt>
+        <dd>{{ offeringLabel('deliveryMode', current.deliveryMode) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.duration' | t }}</dt>
+        <dd>{{ durationText() ?? displayText(null) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.numberOfSessions' | t }}</dt>
+        <dd>{{ current.numberOfSessions ?? displayText(null) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.sessionDurationMinutes' | t }}</dt>
+        <dd>{{ current.sessionDurationMinutes ?? displayText(null) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.sessionFrequency' | t }}</dt>
+        <dd>{{ displayText(current.sessionFrequency) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.groupSizeMin' | t }} / {{ 'partnerships.groupSizeMax' | t }}</dt>
+        <dd>{{ groupSizeText() ?? displayText(null) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.numberOfGroups' | t }}</dt>
+        <dd>{{ current.numberOfGroups ?? displayText(null) }}</dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.locationNotes' | t }}</dt>
+        <dd>{{ displayText(current.locationNotes) }}</dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.instructorRequirement' | t }}</dt>
+        <dd>{{ displayText(current.instructorRequirement) }}</dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.coordinatorRequirement' | t }}</dt>
+        <dd>{{ displayText(current.coordinatorRequirement) }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.offeringSectionCurriculum' | t }}</h2>
+    @if (current.selection.inheritAllModules) {
+      <p class="inherit-note">{{ 'partnerships.inheritsAllModules' | t }}</p>
+    }
+    @if (current.resolved.curriculumModules.length === 0) {
+      <p class="empty">{{ 'partnerships.programNoneAdmin' | t }}</p>
+    } @else {
+      <div class="numbered-grid">
+        @for (item of current.resolved.curriculumModules; track item.id; let i = $index) {
+          <article class="item-card">
+            <span class="num">{{ i + 1 }}</span>
+            <div>
+              <h3>{{ item.title }}</h3>
+              @if (item.description) {
+                <p>{{ item.description }}</p>
+              }
+              @if (tags(item.skillsDeveloped).length) {
+                <div class="tags">
+                  @for (tag of tags(item.skillsDeveloped); track tag) {
+                    <span class="tag">{{ tag }}</span>
+                  }
+                </div>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    }
+    @if (current.curriculumCustomizationNotes) {
+      <p class="meta">
+        <strong>{{ 'partnerships.curriculumCustomizationNotes' | t }}:</strong>
+        {{ current.curriculumCustomizationNotes }}
+      </p>
+    }
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.offeringSectionProjects' | t }}</h2>
+    @if (current.selection.inheritAllProjects) {
+      <p class="inherit-note">{{ 'partnerships.inheritsAllProjects' | t }}</p>
+    }
+    <h3 class="subhead">{{ 'partnerships.sampleProjects' | t }}</h3>
+    @if (current.resolved.sampleProjects.length === 0) {
+      <p class="empty">{{ 'partnerships.sampleProjectsEmpty' | t }}</p>
+    } @else {
+      <div class="stack-cards">
+        @for (item of current.resolved.sampleProjects; track item.id) {
+          <article class="item-card block">
+            <h3>{{ item.name }}</h3>
+            @if (item.description) {
+              <p>{{ item.description }}</p>
+            }
+            @if (item.expectedOutput) {
+              <p class="meta">
+                <strong>{{ 'partnerships.expectedOutput' | t }}:</strong> {{ item.expectedOutput }}
+              </p>
+            }
+            @if (tags(item.skills).length) {
+              <div class="tags">
+                @for (tag of tags(item.skills); track tag) {
+                  <span class="tag">{{ tag }}</span>
+                }
+              </div>
+            }
+          </article>
+        }
+      </div>
+    }
+    @if (current.resolved.includeFinalProject && current.resolved.finalProjectName) {
+      <h3 class="subhead">{{ 'partnerships.finalProject' | t }}</h3>
+      <article class="item-card block">
+        <h3>{{ current.resolved.finalProjectName }}</h3>
+        <p>{{ displayText(current.resolved.finalProjectDescription) }}</p>
+        <p class="meta">
+          <strong>{{ 'partnerships.expectedOutput' | t }}:</strong>
+          {{ displayText(current.resolved.finalProjectExpectedOutput) }}
+        </p>
+        <p class="meta">
+          <strong>{{ 'partnerships.evaluationMethod' | t }}:</strong>
+          {{ displayText(current.resolved.finalProjectEvaluationMethod) }}
+        </p>
+        @if (tags(current.resolved.finalProjectSkills).length) {
+          <div class="tags">
+            @for (tag of tags(current.resolved.finalProjectSkills); track tag) {
+              <span class="tag">{{ tag }}</span>
+            }
+          </div>
+        }
+      </article>
+    }
+    @if (current.projectCustomizationNotes) {
+      <p class="meta">
+        <strong>{{ 'partnerships.projectCustomizationNotes' | t }}:</strong>
+        {{ current.projectCustomizationNotes }}
+      </p>
+    }
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.offeringSectionAssessment' | t }}</h2>
+    <div class="flag-row">
+      <span class="flag" [class.on]="current.includeInitialAssessment">
+        {{ 'partnerships.includeInitialAssessment' | t }}
+      </span>
+      <span class="flag" [class.on]="current.includeMidAssessment">
+        {{ 'partnerships.includeMidAssessment' | t }}
+      </span>
+      <span class="flag" [class.on]="current.includeFinalAssessment">
+        {{ 'partnerships.includeFinalAssessment' | t }}
+      </span>
+      <span class="flag" [class.on]="current.studentProgressReport">
+        {{ 'partnerships.studentProgressReport' | t }}
+      </span>
+      <span class="flag" [class.on]="current.schoolSummaryReport">
+        {{ 'partnerships.schoolSummaryReport' | t }}
+      </span>
+    </div>
+    <dl class="facts">
+      <div>
+        <dt>{{ 'partnerships.assessmentFrequency' | t }}</dt>
+        <dd>{{ displayText(current.assessmentFrequency) }}</dd>
+      </div>
+    </dl>
+    @if (current.resolved.assessmentMethods.length) {
+      <div class="numbered-grid">
+        @for (item of current.resolved.assessmentMethods; track item.id; let i = $index) {
+          <article class="item-card" [class.disabled]="!item.enabled">
+            <span class="num">{{ i + 1 }}</span>
+            <div>
+              <h3>{{ item.label }}</h3>
+              @if (item.description) {
+                <p>{{ item.description }}</p>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.offeringSectionRequirements' | t }}</h2>
+    @if (current.resolved.requirementsInherited) {
+      <p class="inherit-note">{{ 'partnerships.requirementsInheritedNote' | t }}</p>
+    }
+    @if (current.resolved.requirements.length === 0) {
+      <p class="empty">{{ 'partnerships.programNoneAdmin' | t }}</p>
+    } @else {
+      <div class="stack-cards">
+        @for (item of current.resolved.requirements; track item.id) {
+          <article class="item-card block">
+            <h3>
+              {{ item.label }}
+              <span class="soft-badge">{{ enumLabel('requirementKind', item.kind) }}</span>
+              <span class="soft-badge">{{
+                enumLabel('requirementPriority', item.priority)
+              }}</span>
+            </h3>
+            @if (item.description) {
+              <p>{{ item.description }}</p>
+            }
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.offeringSectionOutcomes' | t }}</h2>
+    @if (current.resolved.outcomes.length === 0) {
+      <p class="empty">{{ 'partnerships.programNoneAdmin' | t }}</p>
+    } @else {
+      <div class="numbered-grid">
+        @for (item of current.resolved.outcomes; track item.id; let i = $index) {
+          <article class="item-card">
+            <span class="num">{{ i + 1 }}</span>
+            <div>
+              <h3>{{ item.title }}</h3>
+              @if (item.description) {
+                <p>{{ item.description }}</p>
+              }
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+}

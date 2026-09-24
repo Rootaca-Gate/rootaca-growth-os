@@ -1,0 +1,444 @@
+@if (loading()) {
+  <app-loading-skeleton [rows]="10" [label]="'partnerships.offeringsLoading' | t" />
+} @else if (error(); as message) {
+  <app-error-state
+    [title]="'partnerships.offeringsLoadError' | t"
+    [message]="message"
+    (retry)="editId ? load(editId) : null"
+  />
+} @else {
+  <app-page-header
+    [title]="(isEdit ? 'partnerships.editOffering' : 'partnerships.createOffering') | t"
+    [subtitle]="'partnerships.offeringsSubtitle' | t"
+  >
+    <button mat-stroked-button type="button" (click)="cancel()">{{ 'common.back' | t }}</button>
+  </app-page-header>
+
+  <nav class="ra-steps" aria-label="wizard">
+    @for (label of [
+      'partnerships.offeringStepBasic',
+      'partnerships.offeringStepAudience',
+      'partnerships.offeringStepDelivery',
+      'partnerships.offeringStepCurriculum',
+      'partnerships.offeringStepAssessment',
+      'partnerships.offeringStepReview'
+    ]; track label; let i = $index) {
+      <button
+        type="button"
+        class="ra-step"
+        [class.active]="step() === i + 1"
+        [class.done]="step() > i + 1"
+        (click)="goTo(i + 1)"
+      >
+        <span class="ra-step-num">{{ i + 1 }}</span>
+        <span class="ra-step-label">{{ label | t }}</span>
+      </button>
+    }
+  </nav>
+
+  <p class="ra-step-counter">
+    {{ 'partnerships.offeringStepOf' | t: { current: step(), total: totalSteps } }}
+  </p>
+
+  <form class="form" [formGroup]="form" (ngSubmit)="save()">
+    <!-- Step 1 — Basics -->
+    @if (step() === 1) {
+      <section class="ra-card section">
+        <h2>{{ 'partnerships.offeringStepBasic' | t }}</h2>
+        <div class="grid">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.offeringName' | t }}</mat-label>
+            <input matInput formControlName="name" />
+            @if (form.controls.name.touched && form.controls.name.invalid) {
+              <mat-error>{{ 'partnerships.offeringName' | t }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.selectProgram' | t }}</mat-label>
+            <mat-select formControlName="programId">
+              @for (item of programs(); track item.id) {
+                <mat-option [value]="item.id">{{ item.name }}</mat-option>
+              }
+            </mat-select>
+            <mat-hint>{{ 'partnerships.selectProgramHint' | t }}</mat-hint>
+            @if (form.controls.programId.touched && form.controls.programId.invalid) {
+              <mat-error>{{ 'partnerships.programRequired' | t }}</mat-error>
+            }
+          </mat-form-field>
+          @if (programs().length === 0) {
+            <p class="hint-block full">{{ 'partnerships.noActivePrograms' | t }}</p>
+          }
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.deliveryFormat' | t }}</mat-label>
+            <mat-select formControlName="deliveryFormat">
+              @for (item of deliveryFormats; track item) {
+                <mat-option [value]="item">{{ enumLabel('deliveryFormat', item) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'common.status' | t }}</mat-label>
+            <mat-select formControlName="status">
+              @for (item of offeringStatuses; track item) {
+                <mat-option [value]="item">{{ offeringLabel('status', item) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </section>
+    }
+
+    <!-- Step 2 — Audience overrides -->
+    @if (step() === 2) {
+      <section class="ra-card section">
+        <h2>{{ 'partnerships.offeringStepAudience' | t }}</h2>
+        <p class="hint-block">{{ 'partnerships.inheritHint' | t }}</p>
+        <div class="grid">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.targetAge' | t }}</mat-label>
+            <input matInput formControlName="targetAge" />
+            @if (selectedProgram(); as program) {
+              <mat-hint>{{ 'partnerships.inheritValue' | t: { value: program.targetAge || '—' } }}</mat-hint>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.targetGrades' | t }}</mat-label>
+            <input matInput formControlName="targetGrades" />
+            @if (selectedProgram(); as program) {
+              <mat-hint>{{ 'partnerships.inheritValue' | t: { value: program.targetGrades || '—' } }}</mat-hint>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.programLevel' | t }}</mat-label>
+            <mat-select formControlName="recommendedLevel">
+              <mat-option value="">{{ 'partnerships.inheritedFromProgram' | t }}</mat-option>
+              @for (item of programLevels; track item) {
+                <mat-option [value]="item">{{ enumLabel('level', item) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.learnerProfile' | t }}</mat-label>
+            <textarea matInput rows="3" formControlName="learnerProfile"></textarea>
+          </mat-form-field>
+        </div>
+      </section>
+    }
+
+    <!-- Step 3 — Delivery configuration -->
+    @if (step() === 3) {
+      <section class="ra-card section">
+        <h2>{{ 'partnerships.offeringStepDelivery' | t }}</h2>
+        <div class="grid">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.duration' | t }}</mat-label>
+            <input matInput type="number" min="0" formControlName="duration" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.durationUnit' | t }}</mat-label>
+            <mat-select formControlName="durationUnit">
+              <mat-option value="">{{ 'common.none' | t }}</mat-option>
+              @for (item of durationUnits; track item) {
+                <mat-option [value]="item">{{ offeringLabel('durationUnit', item) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.numberOfSessions' | t }}</mat-label>
+            <input matInput type="number" min="0" formControlName="numberOfSessions" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.sessionDurationMinutes' | t }}</mat-label>
+            <input matInput type="number" min="0" formControlName="sessionDurationMinutes" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.sessionFrequency' | t }}</mat-label>
+            <input matInput formControlName="sessionFrequency" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.deliveryMode' | t }}</mat-label>
+            <mat-select formControlName="deliveryMode">
+              <mat-option value="">{{ 'common.none' | t }}</mat-option>
+              @for (item of deliveryModes; track item) {
+                <mat-option [value]="item">{{ offeringLabel('deliveryMode', item) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.groupSizeMin' | t }}</mat-label>
+            <input matInput type="number" min="0" formControlName="groupSizeMin" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.groupSizeMax' | t }}</mat-label>
+            <input matInput type="number" min="0" formControlName="groupSizeMax" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.numberOfGroups' | t }}</mat-label>
+            <input matInput type="number" min="0" formControlName="numberOfGroups" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.locationNotes' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="locationNotes"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.instructorRequirement' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="instructorRequirement"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.coordinatorRequirement' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="coordinatorRequirement"></textarea>
+          </mat-form-field>
+        </div>
+      </section>
+    }
+
+    <!-- Step 4 — Curriculum -->
+    @if (step() === 4) {
+      <section class="ra-card section">
+        <div class="section-head">
+          <h2>{{ 'partnerships.selectModules' | t }}</h2>
+          @if (moduleOptions().length) {
+            <button mat-stroked-button type="button" (click)="toggleAllModules(!allModulesChecked())">
+              {{ 'partnerships.selectAll' | t }}
+            </button>
+          }
+        </div>
+        <p class="hint-block">{{ 'partnerships.selectionInheritHint' | t }}</p>
+        @if (programLoading()) {
+          <p class="empty">{{ 'partnerships.offeringsLoading' | t }}</p>
+        } @else if (moduleOptions().length === 0) {
+          <p class="empty">{{ 'partnerships.curriculumEmptyProgram' | t }}</p>
+        } @else {
+          @if (allModulesChecked()) {
+            <p class="inherit-note">{{ 'partnerships.inheritsAllModules' | t }}</p>
+          }
+          <div class="checks">
+            @for (opt of moduleOptions(); track opt.id) {
+              <mat-checkbox
+                [checked]="opt.checked"
+                (change)="toggleModule(opt.id, $event.checked)"
+              >
+                {{ opt.label }}
+              </mat-checkbox>
+            }
+          </div>
+        }
+      </section>
+
+      <section class="ra-card section">
+        <div class="section-head">
+          <h2>{{ 'partnerships.selectProjects' | t }}</h2>
+          @if (projectOptions().length) {
+            <button
+              mat-stroked-button
+              type="button"
+              (click)="toggleAllProjects(!allProjectsChecked())"
+            >
+              {{ 'partnerships.selectAll' | t }}
+            </button>
+          }
+        </div>
+        @if (projectOptions().length === 0) {
+          <p class="empty">{{ 'partnerships.projectsEmptyProgram' | t }}</p>
+        } @else {
+          @if (allProjectsChecked()) {
+            <p class="inherit-note">{{ 'partnerships.inheritsAllProjects' | t }}</p>
+          }
+          <div class="checks">
+            @for (opt of projectOptions(); track opt.id) {
+              <mat-checkbox
+                [checked]="opt.checked"
+                (change)="toggleProject(opt.id, $event.checked)"
+              >
+                {{ opt.label }}
+              </mat-checkbox>
+            }
+          </div>
+        }
+        <div class="toggle-row">
+          <mat-checkbox formControlName="includeFinalProject">
+            {{ 'partnerships.includeFinalProject' | t }}
+          </mat-checkbox>
+        </div>
+        <div class="grid">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.curriculumCustomizationNotes' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="curriculumCustomizationNotes"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.projectCustomizationNotes' | t }}</mat-label>
+            <textarea matInput rows="2" formControlName="projectCustomizationNotes"></textarea>
+          </mat-form-field>
+        </div>
+      </section>
+    }
+
+    <!-- Step 5 — Assessment & requirements -->
+    @if (step() === 5) {
+      <section class="ra-card section">
+        <h2>{{ 'partnerships.offeringStepAssessment' | t }}</h2>
+        <div class="checks">
+          <mat-checkbox formControlName="includeInitialAssessment">
+            {{ 'partnerships.includeInitialAssessment' | t }}
+          </mat-checkbox>
+          <mat-checkbox formControlName="includeMidAssessment">
+            {{ 'partnerships.includeMidAssessment' | t }}
+          </mat-checkbox>
+          <mat-checkbox formControlName="includeFinalAssessment">
+            {{ 'partnerships.includeFinalAssessment' | t }}
+          </mat-checkbox>
+        </div>
+        <div class="grid">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'partnerships.assessmentFrequency' | t }}</mat-label>
+            <input matInput formControlName="assessmentFrequency" />
+          </mat-form-field>
+        </div>
+        <h3>{{ 'partnerships.reporting' | t }}</h3>
+        <div class="checks">
+          <mat-checkbox formControlName="studentProgressReport">
+            {{ 'partnerships.studentProgressReport' | t }}
+          </mat-checkbox>
+          <mat-checkbox formControlName="schoolSummaryReport">
+            {{ 'partnerships.schoolSummaryReport' | t }}
+          </mat-checkbox>
+        </div>
+      </section>
+
+      <section class="ra-card section">
+        <div class="section-head">
+          <h2>{{ 'partnerships.customRequirements' | t }}</h2>
+          <button mat-stroked-button type="button" (click)="addRequirement()">
+            {{ 'partnerships.addRequirement' | t }}
+          </button>
+        </div>
+        <p class="hint-block">{{ 'partnerships.customRequirementsHint' | t }}</p>
+        @if (requirements.length === 0) {
+          <p class="inherit-note">{{ 'partnerships.requirementsInheritedNote' | t }}</p>
+        } @else {
+          <div class="list" formArrayName="requirements">
+            @for (group of requirements.controls; track group; let i = $index) {
+              <div class="list-row stack-row" [formGroupName]="i">
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'partnerships.requirementKind' | t }}</mat-label>
+                  <mat-select formControlName="kind">
+                    @for (kind of requirementKinds; track kind) {
+                      <mat-option [value]="kind">{{ enumLabel('requirementKind', kind) }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'common.titleField' | t }}</mat-label>
+                  <input matInput formControlName="label" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'common.reason' | t }}</mat-label>
+                  <mat-select formControlName="priority">
+                    @for (priority of requirementPriorities; track priority) {
+                      <mat-option [value]="priority">{{
+                        enumLabel('requirementPriority', priority)
+                      }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="full">
+                  <mat-label>{{ 'common.description' | t }}</mat-label>
+                  <textarea matInput rows="2" formControlName="description"></textarea>
+                </mat-form-field>
+                <button mat-button color="warn" type="button" (click)="removeRequirement(i)">
+                  {{ 'common.remove' | t }}
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      <section class="ra-card section">
+        <h2>{{ 'partnerships.internalOnly' | t }}</h2>
+        <div class="grid">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.internalNotes' | t }}</mat-label>
+            <textarea matInput rows="3" formControlName="internalNotes"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>{{ 'partnerships.commercialNotes' | t }}</mat-label>
+            <textarea matInput rows="3" formControlName="commercialNotes"></textarea>
+          </mat-form-field>
+        </div>
+      </section>
+    }
+
+    <!-- Step 6 — Review -->
+    @if (step() === 6) {
+      <section class="ra-card section">
+        <h2>{{ 'partnerships.reviewOffering' | t }}</h2>
+        <p class="hint-block">{{ 'partnerships.reviewHint' | t }}</p>
+        <dl class="review">
+          <div>
+            <dt>{{ 'partnerships.offeringName' | t }}</dt>
+            <dd>{{ form.controls.name.value || '—' }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.basedOnProgram' | t }}</dt>
+            <dd>{{ selectedProgram()?.name || '—' }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.deliveryFormat' | t }}</dt>
+            <dd>{{ enumLabel('deliveryFormat', form.controls.deliveryFormat.value || null) }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'common.status' | t }}</dt>
+            <dd>{{ offeringLabel('status', form.controls.status.value) }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.deliveryMode' | t }}</dt>
+            <dd>{{ offeringLabel('deliveryMode', form.controls.deliveryMode.value || null) }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.selectModules' | t }}</dt>
+            <dd>
+              {{
+                allModulesChecked() || moduleOptions().length === 0
+                  ? ('partnerships.inheritsAllModules' | t)
+                  : ('common.itemsCount' | t: { count: moduleOptions().length })
+              }}
+            </dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.customRequirements' | t }}</dt>
+            <dd>
+              {{
+                requirements.length === 0
+                  ? ('partnerships.requirementsInheritedNote' | t)
+                  : ('common.itemsCount' | t: { count: requirements.length })
+              }}
+            </dd>
+          </div>
+        </dl>
+      </section>
+    }
+
+    <div class="wizard-actions">
+      @if (step() > 1) {
+        <button mat-stroked-button type="button" (click)="prev()">{{ 'common.previous' | t }}</button>
+      }
+      <span class="spacer"></span>
+      @if (step() < totalSteps) {
+        <button mat-flat-button color="primary" type="button" (click)="next()">
+          {{ 'common.next' | t }}
+        </button>
+      } @else {
+        <button mat-stroked-button type="button" [disabled]="submitting()" (click)="saveDraft()">
+          {{ 'partnerships.saveDraft' | t }}
+        </button>
+        <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+          {{ 'partnerships.saveOffering' | t }}
+        </button>
+      }
+    </div>
+  </form>
+}

@@ -777,6 +777,231 @@ export type ResearchJobWritePayload = {
   discoveryMode?: ResearchDiscoveryMode;
 };
 
+export type PartnershipProgramType = 'TECHNICAL' | 'EDUCATIONAL';
+
+export type PartnershipProgramStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+
+export type PartnershipProgramLevel =
+  | 'BEGINNER'
+  | 'INTERMEDIATE'
+  | 'ADVANCED'
+  | 'BEGINNER_INTERMEDIATE'
+  | 'INTERMEDIATE_ADVANCED';
+
+export type PartnershipDeliveryFormat =
+  | 'WORKSHOP'
+  | 'AFTER_SCHOOL'
+  | 'CODING_CLUB'
+  | 'SEMESTER'
+  | 'ANNUAL'
+  | 'CUSTOMIZED';
+
+export type PartnershipProgramRequirementKind = 'EQUIPMENT' | 'SCHOOL';
+
+export type PartnershipProgramRequirementPriority = 'REQUIRED' | 'RECOMMENDED';
+
+export type PartnershipProgramDocumentType =
+  | 'CURRICULUM_PDF'
+  | 'PROGRAM_PROFILE'
+  | 'INSTRUCTOR_GUIDE'
+  | 'SAMPLE_PROJECT'
+  | 'ASSESSMENT_TEMPLATE'
+  | 'OTHER';
+
+export type PartnershipProgramDocumentStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+
+export type ProgramObjective = {
+  id?: string;
+  title: string;
+  description: string;
+  sortOrder: number;
+};
+
+export type ProgramCurriculumModule = {
+  id?: string;
+  title: string;
+  description: string;
+  skillsDeveloped: string;
+  sortOrder: number;
+};
+
+export type ProgramActivityItem = {
+  id?: string;
+  name: string;
+  description: string;
+  skillsDeveloped: string;
+  sortOrder: number;
+};
+
+export type ProgramSampleProject = {
+  id?: string;
+  name: string;
+  description: string;
+  skills: string;
+  expectedOutput: string;
+  sortOrder: number;
+};
+
+export type ProgramAssessmentMethod = {
+  id?: string;
+  key: string;
+  label: string;
+  description: string;
+  weight: number | null;
+  enabled: boolean;
+  sortOrder: number;
+};
+
+export type ProgramRequirement = {
+  id?: string;
+  kind: PartnershipProgramRequirementKind;
+  priority: PartnershipProgramRequirementPriority;
+  label: string;
+  description: string;
+  sortOrder: number;
+};
+
+export type ProgramOutcome = {
+  id?: string;
+  title: string;
+  description: string;
+  sortOrder: number;
+};
+
+export type ProgramDocument = {
+  id?: string;
+  documentType: PartnershipProgramDocumentType;
+  title: string;
+  url: string | null;
+  version: string;
+  status: PartnershipProgramDocumentStatus;
+  notes: string;
+  sortOrder: number;
+  uploadedAt: string;
+};
+
+export type ProgramListItem = {
+  id: string;
+  name: string;
+  programType: PartnershipProgramType;
+  targetGrades: string | null;
+  recommendedLevel: PartnershipProgramLevel | null;
+  deliveryFormats: PartnershipDeliveryFormat[];
+  status: PartnershipProgramStatus;
+  displayOrder: number;
+};
+
+export type PartnershipProgram = ProgramListItem & {
+  shortDescription: string;
+  targetAge: string | null;
+  recommendedStudentProfile: string;
+  internalNotes: string;
+  schoolValue: string;
+  studentValue: string;
+  finalProjectName: string | null;
+  finalProjectDescription: string | null;
+  finalProjectExpectedOutput: string | null;
+  finalProjectSkills: string | null;
+  finalProjectEvaluationMethod: string | null;
+  objectives: ProgramObjective[];
+  curriculumModules: ProgramCurriculumModule[];
+  activities: ProgramActivityItem[];
+  sampleProjects: ProgramSampleProject[];
+  assessmentMethods: ProgramAssessmentMethod[];
+  requirements: ProgramRequirement[];
+  outcomes: ProgramOutcome[];
+  documents: ProgramDocument[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ProgramQuery = {
+  search?: string;
+  programType?: PartnershipProgramType | '';
+  recommendedLevel?: PartnershipProgramLevel | '';
+  status?: PartnershipProgramStatus | '';
+  targetGrade?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export type ProgramWritePayload = {
+  name: string;
+  shortDescription?: string;
+  programType: PartnershipProgramType;
+  targetAge?: string;
+  targetGrades?: string;
+  recommendedLevel?: PartnershipProgramLevel | null;
+  recommendedStudentProfile?: string;
+  status?: PartnershipProgramStatus;
+  displayOrder?: number;
+  internalNotes?: string;
+  schoolValue?: string;
+  studentValue?: string;
+  finalProjectName?: string;
+  finalProjectDescription?: string;
+  finalProjectExpectedOutput?: string;
+  finalProjectSkills?: string;
+  finalProjectEvaluationMethod?: string;
+  objectives?: Array<{
+    title: string;
+    description?: string;
+    sortOrder?: number;
+  }>;
+  curriculumModules?: Array<{
+    title: string;
+    description?: string;
+    skillsDeveloped?: string;
+    sortOrder?: number;
+  }>;
+  activities?: Array<{
+    name: string;
+    description?: string;
+    skillsDeveloped?: string;
+    sortOrder?: number;
+  }>;
+  sampleProjects?: Array<{
+    name: string;
+    description?: string;
+    skills?: string;
+    expectedOutput?: string;
+    sortOrder?: number;
+  }>;
+  assessmentMethods?: Array<{
+    key: string;
+    label: string;
+    description?: string;
+    weight?: number | null;
+    enabled?: boolean;
+    sortOrder?: number;
+  }>;
+  deliveryFormats?: PartnershipDeliveryFormat[];
+  requirements?: Array<{
+    kind: PartnershipProgramRequirementKind;
+    priority?: PartnershipProgramRequirementPriority;
+    label: string;
+    description?: string;
+    sortOrder?: number;
+  }>;
+  outcomes?: Array<{
+    title: string;
+    description?: string;
+    sortOrder?: number;
+  }>;
+  documents?: Array<{
+    documentType: PartnershipProgramDocumentType;
+    title: string;
+    url?: string;
+    version?: string;
+    status?: PartnershipProgramDocumentStatus;
+    notes?: string;
+    sortOrder?: number;
+    uploadedAt?: string;
+  }>;
+};
+
+export type ProgramUpdatePayload = Partial<Omit<ProgramWritePayload, 'name'>> & { name?: string };
+
 export type ResearchCandidateWritePayload = {
   discoveredName: string;
   discoveredNameAr?: string;

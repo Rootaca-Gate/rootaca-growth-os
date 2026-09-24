@@ -1,0 +1,350 @@
+@if (loading()) {
+  <app-loading-skeleton [rows]="14" [label]="'partnerships.proposalsLoading' | t" />
+} @else if (error(); as message) {
+  <app-error-state
+    [title]="'partnerships.proposalsLoadError' | t"
+    [message]="message"
+    (retry)="reload()"
+  />
+} @else if (proposal(); as current) {
+  <header class="profile-header">
+    <div class="eyebrow">{{ 'partnerships.schoolPartnershipProposal' | t }}</div>
+    <div class="header-row">
+      <div class="titles">
+        <div class="relationship">
+          <a
+            class="rel-school"
+            [routerLink]="['/partnerships/institutions', current.institutionId]"
+          >
+            {{ current.institutionName }}
+          </a>
+          <span class="rel-arrow" aria-hidden="true">→</span>
+          <span class="rel-proposal">{{ current.title }}</span>
+        </div>
+        <h1>{{ current.title }}</h1>
+        <div class="meta-row">
+          <span class="soft-badge">{{ current.proposalNumber }}</span>
+          <span [class]="statusClass(current.status)">
+            {{ 'common.status' | t }}: {{ proposalLabel('status', current.status) }}
+          </span>
+          <span class="soft-badge">v{{ current.version }}</span>
+          @if (current.isLocked) {
+            <span class="lock-badge">{{ 'partnerships.proposalsLockedHint' | t }}</span>
+          }
+        </div>
+        <div class="dates">
+          <span>{{ 'partnerships.proposalDate' | t }}: {{ current.proposalDate | date: 'mediumDate' }}</span>
+          <span>
+            {{ 'partnerships.validUntil' | t }}:
+            {{
+              current.validUntil
+                ? (current.validUntil | date: 'mediumDate')
+                : ('partnerships.noValue' | t)
+            }}
+          </span>
+          <span>{{ 'common.updated' | t }}: {{ current.updatedAt | date: 'medium' }}</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-stroked-button type="button" (click)="back()">{{ 'common.back' | t }}</button>
+        @if (permissions.canWrite() && canEdit(current)) {
+          <a mat-stroked-button [routerLink]="['/partnerships/proposals', current.id, 'edit']">{{
+            'common.edit' | t
+          }}</a>
+        }
+        @if (permissions.canWrite() && current.isLocked) {
+          <button mat-stroked-button type="button" [disabled]="busy()" (click)="revise()">
+            {{ 'partnerships.reviseProposal' | t }}
+          </button>
+        }
+        @if (canCreateSow(current)) {
+          <button mat-flat-button color="primary" type="button" [disabled]="busy()" (click)="createSow()">
+            {{ 'partnerships.createSow' | t }}
+          </button>
+        }
+        <a mat-stroked-button [routerLink]="['/partnerships/proposals', current.id, 'preview']">{{
+          'partnerships.previewProposal' | t
+        }}</a>
+        <button mat-stroked-button type="button" (click)="generatePdf()">
+          {{ 'partnerships.previewPdf' | t }}
+        </button>
+        <button mat-stroked-button type="button" [disabled]="busy()" (click)="share()">
+          {{ 'partnerships.shareProposal' | t }}
+        </button>
+        @if (permissions.canWrite()) {
+          <button mat-stroked-button type="button" [disabled]="busy()" (click)="duplicate()">
+            {{ 'partnerships.duplicateProposal' | t }}
+          </button>
+        }
+        @if (permissions.canWrite() && current.status === 'DRAFT') {
+          <button mat-flat-button color="primary" type="button" [disabled]="busy()" (click)="send()">
+            {{ 'partnerships.sendProposal' | t }}
+          </button>
+        }
+        @if (permissions.canWrite() && current.status !== 'ARCHIVED') {
+          <button mat-stroked-button type="button" [disabled]="busy()" (click)="archive()">
+            {{ 'partnerships.archiveProposal' | t }}
+          </button>
+        }
+      </div>
+    </div>
+  </header>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.proposalSectionSchool' | t }}</h2>
+    <dl class="facts">
+      <div>
+        <dt>{{ 'partnerships.school' | t }}</dt>
+        <dd>
+          <a [routerLink]="['/partnerships/institutions', current.institutionId]">{{
+            current.institution.name || current.institutionName
+          }}</a>
+        </dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.location' | t }}</dt>
+        <dd>
+          {{ display(institutionLocation(current.institution)) }}
+        </dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.preparedBy' | t }}</dt>
+        <dd>{{ display(current.preparedBy) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.grandTotal' | t }}</dt>
+        <dd class="money">{{ money(current.grandTotal) }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.proposalSectionOfferings' | t }}</h2>
+    @if (current.offerings.length === 0) {
+      <p class="empty">{{ 'partnerships.noValue' | t }}</p>
+    } @else {
+      <div class="offering-list">
+        @for (line of current.offerings; track line.id) {
+          <article class="offering-card">
+            <div class="offering-card-head">
+              <div>
+                <h3>{{ line.snapshotOfferingName }}</h3>
+                <p class="muted">{{ line.snapshotProgramName }}</p>
+              </div>
+              <span class="type-chip">{{
+                programLabel('deliveryFormat', line.snapshotDeliveryFormat)
+              }}</span>
+            </div>
+            <dl class="facts compact">
+              <div>
+                <dt>{{ 'partnerships.targetGrades' | t }}</dt>
+                <dd>{{ display(line.snapshotTargetGrades) }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'partnerships.programLevel' | t }}</dt>
+                <dd>{{ programLabel('level', line.snapshotRecommendedLevel) }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'partnerships.duration' | t }}</dt>
+                <dd>{{ durationText(line) }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'partnerships.numberOfSessions' | t }}</dt>
+                <dd>{{ display(line.snapshotNumberOfSessions?.toString()) }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'partnerships.deliveryMode' | t }}</dt>
+                <dd>{{ offeringLabel('deliveryMode', line.snapshotDeliveryMode) }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'partnerships.groupSizeMin' | t }}</dt>
+                <dd>{{ groupSizeText(line) }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'partnerships.pricingModel' | t }}</dt>
+                <dd>{{ proposalLabel('pricingModel', line.pricingModel) }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'partnerships.lineSubtotal' | t }}</dt>
+                <dd class="money">{{ money(line.lineSubtotal) }}</dd>
+              </div>
+            </dl>
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.proposalSectionCommercial' | t }}</h2>
+    <div class="commercial-table-wrap">
+      <table class="commercial-table">
+        <thead>
+          <tr>
+            <th>{{ 'partnerships.offering' | t }}</th>
+            <th>{{ 'partnerships.pricingModel' | t }}</th>
+            <th>{{ 'partnerships.quantity' | t }}</th>
+            <th>{{ 'partnerships.unitPrice' | t }}</th>
+            <th>{{ 'partnerships.discount' | t }}</th>
+            <th>{{ 'partnerships.lineSubtotal' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (line of current.offerings; track line.id) {
+            <tr>
+              <td>{{ line.snapshotOfferingName }}</td>
+              <td>{{ proposalLabel('pricingModel', line.pricingModel) }}</td>
+              <td>{{ display(line.quantity?.toString()) }}</td>
+              <td class="money">{{ money(line.unitPrice) }}</td>
+              <td>
+                @if (line.discountType === 'NONE' || line.discountValue == null) {
+                  {{ 'partnerships.noValue' | t }}
+                } @else if (line.discountType === 'PERCENTAGE') {
+                  {{ line.discountValue }}%
+                } @else {
+                  {{ money(line.discountValue) }}
+                }
+              </td>
+              <td class="money">{{ money(line.lineSubtotal) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <dl class="totals">
+      <div>
+        <dt>{{ 'partnerships.subtotal' | t }}</dt>
+        <dd>{{ money(current.subtotal) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.discount' | t }}</dt>
+        <dd>{{ money(current.discountAmount) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.tax' | t }}</dt>
+        <dd>{{ money(current.taxAmount) }}</dd>
+      </div>
+      <div class="grand">
+        <dt>{{ 'partnerships.grandTotal' | t }}</dt>
+        <dd>{{ money(current.grandTotal) }}</dd>
+      </div>
+    </dl>
+    <dl class="facts" style="margin-top: 16px">
+      <div class="full">
+        <dt>{{ 'partnerships.paymentTerms' | t }}</dt>
+        <dd>{{ display(current.paymentTerms) }}</dd>
+      </div>
+      <div>
+        <dt>{{ 'partnerships.currency' | t }}</dt>
+        <dd>{{ display(current.currency) }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.proposalSectionContent' | t }}</h2>
+    <dl class="facts">
+      <div class="full">
+        <dt>{{ 'partnerships.executiveSummary' | t }}</dt>
+        <dd>{{ display(current.executiveSummary) }}</dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.schoolChallenge' | t }}</dt>
+        <dd>{{ display(current.schoolChallenge) }}</dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.schoolObjective' | t }}</dt>
+        <dd>{{ display(current.schoolObjective) }}</dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.partnershipObjective' | t }}</dt>
+        <dd>{{ display(current.partnershipObjective) }}</dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.implementationApproach' | t }}</dt>
+        <dd>{{ display(current.implementationApproach) }}</dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.nextSteps' | t }}</dt>
+        <dd>{{ display(current.nextSteps) }}</dd>
+      </div>
+      <div class="full">
+        <dt>{{ 'partnerships.termsAndConditions' | t }}</dt>
+        <dd>{{ display(current.termsAndConditions) }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  @if (current.timelinePhases.length) {
+    <section class="profile-card">
+      <h2>{{ 'partnerships.proposalSectionTimeline' | t }}</h2>
+      <ol class="phase-list">
+        @for (phase of current.timelinePhases; track phase.id) {
+          <li>
+            <strong>{{ phase.title }}</strong>
+            @if (phase.description) {
+              <p>{{ phase.description }}</p>
+            }
+          </li>
+        }
+      </ol>
+    </section>
+  }
+
+  @if (current.customOutcomes.length) {
+    <section class="profile-card">
+      <h2>{{ 'partnerships.proposalSectionOutcomes' | t }}</h2>
+      <ul class="outcome-list">
+        @for (outcome of current.customOutcomes; track outcome.id) {
+          <li>
+            <strong>{{ outcome.title }}</strong>
+            @if (outcome.description) {
+              <p>{{ outcome.description }}</p>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (permissions.canWrite() && nextStatuses().length) {
+    <section class="profile-card">
+      <h2>{{ 'partnerships.changeStatus' | t }}</h2>
+      <div class="status-row">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'common.status' | t }}</mat-label>
+          <mat-select [formControl]="statusControl">
+            @for (item of nextStatuses(); track item) {
+              <mat-option [value]="item">{{ proposalLabel('status', item) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="busy() || !statusControl.value"
+          (click)="changeStatus()"
+        >
+          {{ 'partnerships.changeStatus' | t }}
+        </button>
+      </div>
+    </section>
+  }
+
+  @if (current.versions.length) {
+    <section class="profile-card">
+      <h2>{{ 'partnerships.proposalSectionVersions' | t }}</h2>
+      <ul class="version-list">
+        @for (version of current.versions; track version.id) {
+          <li>
+            <strong>v{{ version.version }}</strong>
+            <span>{{ version.createdAt | date: 'medium' }}</span>
+            @if (version.note) {
+              <span class="muted">{{ version.note }}</span>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  }
+}

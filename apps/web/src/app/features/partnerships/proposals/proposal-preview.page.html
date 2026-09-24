@@ -1,0 +1,39 @@
+@if (loading()) {
+  <app-loading-skeleton variant="table" [label]="'partnerships.proposalsLoading' | t" />
+} @else if (error(); as message) {
+  <app-error-state
+    [title]="'partnerships.proposalsLoadError' | t"
+    [message]="message"
+    (retry)="reload()"
+  />
+} @else if (proposal(); as current) {
+  <div class="preview-toolbar no-print">
+    <div class="preview-toolbar-copy">
+      <h1>{{ 'partnerships.previewProposal' | t }}</h1>
+      <p>{{ current.title }} · {{ current.institutionName }}</p>
+    </div>
+    <div class="preview-toolbar-actions">
+      <a mat-stroked-button [routerLink]="['/partnerships/proposals', current.id]">{{
+        'common.back' | t
+      }}</a>
+      <button mat-stroked-button type="button" (click)="openPrintPreview()">
+        {{ 'partnerships.previewPdf' | t }}
+      </button>
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="downloading()"
+        (click)="downloadPdf()"
+      >
+        {{ downloading() ? ('partnerships.pdfDownloading' | t) : ('partnerships.downloadPdf' | t) }}
+      </button>
+    </div>
+  </div>
+
+  @if (previewUrl(); as url) {
+    <div class="preview-frame-wrap">
+      <iframe class="preview-frame" [src]="url" title="ROOTACA Proposal PDF Preview"></iframe>
+    </div>
+  }
+}

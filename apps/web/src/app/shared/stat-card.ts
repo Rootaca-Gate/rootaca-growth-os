@@ -13,22 +13,23 @@ import { Component, input } from '@angular/core';
   `,
   styles: `
     .stat {
-      padding: 18px 20px;
+      padding: var(--ra-card-pad, 22px);
     }
 
     strong {
       display: block;
-      margin-top: 10px;
-      font-size: 2rem;
+      margin-block-start: 10px;
+      font-size: 1.75rem;
       font-weight: 700;
       letter-spacing: -0.04em;
       font-variant-numeric: tabular-nums;
+      line-height: 1.1;
     }
 
     .hint {
       margin: 8px 0 0;
       color: var(--ra-muted);
-      font-size: 0.88rem;
+      font-size: var(--ra-body-sm, 0.875rem);
     }
   `,
 })

@@ -37,7 +37,53 @@ import {
   ResearchProvidersStatus,
   Source,
   TimelineItem,
+  PartnershipProgram,
+  ProgramListItem,
+  ProgramQuery,
+  ProgramUpdatePayload,
+  ProgramWritePayload,
 } from './partnership.models';
+import {
+  OfferingListItem,
+  OfferingQuery,
+  OfferingUpdatePayload,
+  OfferingWritePayload,
+  PartnershipOffering,
+} from './offerings/offering.models';
+import {
+  PartnershipProposal,
+  PartnershipProposalStatus,
+  ProposalListItem,
+  ProposalQuery,
+  ProposalUpdatePayload,
+  ProposalWritePayload,
+} from './proposals/proposal.models';
+import {
+  PartnershipSow,
+  PartnershipSowStatus,
+  SowChangeRequestPayload,
+  SowDecideChangeRequestPayload,
+  SowListItem,
+  SowQuery,
+  SowUpdatePayload,
+  SowWritePayload,
+} from './sows/sow.models';
+import {
+  DeliveryListItem,
+  DeliveryQuery,
+  DeliveryUpdatePayload,
+  DeliveryUserOption,
+  PartnershipDelivery,
+  PartnershipDeliveryStatus,
+} from './delivery/delivery.models';
+import {
+  CreateReportFromDeliveryPayload,
+  PartnershipReport,
+  PartnershipReportStatus,
+  ReportListItem,
+  ReportQuery,
+  ReportUpdatePayload,
+} from './reports/report.models';
 
 function toParams(query: Record<string, unknown>): HttpParams {
   let params = new HttpParams();
@@ -329,5 +375,235 @@ export class PartnershipsApi {
       `${this.base}/research/candidates/${id}/import`,
       {},
     );
+  }
+
+  listPrograms(query: ProgramQuery = {}): Observable<Paginated<ProgramListItem>> {
+    return this.http.get<Paginated<ProgramListItem>>(`${this.base}/programs`, {
+      params: toParams(query as Record<string, unknown>),
+    });
+  }
+
+  getProgram(id: string): Observable<PartnershipProgram> {
+    return this.http.get<PartnershipProgram>(`${this.base}/programs/${id}`);
+  }
+
+  createProgram(payload: ProgramWritePayload): Observable<PartnershipProgram> {
+    return this.http.post<PartnershipProgram>(`${this.base}/programs`, payload);
+  }
+
+  updateProgram(id: string, payload: ProgramUpdatePayload): Observable<PartnershipProgram> {
+    return this.http.patch<PartnershipProgram>(`${this.base}/programs/${id}`, payload);
+  }
+
+  archiveProgram(id: string): Observable<PartnershipProgram> {
+    return this.http.post<PartnershipProgram>(`${this.base}/programs/${id}/archive`, {});
+  }
+
+  duplicateProgram(id: string): Observable<PartnershipProgram> {
+    return this.http.post<PartnershipProgram>(`${this.base}/programs/${id}/duplicate`, {});
+  }
+
+  listOfferings(query: OfferingQuery = {}): Observable<Paginated<OfferingListItem>> {
+    return this.http.get<Paginated<OfferingListItem>>(`${this.base}/offerings`, {
+      params: toParams(query as Record<string, unknown>),
+    });
+  }
+
+  getOffering(id: string): Observable<PartnershipOffering> {
+    return this.http.get<PartnershipOffering>(`${this.base}/offerings/${id}`);
+  }
+
+  createOffering(payload: OfferingWritePayload): Observable<PartnershipOffering> {
+    return this.http.post<PartnershipOffering>(`${this.base}/offerings`, payload);
+  }
+
+  updateOffering(id: string, payload: OfferingUpdatePayload): Observable<PartnershipOffering> {
+    return this.http.patch<PartnershipOffering>(`${this.base}/offerings/${id}`, payload);
+  }
+
+  archiveOffering(id: string): Observable<PartnershipOffering> {
+    return this.http.post<PartnershipOffering>(`${this.base}/offerings/${id}/archive`, {});
+  }
+
+  duplicateOffering(id: string): Observable<PartnershipOffering> {
+    return this.http.post<PartnershipOffering>(`${this.base}/offerings/${id}/duplicate`, {});
+  }
+
+  listProposals(query: ProposalQuery = {}): Observable<Paginated<ProposalListItem>> {
+    return this.http.get<Paginated<ProposalListItem>>(`${this.base}/proposals`, {
+      params: toParams(query as Record<string, unknown>),
+    });
+  }
+
+  getProposal(id: string): Observable<PartnershipProposal> {
+    return this.http.get<PartnershipProposal>(`${this.base}/proposals/${id}`);
+  }
+
+  createProposal(payload: ProposalWritePayload): Observable<PartnershipProposal> {
+    return this.http.post<PartnershipProposal>(`${this.base}/proposals`, payload);
+  }
+
+  updateProposal(id: string, payload: ProposalUpdatePayload): Observable<PartnershipProposal> {
+    return this.http.patch<PartnershipProposal>(`${this.base}/proposals/${id}`, payload);
+  }
+
+  archiveProposal(id: string): Observable<PartnershipProposal> {
+    return this.http.post<PartnershipProposal>(`${this.base}/proposals/${id}/archive`, {});
+  }
+
+  duplicateProposal(id: string): Observable<PartnershipProposal> {
+    return this.http.post<PartnershipProposal>(`${this.base}/proposals/${id}/duplicate`, {});
+  }
+
+  sendProposal(id: string): Observable<PartnershipProposal> {
+    return this.http.post<PartnershipProposal>(`${this.base}/proposals/${id}/send`, {});
+  }
+
+  changeProposalStatus(
+    id: string,
+    status: PartnershipProposalStatus,
+  ): Observable<PartnershipProposal> {
+    return this.http.post<PartnershipProposal>(`${this.base}/proposals/${id}/status`, { status });
+  }
+
+  reviseProposal(id: string): Observable<PartnershipProposal> {
+    return this.http.post<PartnershipProposal>(`${this.base}/proposals/${id}/revise`, {});
+  }
+
+  ensureProposalShareToken(id: string): Observable<PartnershipProposal> {
+    return this.http.post<PartnershipProposal>(`${this.base}/proposals/${id}/share-token`, {});
+  }
+
+  listSows(query: SowQuery = {}): Observable<Paginated<SowListItem>> {
+    return this.http.get<Paginated<SowListItem>>(`${this.base}/sows`, {
+      params: toParams(query as Record<string, unknown>),
+    });
+  }
+
+  getSow(id: string): Observable<PartnershipSow> {
+    return this.http.get<PartnershipSow>(`${this.base}/sows/${id}`);
+  }
+
+  createSow(payload: SowWritePayload): Observable<PartnershipSow> {
+    return this.http.post<PartnershipSow>(`${this.base}/sows`, payload);
+  }
+
+  createSowFromProposal(proposalId: string): Observable<PartnershipSow> {
+    return this.http.post<PartnershipSow>(`${this.base}/sows/create-from-proposal`, {
+      proposalId,
+    });
+  }
+
+  updateSow(id: string, payload: SowUpdatePayload): Observable<PartnershipSow> {
+    return this.http.patch<PartnershipSow>(`${this.base}/sows/${id}`, payload);
+  }
+
+  archiveSow(id: string): Observable<PartnershipSow> {
+    return this.http.post<PartnershipSow>(`${this.base}/sows/${id}/archive`, {});
+  }
+
+  duplicateSow(id: string): Observable<PartnershipSow> {
+    return this.http.post<PartnershipSow>(`${this.base}/sows/${id}/duplicate`, {});
+  }
+
+  changeSowStatus(id: string, status: PartnershipSowStatus): Observable<PartnershipSow> {
+    return this.http.post<PartnershipSow>(`${this.base}/sows/${id}/status`, { status });
+  }
+
+  createSowChangeRequest(
+    id: string,
+    payload: SowChangeRequestPayload,
+  ): Observable<PartnershipSow> {
+    return this.http.post<PartnershipSow>(`${this.base}/sows/${id}/change-requests`, payload);
+  }
+
+  decideSowChangeRequest(
+    id: string,
+    crId: string,
+    payload: SowDecideChangeRequestPayload,
+  ): Observable<PartnershipSow> {
+    return this.http.post<PartnershipSow>(
+      `${this.base}/sows/${id}/change-requests/${crId}/decide`,
+      payload,
+    );
+  }
+
+  listDeliveries(query: DeliveryQuery = {}): Observable<Paginated<DeliveryListItem>> {
+    return this.http.get<Paginated<DeliveryListItem>>(`${this.base}/delivery`, {
+      params: toParams(query as Record<string, unknown>),
+    });
+  }
+
+  getDelivery(id: string): Observable<PartnershipDelivery> {
+    return this.http.get<PartnershipDelivery>(`${this.base}/delivery/${id}`);
+  }
+
+  createDeliveryFromSow(sowId: string): Observable<PartnershipDelivery> {
+    return this.http.post<PartnershipDelivery>(`${this.base}/delivery/create-from-sow`, {
+      sowId,
+    });
+  }
+
+  updateDelivery(id: string, payload: DeliveryUpdatePayload): Observable<PartnershipDelivery> {
+    return this.http.patch<PartnershipDelivery>(`${this.base}/delivery/${id}`, payload);
+  }
+
+  changeDeliveryStatus(
+    id: string,
+    status: PartnershipDeliveryStatus,
+  ): Observable<PartnershipDelivery> {
+    return this.http.post<PartnershipDelivery>(`${this.base}/delivery/${id}/status`, { status });
+  }
+
+  archiveDelivery(id: string): Observable<PartnershipDelivery> {
+    return this.http.post<PartnershipDelivery>(`${this.base}/delivery/${id}/archive`, {});
+  }
+
+  duplicateDelivery(id: string): Observable<PartnershipDelivery> {
+    return this.http.post<PartnershipDelivery>(`${this.base}/delivery/${id}/duplicate`, {});
+  }
+
+  listDeliveryUsers(): Observable<DeliveryUserOption[]> {
+    return this.http.get<DeliveryUserOption[]>(`${this.base}/delivery/users`);
+  }
+
+  listReports(query: ReportQuery = {}): Observable<Paginated<ReportListItem>> {
+    return this.http.get<Paginated<ReportListItem>>(`${this.base}/reports`, {
+      params: toParams(query as Record<string, unknown>),
+    });
+  }
+
+  getReport(id: string): Observable<PartnershipReport> {
+    return this.http.get<PartnershipReport>(`${this.base}/reports/${id}`);
+  }
+
+  createReportFromDelivery(
+    payload: CreateReportFromDeliveryPayload,
+  ): Observable<PartnershipReport> {
+    return this.http.post<PartnershipReport>(`${this.base}/reports/create-from-delivery`, payload);
+  }
+
+  updateReport(id: string, payload: ReportUpdatePayload): Observable<PartnershipReport> {
+    return this.http.patch<PartnershipReport>(`${this.base}/reports/${id}`, payload);
+  }
+
+  changeReportStatus(id: string, status: PartnershipReportStatus): Observable<PartnershipReport> {
+    return this.http.post<PartnershipReport>(`${this.base}/reports/${id}/status`, { status });
+  }
+
+  archiveReport(id: string): Observable<PartnershipReport> {
+    return this.http.post<PartnershipReport>(`${this.base}/reports/${id}/archive`, {});
+  }
+
+  duplicateReport(id: string): Observable<PartnershipReport> {
+    return this.http.post<PartnershipReport>(`${this.base}/reports/${id}/duplicate`, {});
+  }
+
+  refreshReportSnapshot(id: string): Observable<PartnershipReport> {
+    return this.http.post<PartnershipReport>(`${this.base}/reports/${id}/refresh-snapshot`, {});
+  }
+
+  markReportPdfGenerated(id: string): Observable<PartnershipReport> {
+    return this.http.post<PartnershipReport>(`${this.base}/reports/${id}/pdf-generated`, {});
   }
 }

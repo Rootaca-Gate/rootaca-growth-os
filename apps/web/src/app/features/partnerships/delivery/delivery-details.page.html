@@ -1,0 +1,767 @@
+@if (loading()) {
+  <app-loading-skeleton [rows]="14" [label]="'partnerships.deliveryLoading' | t" />
+} @else if (error(); as message) {
+  <app-error-state
+    [title]="'partnerships.deliveryLoadError' | t"
+    [message]="message"
+    (retry)="reload()"
+  />
+} @else if (delivery(); as current) {
+  <header class="profile-header">
+    <div class="eyebrow">{{ 'partnerships.deliveryTitle' | t }}</div>
+    <div class="header-row">
+      <div class="titles">
+        <div class="relationship">
+          @for (link of relationshipChain(); track $index; let last = $last) {
+            @if (link.routerLink) {
+              <a class="rel-link" [routerLink]="link.routerLink">{{ link.value }}</a>
+            } @else {
+              <span class="rel-node">{{ link.value }}</span>
+            }
+            @if (!last) {
+              <span class="rel-arrow" aria-hidden="true">↓</span>
+            }
+          }
+        </div>
+        <h1>{{ current.name }}</h1>
+        <div class="meta-row">
+          <span class="soft-badge">{{ current.deliveryNumber }}</span>
+          <span [class]="statusClass(current.status)">
+            {{ 'common.status' | t }}: {{ deliveryLabel('status', current.status) }}
+          </span>
+          @if (current.archivedAt) {
+            <span class="lock-badge">{{ 'partnerships.deliveryArchivedBadge' | t }}</span>
+          }
+        </div>
+        <div class="dates">
+          <span>
+            {{ 'partnerships.startDate' | t }}:
+            {{ current.startDate ? (current.startDate | date: 'mediumDate') : ('partnerships.noValue' | t) }}
+          </span>
+          <span>
+            {{ 'partnerships.endDate' | t }}:
+            {{ current.endDate ? (current.endDate | date: 'mediumDate') : ('partnerships.noValue' | t) }}
+          </span>
+          <span>{{ 'common.updated' | t }}: {{ current.updatedAt | date: 'medium' }}</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-stroked-button type="button" (click)="back()">{{ 'common.back' | t }}</button>
+        @if (permissions.canWrite()) {
+          <a mat-stroked-button [routerLink]="['/partnerships/delivery', current.id, 'edit']">{{
+            'common.edit' | t
+          }}</a>
+        }
+        <a
+          mat-stroked-button
+          [routerLink]="['/partnerships/reports/new']"
+          [queryParams]="{ deliveryId: current.id }"
+          >{{ 'partnerships.reportsCreateFromDelivery' | t }}</a
+        >
+        <a mat-stroked-button [routerLink]="['/partnerships/delivery', current.id, 'preview']">{{
+          'partnerships.previewDelivery' | t
+        }}</a>
+        <button mat-stroked-button type="button" (click)="generatePdf()">
+          {{ 'partnerships.previewPdf' | t }}
+        </button>
+        @if (permissions.canWrite()) {
+          <button mat-stroked-button type="button" [disabled]="busy()" (click)="duplicate()">
+            {{ 'partnerships.duplicateDelivery' | t }}
+          </button>
+          @if (!current.archivedAt) {
+            <button mat-stroked-button type="button" [disabled]="busy()" (click)="archive()">
+              {{ 'partnerships.archiveDelivery' | t }}
+            </button>
+          }
+        }
+      </div>
+    </div>
+  </header>
+
+  <section class="kpi-grid">
+    <article class="kpi-card kpi-hero">
+      <span class="kpi-value">{{ progressText(current.progress.overallPercent) }}</span>
+      <span class="kpi-label">{{ 'partnerships.deliveryOverallProgress' | t }}</span>
+      <div class="kpi-track" aria-hidden="true">
+        <div class="kpi-fill" [style.width.%]="current.progress.overallPercent"></div>
+      </div>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-value">{{ current.kpis.sessionsCompleted }} / {{ current.kpis.sessionsTotal }}</span>
+      <span class="kpi-label">{{ 'partnerships.deliveryKpiSessions' | t }}</span>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-value">{{ current.kpis.studentsUnique }}</span>
+      <span class="kpi-label">{{ 'partnerships.deliveryKpiStudents' | t }}</span>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-value">{{ current.kpis.groupsCount }}</span>
+      <span class="kpi-label">{{ 'partnerships.deliveryKpiGroups' | t }}</span>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-value">{{ current.kpis.deliverablesAccepted }} / {{ current.kpis.deliverablesTotal }}</span>
+      <span class="kpi-label">{{ 'partnerships.deliveryKpiDeliverables' | t }}</span>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-value">{{ current.kpis.milestonesCompleted }} / {{ current.kpis.milestonesTotal }}</span>
+      <span class="kpi-label">{{ 'partnerships.deliveryKpiMilestones' | t }}</span>
+    </article>
+  </section>
+
+  @if (current.completionChecklist.items.length) {
+    <section class="profile-card">
+      <div class="section-head">
+        <h2>{{ 'partnerships.deliveryCompletionChecklist' | t }}</h2>
+        <span
+          class="soft-badge"
+          [class.ok]="current.completionChecklist.allRequiredSatisfied"
+        >
+          {{
+            (current.completionChecklist.allRequiredSatisfied
+              ? 'partnerships.deliveryReadyToComplete'
+              : 'partnerships.deliveryNotReadyToComplete'
+            ) | t
+          }}
+        </span>
+      </div>
+      <ul class="checklist">
+        @for (item of current.completionChecklist.items; track item.key) {
+          <li class="checklist-item">
+            <span class="check-mark" [class.on]="item.satisfied" [class.off]="!item.satisfied">{{
+              item.satisfied ? '✓' : '•'
+            }}</span>
+            <div class="check-body">
+              <div class="check-row">
+                <strong>{{ item.label }}</strong>
+                @if (item.required) {
+                  <span class="soft-badge">{{ 'partnerships.deliveryRequired' | t }}</span>
+                }
+              </div>
+              @if (item.detail) {
+                <p class="muted">{{ item.detail }}</p>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (permissions.canWrite() && (nextStatuses().length || current.status === 'COMPLETED')) {
+    <section class="profile-card">
+      <div class="action-cluster">
+        @if (nextStatuses().length) {
+          <div class="status-row">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'partnerships.deliveryChangeStatus' | t }}</mat-label>
+              <mat-select [formControl]="statusControl">
+                @for (item of nextStatuses(); track item) {
+                  <mat-option [value]="item">{{ deliveryLabel('status', item) }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="busy() || !statusControl.value"
+              (click)="changeStatus()"
+            >
+              {{ 'partnerships.deliveryChangeStatus' | t }}
+            </button>
+          </div>
+        }
+        <div class="follow-on">
+          <button mat-flat-button color="primary" type="button" (click)="createFollowOn('renewal')">
+            {{ 'partnerships.deliveryCreateRenewal' | t }}
+          </button>
+          <button mat-stroked-button type="button" (click)="createFollowOn('expansion')">
+            {{ 'partnerships.deliveryCreateExpansion' | t }}
+          </button>
+        </div>
+      </div>
+    </section>
+  }
+
+  <mat-tab-group class="delivery-tabs" animationDuration="200ms">
+    <!-- Overview -->
+    <mat-tab [label]="'partnerships.deliveryTabOverview' | t">
+      <div class="tab-body">
+        <section class="profile-card">
+          <h2>{{ 'partnerships.deliveryProgressOverview' | t }}</h2>
+          @if (progressBars().length) {
+            <div class="bars">
+              @for (bar of progressBars(); track bar.label) {
+                <div class="bar-row">
+                  <div class="bar-head">
+                    <span>{{ bar.label | t }}</span>
+                    <span>{{ bar.completed }} / {{ bar.total }} · {{ progressText(bar.ratio) }}</span>
+                  </div>
+                  <div class="bar-track" aria-hidden="true">
+                    <div class="bar-fill" [style.width.%]="bar.ratio"></div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="empty">{{ 'partnerships.deliveryNoActivity' | t }}</p>
+          }
+        </section>
+
+        <section class="profile-card">
+          <h2>{{ 'partnerships.deliverySow' | t }}</h2>
+          <dl class="facts">
+            <div>
+              <dt>{{ 'partnerships.deliveryRelSow' | t }}</dt>
+              <dd>
+                <a [routerLink]="['/partnerships/sows', current.sowId]">{{
+                  current.sow.sowNumber || current.sowNumberSnapshot
+                }}</a>
+              </dd>
+            </div>
+            <div>
+              <dt>{{ 'partnerships.deliveryRelProposal' | t }}</dt>
+              <dd>
+                <a [routerLink]="['/partnerships/proposals', current.proposalId]">{{
+                  display(current.proposalNumberSnapshot)
+                }}</a>
+              </dd>
+            </div>
+            <div>
+              <dt>{{ 'partnerships.school' | t }}</dt>
+              <dd>
+                <a [routerLink]="['/partnerships/institutions', current.institutionId]">{{
+                  current.institution.name
+                }}</a>
+              </dd>
+            </div>
+            <div>
+              <dt>{{ 'partnerships.deliveryFinalReportRequired' | t }}</dt>
+              <dd>{{ (current.finalReportRequired ? 'partnerships.deliveryYes' : 'partnerships.deliveryNo') | t }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        @if (current.teamMembers.length) {
+          <section class="profile-card">
+            <h2>{{ 'partnerships.deliveryTeam' | t }}</h2>
+            <div class="ra-table-wrap">
+              <table class="matrix-table">
+                <thead>
+                  <tr>
+                    <th>{{ 'partnerships.deliveryFieldRole' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldName' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldResponsibilities' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldAvailability' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (member of current.teamMembers; track member.id) {
+                    <tr>
+                      <td><strong>{{ member.role }}</strong></td>
+                      <td>{{ display(member.name) }}</td>
+                      <td>{{ display(member.responsibilities) }}</td>
+                      <td>{{ display(member.availability) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </section>
+        } @else {
+          <p class="empty">{{ 'partnerships.deliveryNoTeam' | t }}</p>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- Timeline: phases + milestones -->
+    <mat-tab [label]="'partnerships.deliveryTabTimeline' | t">
+      <div class="tab-body">
+        <section class="profile-card">
+          <h2>{{ 'partnerships.deliveryPhases' | t }}</h2>
+          @if (current.phases.length) {
+            <ol class="timeline">
+              @for (p of current.phases; track p.id) {
+                <li>
+                  <span class="tl-dot" aria-hidden="true"></span>
+                  <div class="tl-body">
+                    <div class="tl-head">
+                      <strong>{{ p.name }}</strong>
+                      <span class="tl-range">
+                        {{ p.startDate ? (p.startDate | date: 'mediumDate') : '' }}
+                        @if (p.startDate && p.endDate) { → }
+                        {{ p.endDate ? (p.endDate | date: 'mediumDate') : '' }}
+                      </span>
+                    </div>
+                    @if (p.description) {
+                      <p>{{ p.description }}</p>
+                    }
+                    <div class="tl-meta">
+                      @if (p.owner) {
+                        <span class="soft-badge">{{ 'partnerships.deliveryFieldOwner' | t }}: {{ p.owner }}</span>
+                      }
+                      <span class="soft-badge">{{ deliveryLabel('phaseStatus', p.status) }}</span>
+                    </div>
+                  </div>
+                </li>
+              }
+            </ol>
+          } @else {
+            <p class="empty">{{ 'partnerships.deliveryNoPhases' | t }}</p>
+          }
+        </section>
+
+        <section class="profile-card">
+          <h2>{{ 'partnerships.deliveryMilestones' | t }}</h2>
+          @if (current.milestones.length) {
+            <ol class="timeline">
+              @for (m of current.milestones; track m.id) {
+                <li>
+                  <span class="tl-dot" aria-hidden="true"></span>
+                  <div class="tl-body">
+                    <div class="tl-head">
+                      <strong>{{ m.name }}</strong>
+                      <span class="tl-range">
+                        {{ m.startDate ? (m.startDate | date: 'mediumDate') : '' }}
+                        @if (m.startDate && m.endDate) { → }
+                        {{ m.endDate ? (m.endDate | date: 'mediumDate') : '' }}
+                      </span>
+                    </div>
+                    @if (m.description) {
+                      <p>{{ m.description }}</p>
+                    }
+                    <div class="tl-meta">
+                      @if (m.requiredForCompletion) {
+                        <span class="soft-badge">{{ 'partnerships.deliveryRequired' | t }}</span>
+                      }
+                      <span class="soft-badge">{{ deliveryLabel('milestoneStatus', m.status) }}</span>
+                    </div>
+                  </div>
+                </li>
+              }
+            </ol>
+          } @else {
+            <p class="empty">{{ 'partnerships.deliveryNoMilestones' | t }}</p>
+          }
+        </section>
+      </div>
+    </mat-tab>
+
+    <!-- Sessions -->
+    <mat-tab [label]="'partnerships.deliveryTabSessions' | t">
+      <div class="tab-body">
+        <section class="profile-card">
+          <h2>{{ 'partnerships.deliverySessions' | t }}</h2>
+          @if (current.sessions.length) {
+            <div class="ra-table-wrap">
+              <table class="matrix-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>{{ 'partnerships.deliveryFieldDate' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldTopic' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldInstructor' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldOutcome' | t }}</th>
+                    <th>{{ 'common.status' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (s of current.sessions; track s.id) {
+                    <tr>
+                      <td>{{ s.sessionNumber }}</td>
+                      <td>{{ s.sessionDate ? (s.sessionDate | date: 'mediumDate') : ('partnerships.noValue' | t) }}</td>
+                      <td>{{ display(s.topic) }}</td>
+                      <td>{{ display(s.instructorName) }}</td>
+                      <td>{{ display(s.sessionOutcome) }}</td>
+                      <td><span class="soft-badge">{{ deliveryLabel('sessionStatus', s.status) }}</span></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="empty">{{ 'partnerships.deliveryNoSessions' | t }}</p>
+          }
+        </section>
+      </div>
+    </mat-tab>
+
+    <!-- Students & Groups -->
+    <mat-tab [label]="'partnerships.deliveryTabStudents' | t">
+      <div class="tab-body">
+        <section class="profile-card">
+          <h2>{{ 'partnerships.deliveryGroups' | t }}</h2>
+          @if (current.groups.length) {
+            <div class="group-grid">
+              @for (g of current.groups; track g.id) {
+                <article class="group-card">
+                  <div class="group-head">
+                    <h3>{{ g.name }}</h3>
+                    <span class="soft-badge">{{ deliveryLabel('groupStatus', g.status) }}</span>
+                  </div>
+                  <dl class="facts compact">
+                    <div>
+                      <dt>{{ 'partnerships.deliveryFieldGrade' | t }}</dt>
+                      <dd>{{ display(g.grade) }}</dd>
+                    </div>
+                    <div>
+                      <dt>{{ 'partnerships.deliveryFieldLevel' | t }}</dt>
+                      <dd>{{ display(g.level) }}</dd>
+                    </div>
+                    <div>
+                      <dt>{{ 'partnerships.deliveryFieldSchedule' | t }}</dt>
+                      <dd>{{ display(g.schedule) }}</dd>
+                    </div>
+                    <div>
+                      <dt>{{ 'partnerships.deliveryFieldStudents' | t }}</dt>
+                      <dd>{{ g.students.length }}</dd>
+                    </div>
+                  </dl>
+                </article>
+              }
+            </div>
+          } @else {
+            <p class="empty">{{ 'partnerships.deliveryNoGroups' | t }}</p>
+          }
+        </section>
+      </div>
+    </mat-tab>
+
+    <!-- Tasks -->
+    <mat-tab [label]="'partnerships.deliveryTabTasks' | t">
+      <div class="tab-body">
+        <section class="profile-card">
+          <h2>{{ 'partnerships.deliveryTasks' | t }}</h2>
+          @if (current.tasks.length) {
+            <div class="ra-table-wrap">
+              <table class="matrix-table">
+                <thead>
+                  <tr>
+                    <th>{{ 'partnerships.deliveryFieldTitle' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldOwner' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldPriority' | t }}</th>
+                    <th>{{ 'partnerships.sowDueDate' | t }}</th>
+                    <th>{{ 'common.status' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (task of current.tasks; track task.id) {
+                    <tr>
+                      <td>
+                        <strong>{{ task.title }}</strong>
+                        @if (task.description) {
+                          <div class="muted">{{ task.description }}</div>
+                        }
+                      </td>
+                      <td>{{ display(task.owner) }}</td>
+                      <td><span class="soft-badge">{{ deliveryLabel('taskPriority', task.priority) }}</span></td>
+                      <td>{{ task.dueDate ? (task.dueDate | date: 'mediumDate') : ('partnerships.noValue' | t) }}</td>
+                      <td><span class="soft-badge">{{ deliveryLabel('taskStatus', task.status) }}</span></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="empty">{{ 'partnerships.deliveryNoTasks' | t }}</p>
+          }
+        </section>
+      </div>
+    </mat-tab>
+
+    <!-- Deliverables -->
+    <mat-tab [label]="'partnerships.deliveryTabDeliverables' | t">
+      <div class="tab-body">
+        <section class="profile-card">
+          <h2>{{ 'partnerships.deliveryDeliverables' | t }}</h2>
+          @if (current.deliverables.length) {
+            <div class="ra-table-wrap">
+              <table class="matrix-table">
+                <thead>
+                  <tr>
+                    <th>{{ 'partnerships.deliveryFieldName' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldOwner' | t }}</th>
+                    <th>{{ 'partnerships.sowDueDate' | t }}</th>
+                    <th>{{ 'partnerships.sowAcceptanceCriteria' | t }}</th>
+                    <th>{{ 'common.status' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (d of current.deliverables; track d.id) {
+                    <tr>
+                      <td>
+                        <strong>{{ d.name }}</strong>
+                        @if (d.requiredForCompletion) {
+                          <span class="soft-badge">{{ 'partnerships.deliveryRequired' | t }}</span>
+                        }
+                        @if (d.description) {
+                          <div class="muted">{{ d.description }}</div>
+                        }
+                      </td>
+                      <td>{{ display(d.owner) }}</td>
+                      <td>{{ d.dueDate ? (d.dueDate | date: 'mediumDate') : ('partnerships.noValue' | t) }}</td>
+                      <td>{{ display(d.acceptanceCriteria) }}</td>
+                      <td><span class="soft-badge">{{ deliveryLabel('deliverableStatus', d.status) }}</span></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="empty">{{ 'partnerships.deliveryNoDeliverables' | t }}</p>
+          }
+        </section>
+      </div>
+    </mat-tab>
+
+    <!-- Issues & RAID -->
+    <mat-tab [label]="'partnerships.deliveryTabIssues' | t">
+      <div class="tab-body">
+        <section class="profile-card">
+          <h2>{{ 'partnerships.deliveryIssues' | t }}</h2>
+          @if (current.issues.length) {
+            <div class="ra-table-wrap">
+              <table class="matrix-table">
+                <thead>
+                  <tr>
+                    <th>{{ 'partnerships.deliveryFieldTitle' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldOwner' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldSeverity' | t }}</th>
+                    <th>{{ 'common.status' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (i of current.issues; track i.id) {
+                    <tr>
+                      <td>
+                        <strong>{{ i.title }}</strong>
+                        @if (i.description) {
+                          <div class="muted">{{ i.description }}</div>
+                        }
+                      </td>
+                      <td>{{ display(i.owner) }}</td>
+                      <td><span class="soft-badge">{{ deliveryLabel('issueSeverity', i.severity) }}</span></td>
+                      <td><span class="soft-badge">{{ deliveryLabel('issueStatus', i.status) }}</span></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="empty">{{ 'partnerships.deliveryNoIssues' | t }}</p>
+          }
+        </section>
+
+        <section class="profile-card">
+          <h2>{{ 'partnerships.deliveryRaid' | t }}</h2>
+          @if (current.raidItems.length) {
+            <div class="ra-table-wrap">
+              <table class="matrix-table">
+                <thead>
+                  <tr>
+                    <th>{{ 'partnerships.deliveryFieldType' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldTitle' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldMitigation' | t }}</th>
+                    <th>{{ 'common.status' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (r of current.raidItems; track r.id) {
+                    <tr>
+                      <td><span class="soft-badge">{{ deliveryLabel('raidType', r.type) }}</span></td>
+                      <td>
+                        <strong>{{ r.title }}</strong>
+                        @if (r.description) {
+                          <div class="muted">{{ r.description }}</div>
+                        }
+                      </td>
+                      <td>{{ display(r.mitigation) }}</td>
+                      <td><span class="soft-badge">{{ deliveryLabel('raidStatus', r.status) }}</span></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="empty">{{ 'partnerships.deliveryNoRaid' | t }}</p>
+          }
+        </section>
+      </div>
+    </mat-tab>
+
+    <!-- Communications -->
+    <mat-tab [label]="'partnerships.deliveryTabCommunications' | t">
+      <div class="tab-body">
+        <section class="profile-card">
+          <h2>{{ 'partnerships.deliveryCommunications' | t }}</h2>
+          @if (current.communications.length) {
+            <div class="ra-table-wrap">
+              <table class="matrix-table">
+                <thead>
+                  <tr>
+                    <th>{{ 'partnerships.deliveryFieldDate' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldType' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldSubject' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldActionItems' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (c of current.communications; track c.id) {
+                    <tr>
+                      <td>{{ c.occurredAt ? (c.occurredAt | date: 'mediumDate') : ('partnerships.noValue' | t) }}</td>
+                      <td><span class="soft-badge">{{ deliveryLabel('commType', c.type) }}</span></td>
+                      <td>
+                        <strong>{{ display(c.subject) }}</strong>
+                        @if (c.summary) {
+                          <div class="muted">{{ c.summary }}</div>
+                        }
+                      </td>
+                      <td>{{ display(c.actionItems) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="empty">{{ 'partnerships.deliveryNoCommunications' | t }}</p>
+          }
+        </section>
+
+        <section class="profile-card">
+          <h2>{{ 'partnerships.deliveryCheckpoints' | t }}</h2>
+          @if (current.checkpoints.length) {
+            <div class="ra-table-wrap">
+              <table class="matrix-table">
+                <thead>
+                  <tr>
+                    <th>{{ 'partnerships.deliveryFieldType' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldName' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldDate' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldDecisions' | t }}</th>
+                    <th>{{ 'common.status' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (cp of current.checkpoints; track cp.id) {
+                    <tr>
+                      <td><span class="soft-badge">{{ deliveryLabel('checkpointKind', cp.kind) }}</span></td>
+                      <td><strong>{{ cp.name }}</strong></td>
+                      <td>{{ cp.checkpointDate ? (cp.checkpointDate | date: 'mediumDate') : ('partnerships.noValue' | t) }}</td>
+                      <td>{{ display(cp.decisions) }}</td>
+                      <td><span class="soft-badge">{{ deliveryLabel('checkpointStatus', cp.status) }}</span></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="empty">{{ 'partnerships.deliveryNoCheckpoints' | t }}</p>
+          }
+        </section>
+      </div>
+    </mat-tab>
+
+    <!-- Reports -->
+    <mat-tab [label]="'partnerships.deliveryTabReports' | t">
+      <div class="tab-body">
+        <section class="profile-card">
+          <h2>{{ 'partnerships.deliveryReports' | t }}</h2>
+          @if (current.reports.length) {
+            <div class="ra-table-wrap">
+              <table class="matrix-table">
+                <thead>
+                  <tr>
+                    <th>{{ 'partnerships.deliveryFieldName' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldType' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldPeriod' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldAuthor' | t }}</th>
+                    <th>{{ 'common.status' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (rep of current.reports; track rep.id) {
+                    <tr>
+                      <td><strong>{{ rep.title }}</strong></td>
+                      <td><span class="soft-badge">{{ deliveryLabel('reportType', rep.type) }}</span></td>
+                      <td>{{ display(rep.periodLabel) }}</td>
+                      <td>{{ display(rep.author) }}</td>
+                      <td><span class="soft-badge">{{ deliveryLabel('reportStatus', rep.status) }}</span></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="empty">{{ 'partnerships.deliveryNoReports' | t }}</p>
+          }
+        </section>
+      </div>
+    </mat-tab>
+
+    <!-- Documents -->
+    <mat-tab [label]="'partnerships.deliveryTabDocuments' | t">
+      <div class="tab-body">
+        <section class="profile-card">
+          <h2>{{ 'partnerships.deliveryDocuments' | t }}</h2>
+          @if (current.documents.length) {
+            <div class="ra-table-wrap">
+              <table class="matrix-table">
+                <thead>
+                  <tr>
+                    <th>{{ 'partnerships.deliveryFieldName' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldType' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldVersion' | t }}</th>
+                    <th>{{ 'partnerships.deliveryFieldUploadedBy' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (doc of current.documents; track doc.id) {
+                    <tr>
+                      <td>
+                        @if (doc.fileUrl) {
+                          <a [href]="doc.fileUrl" target="_blank" rel="noopener">{{ doc.name }}</a>
+                        } @else {
+                          <strong>{{ doc.name }}</strong>
+                        }
+                      </td>
+                      <td><span class="soft-badge">{{ deliveryLabel('documentType', doc.type) }}</span></td>
+                      <td>{{ display(doc.version) }}</td>
+                      <td>{{ display(doc.uploadedBy) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="empty">{{ 'partnerships.deliveryNoDocuments' | t }}</p>
+          }
+        </section>
+      </div>
+    </mat-tab>
+
+    <!-- Activity -->
+    <mat-tab [label]="'partnerships.deliveryTabActivity' | t">
+      <div class="tab-body">
+        <section class="profile-card">
+          <h2>{{ 'partnerships.deliveryActivity' | t }}</h2>
+          @if (current.activityLogs.length) {
+            <ul class="activity-list">
+              @for (log of current.activityLogs; track log.id) {
+                <li>
+                  <div class="activity-head">
+                    <strong>{{ log.action }}</strong>
+                    <span class="activity-date">{{ log.createdAt | date: 'medium' }}</span>
+                  </div>
+                  @if (log.summary) {
+                    <p class="muted">{{ log.summary }}</p>
+                  }
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="empty">{{ 'partnerships.deliveryNoActivity' | t }}</p>
+          }
+        </section>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+}

@@ -1,0 +1,63 @@
+.programs-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 960px;
+}
+
+.program-name {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.program-name:hover {
+  color: var(--ra-accent);
+}
+
+.type-chip {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--ra-accent-soft);
+  color: var(--ra-accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.status-draft {
+  background: #eef1ef;
+  color: var(--ra-muted);
+}
+
+.status-active {
+  background: var(--ra-success-soft);
+  color: var(--ra-success);
+}
+
+.status-archived {
+  background: var(--ra-warning-soft);
+  color: var(--ra-warning);
+}
+
+.delivery-cell {
+  max-width: 220px;
+  color: var(--ra-muted);
+  font-size: var(--ra-body-sm);
+}
+
+.actions {
+  white-space: nowrap;
+}
+
+.actions a,
+.actions button {
+  min-width: 0;
+}

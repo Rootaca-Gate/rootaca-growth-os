@@ -11,34 +11,49 @@
       <span>{{ 'brand.product' | t }}</span>
     </div>
 
-    <nav>
+    <nav aria-label="Main">
       @for (section of nav; track section.titleKey) {
-        <p class="ra-kicker">{{ section.titleKey | t }}</p>
-        @for (item of section.items; track item.path) {
-          <a
-            [routerLink]="item.path"
-            routerLinkActive="active"
-            [routerLinkActiveOptions]="{ exact: item.exact === true }"
+        <div class="nav-section" [class.is-open]="isSectionExpanded(section)">
+          <button
+            type="button"
+            class="section-toggle"
+            [attr.aria-expanded]="isSectionExpanded(section)"
+            (click)="toggleSection(section, $event)"
           >
-            <mat-icon>{{ item.icon }}</mat-icon>
-            <span>{{ item.labelKey | t }}</span>
-          </a>
-        }
+            <span class="section-title">{{ section.titleKey | t }}</span>
+            <mat-icon class="chevron" aria-hidden="true">
+              {{ isSectionExpanded(section) ? 'expand_less' : 'expand_more' }}
+            </mat-icon>
+          </button>
+
+          @if (isSectionExpanded(section)) {
+            <div class="section-items">
+              @for (item of section.items; track item.path) {
+                <a
+                  [routerLink]="item.path"
+                  routerLinkActive="active"
+                  [routerLinkActiveOptions]="{ exact: item.exact === true }"
+                  [class.active]="isItemActive(item.path, item.exact)"
+                  (click)="onNavLinkClick()"
+                >
+                  <mat-icon>{{ item.icon }}</mat-icon>
+                  <span>{{ item.labelKey | t }}</span>
+                </a>
+              }
+            </div>
+          }
+        </div>
       }
     </nav>
 
     <div class="sidebar-footer">
-      @if (auth.currentUser(); as user) {
-        <div class="user">
-          <strong>{{ user.displayName }}</strong>
-          <span>{{ user.email }}</span>
-        </div>
-      }
-      <button type="button" (click)="toggleDirection()">
+      <button type="button" class="footer-action" (click)="toggleDirection()">
         {{ direction() === 'rtl' ? ('common.switchToEnglish' | t) : ('common.switchToArabic' | t) }}
       </button>
-      <a routerLink="/settings">{{ 'nav.settings' | t }}</a>
-      <button type="button" (click)="logout()">{{ 'nav.logout' | t }}</button>
+      @if (auth.currentUser(); as user) {
+        <a class="footer-email" [href]="'mailto:' + user.email">{{ user.email }}</a>
+      }
+      <button type="button" class="footer-action" (click)="logout()">{{ 'nav.logout' | t }}</button>
     </div>
   </mat-sidenav>
 

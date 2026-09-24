@@ -4,7 +4,7 @@ import { Component, input } from '@angular/core';
   selector: 'app-page-header',
   template: `
     <header class="page-header">
-      <div>
+      <div class="page-header__copy">
         @if (eyebrow()) {
           <p class="ra-kicker">{{ eyebrow() }}</p>
         }
@@ -24,28 +24,38 @@ import { Component, input } from '@angular/core';
       flex-wrap: wrap;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 16px;
-      margin-block-end: 28px;
+      gap: 16px 24px;
+      margin-block-end: var(--ra-section-gap, 28px);
+    }
+
+    .page-header__copy {
+      flex: 1 1 240px;
+      min-width: 0;
     }
 
     h1 {
       margin: 4px 0 0;
-      font-size: 1.75rem;
-      font-weight: 650;
+      font-size: var(--ra-title-page, 1.625rem);
+      font-weight: 700;
       letter-spacing: -0.03em;
-      line-height: 1.15;
+      line-height: 1.2;
+      color: var(--ra-text);
     }
 
     .subtitle {
       margin: 8px 0 0;
-      max-width: 46rem;
+      max-width: 42rem;
       color: var(--ra-muted);
-      line-height: 1.5;
+      font-size: var(--ra-body-sm, 0.875rem);
+      font-weight: 400;
+      line-height: 1.55;
     }
 
     .actions {
       display: flex;
       flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
       gap: 8px;
     }
 
@@ -55,7 +65,12 @@ import { Component, input } from '@angular/core';
         align-items: stretch;
       }
 
-      .page-header > div:first-child {
+      .actions {
+        justify-content: stretch;
+      }
+
+      .actions ::ng-deep a,
+      .actions ::ng-deep button {
         flex: 1 1 auto;
       }
     }

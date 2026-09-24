@@ -46,7 +46,7 @@ import { partnershipErrorMessage } from './partnership.util';
       }
     </app-page-header>
     <section class="ra-filters">
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>{{ 'common.status' | t }}</mat-label>
         <mat-select [formControl]="statusControl">
           <mat-option value="">{{ 'common.allStatuses' | t }}</mat-option>
@@ -55,7 +55,7 @@ import { partnershipErrorMessage } from './partnership.util';
           }
         </mat-select>
       </mat-form-field>
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>{{ 'partnerships.priority' | t }}</mat-label>
         <mat-select [formControl]="priorityControl">
           <mat-option value="">{{ 'common.allStatuses' | t }}</mat-option>
@@ -66,11 +66,11 @@ import { partnershipErrorMessage } from './partnership.util';
       </mat-form-field>
     </section>
     @if (loading()) {
-      <app-loading-skeleton [rows]="6" [label]="'partnerships.leadsLoading' | t" />
+      <app-loading-skeleton variant="table" [label]="'partnerships.leadsLoading' | t" />
     } @else if (errorMessage(); as message) {
       <app-error-state [title]="'partnerships.leadsLoadError' | t" [message]="message" (retry)="load()" />
     } @else if (result().items.length === 0) {
-      <app-empty-state [title]="'partnerships.leadsEmptyTitle' | t" [message]="'partnerships.leadsEmptyMessage' | t">
+      <app-empty-state icon="handshake" [title]="'partnerships.leadsEmptyTitle' | t" [message]="'partnerships.leadsEmptyMessage' | t">
         @if (permissions.canWrite()) {
           <a mat-flat-button color="primary" routerLink="/partnerships/institutions">{{ 'partnerships.addLead' | t }}</a>
         }

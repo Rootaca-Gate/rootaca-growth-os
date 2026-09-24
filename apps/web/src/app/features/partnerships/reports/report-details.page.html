@@ -8,6 +8,7 @@
   />
 } @else if (report(); as current) {
   <header class="profile-header">
+    <app-partnership-breadcrumbs [items]="breadcrumbs()" />
     <div class="eyebrow">{{ 'partnerships.reportsTitle' | t }}</div>
     <div class="header-row">
       <div class="titles">
@@ -265,7 +266,25 @@
   </section>
 
   <section class="panel cta-row">
-    <button mat-flat-button color="primary" type="button" (click)="createFollowOn('renewal')">
+    @if (permissions.canWrite()) {
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="busy()"
+        (click)="createRenewalOpportunity()"
+      >
+        {{ 'partnerships.createRenewalOpportunity' | t }}
+      </button>
+    }
+    <a
+      mat-stroked-button
+      [routerLink]="['/partnerships/renewals/new']"
+      [queryParams]="{ deliveryId: current.deliveryId, reportId: current.id, institutionId: current.institutionId, sowId: current.sowId, type: 'RENEWAL' }"
+    >
+      {{ 'partnerships.renewalsCreateFromSource' | t }}
+    </a>
+    <button mat-stroked-button type="button" (click)="createFollowOn('renewal')">
       {{ 'partnerships.deliveryCreateRenewal' | t }}
     </button>
     <button mat-stroked-button type="button" (click)="createFollowOn('expansion')">

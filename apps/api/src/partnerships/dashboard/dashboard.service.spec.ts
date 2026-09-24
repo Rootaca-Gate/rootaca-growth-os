@@ -17,6 +17,21 @@ describe('PartnershipDashboardService', () => {
     partnershipFollowUp: {
       count: jest.fn(),
     },
+    partnershipProposal: {
+      count: jest.fn(),
+    },
+    partnershipSow: {
+      count: jest.fn(),
+    },
+    partnershipDelivery: {
+      count: jest.fn(),
+    },
+    partnershipReport: {
+      count: jest.fn(),
+    },
+    partnershipOpportunity: {
+      count: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
@@ -43,6 +58,14 @@ describe('PartnershipDashboardService', () => {
       .mockResolvedValueOnce([{ governorate: 'Cairo', _count: { _all: 4 } }])
       .mockResolvedValueOnce([{ institutionType: 'SCHOOL', _count: { _all: 8 } }]);
     prisma.partnershipFollowUp.count.mockResolvedValueOnce(2).mockResolvedValueOnce(1);
+    prisma.partnershipProposal.count
+      .mockResolvedValueOnce(7)
+      .mockResolvedValueOnce(3)
+      .mockResolvedValueOnce(4);
+    prisma.partnershipSow.count.mockResolvedValueOnce(4).mockResolvedValueOnce(1);
+    prisma.partnershipDelivery.count.mockResolvedValueOnce(2).mockResolvedValueOnce(1);
+    prisma.partnershipReport.count.mockResolvedValueOnce(5).mockResolvedValueOnce(2);
+    prisma.partnershipOpportunity.count.mockResolvedValueOnce(6).mockResolvedValueOnce(3);
   });
 
   it('aggregates dashboard metrics without loading all rows', async () => {
@@ -53,6 +76,17 @@ describe('PartnershipDashboardService', () => {
     expect(result.meetings).toBe(2);
     expect(result.followUpsDueToday).toBe(2);
     expect(result.overdueFollowUps).toBe(1);
+    expect(result.proposalsTotal).toBe(7);
+    expect(result.proposalsAccepted).toBe(3);
+    expect(result.sowsActive).toBe(4);
+    expect(result.deliveriesActive).toBe(2);
+    expect(result.reportsPublished).toBe(5);
+    expect(result.renewalsOpen).toBe(6);
+    expect(result.attentionProposalFollowUp).toBe(4);
+    expect(result.attentionSowPendingSignature).toBe(1);
+    expect(result.attentionDeliveryPaused).toBe(1);
+    expect(result.attentionReportInReview).toBe(2);
+    expect(result.attentionRenewalPlanning).toBe(3);
     expect(result.institutionsByGovernorate[0]?.key).toBe('Cairo');
   });
 });

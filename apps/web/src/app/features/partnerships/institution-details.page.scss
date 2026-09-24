@@ -120,6 +120,78 @@ td {
   font-size: 0.9rem;
 }
 
+.hub {
+  padding: 8px 8px 4px;
+}
+
+.hub-panel {
+  padding: 16px 12px 8px;
+}
+
+.row-link {
+  color: var(--ra-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.row-link:hover {
+  text-decoration: underline;
+}
+
+.soft-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ra-accent) 12%, transparent);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.view-all {
+  display: inline-block;
+  margin-top: 12px;
+  color: var(--ra-accent);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.88rem;
+}
+
+.view-all:hover {
+  text-decoration: underline;
+}
+
+.hub-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.hub-timeline li {
+  padding-inline-start: 14px;
+  border-inline-start: 2px solid var(--ra-border);
+}
+
+.hub-timeline-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hub-timeline-date {
+  color: var(--ra-muted);
+  font-size: 0.8rem;
+}
+
+.hub-timeline-desc {
+  margin: 4px 0 0;
+  color: var(--ra-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
 @media (max-width: 720px) {
   .facts,
   .grid {

@@ -1,24 +1,40 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DirectionService } from '../../../core/direction.service';
 import { TPipe } from '../../../core/i18n/t.pipe';
+import { EmptyState } from '../../../shared/empty-state';
 import { ErrorState } from '../../../shared/error-state';
 import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 import { programEnumLabel } from '../partnership.labels';
 import { PartnershipProgram, ProgramRequirement } from '../partnership.models';
+import { OfferingListItem } from '../offerings/offering.models';
 import { usePartnershipPermissions } from '../partnership.permissions';
 import { PartnershipsApi } from '../partnerships.api';
 import { partnershipErrorMessage } from '../partnership.util';
 import { programFieldDisplay, skillTags } from './program-display';
 import { buildProgramPdfHtml, openProgramPdfWindow } from './program-pdf';
 import { buildProgramPdfLabels } from './program-pdf-labels';
+import {
+  PartnershipBreadcrumb,
+  PartnershipBreadcrumbs,
+  partnershipJourneyCrumbs,
+} from '../shared/partnership-breadcrumbs';
 
 @Component({
   selector: 'app-program-details-page',
-  imports: [DatePipe, RouterLink, MatButtonModule, ErrorState, LoadingSkeleton, TPipe],
+  imports: [
+    DatePipe,
+    RouterLink,
+    MatButtonModule,
+    EmptyState,
+    ErrorState,
+    LoadingSkeleton,
+    PartnershipBreadcrumbs,
+    TPipe,
+  ],
   templateUrl: './program-details.page.html',
   styleUrl: './program-details.page.scss',
 })
@@ -34,6 +50,21 @@ export class ProgramDetailsPage {
   readonly error = signal<string | null>(null);
   readonly archiving = signal(false);
   readonly program = signal<PartnershipProgram | null>(null);
+  readonly offerings = signal<OfferingListItem[]>([]);
+
+  readonly breadcrumbs = computed<PartnershipBreadcrumb[]>(() => {
+    const current = this.program();
+    if (!current) {
+      return [];
+    }
+    return partnershipJourneyCrumbs(
+      (key) => this.i18n.t(key),
+      'catalog',
+      'nav.programs',
+      '/partnerships/programs',
+      current.name || this.i18n.t('partnerships.breadcrumbProgram'),
+    );
+  });
 
   constructor() {
     this.reload();
@@ -53,11 +84,20 @@ export class ProgramDetailsPage {
       next: (program) => {
         this.program.set(program);
         this.loading.set(false);
+        this.loadOfferings(program.id);
       },
       error: (err: unknown) => {
         this.loading.set(false);
         this.error.set(partnershipErrorMessage(err, this.i18n.t('partnerships.programsLoadError')));
       },
+    });
+  }
+
+  private loadOfferings(programId: string): void {
+    this.offerings.set([]);
+    this.api.listOfferings({ programId, pageSize: 50 }).subscribe({
+      next: (page) => this.offerings.set(page.items),
+      error: () => this.offerings.set([]),
     });
   }
 

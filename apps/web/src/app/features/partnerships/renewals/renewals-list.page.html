@@ -1,0 +1,232 @@
+<app-page-header
+  [title]="'partnerships.renewalsTitle' | t"
+  [subtitle]="'partnerships.renewalsSubtitle' | t"
+>
+  @if (permissions.canWrite()) {
+    <a mat-flat-button color="primary" routerLink="/partnerships/renewals/new">{{
+      'partnerships.renewalsAdd' | t
+    }}</a>
+  }
+</app-page-header>
+
+@if (dashboard(); as stats) {
+  <section class="kpi-strip">
+    <article class="kpi-card">
+      <span class="kpi-value">{{ stats.open }}</span>
+      <span class="kpi-label">{{ 'partnerships.renewalsKpiOpen' | t }}</span>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-value">{{ stats.renewals }}</span>
+      <span class="kpi-label">{{ 'partnerships.renewalsKpiRenewals' | t }}</span>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-value">{{ stats.expansions }}</span>
+      <span class="kpi-label">{{ 'partnerships.renewalsKpiExpansions' | t }}</span>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-value">{{ stats.proposalDrafts }}</span>
+      <span class="kpi-label">{{ 'partnerships.renewalsKpiProposalDrafts' | t }}</span>
+    </article>
+    <article class="kpi-card">
+      <span class="kpi-value">{{ stats.converted }}</span>
+      <span class="kpi-label">{{ 'partnerships.renewalsKpiConverted' | t }}</span>
+    </article>
+    <article class="kpi-card kpi-highlight">
+      <span class="kpi-value">{{ stats.upcoming }}</span>
+      <span class="kpi-label">{{ 'partnerships.renewalsKpiUpcoming' | t }}</span>
+    </article>
+  </section>
+}
+
+@if (upcoming().length) {
+  <section class="panel upcoming-panel">
+    <h2>{{ 'partnerships.renewalsUpcomingTitle' | t }}</h2>
+    <div class="ra-table-wrap">
+      <table class="renewals-table">
+        <thead>
+          <tr>
+            <th>{{ 'partnerships.renewalsColOpportunity' | t }}</th>
+            <th>{{ 'partnerships.school' | t }}</th>
+            <th>{{ 'partnerships.renewalsColType' | t }}</th>
+            <th>{{ 'partnerships.renewalsColExpectedDate' | t }}</th>
+            <th>{{ 'common.status' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of upcoming(); track row.id) {
+            <tr>
+              <td>
+                <a class="report-link" [routerLink]="['/partnerships/renewals', row.id]">{{
+                  row.opportunityNumber
+                }}</a>
+                <div class="report-title">{{ row.title }}</div>
+              </td>
+              <td>{{ row.institutionName }}</td>
+              <td><span [class]="typeClass(row.type)">{{ oppLabel('type', row.type) }}</span></td>
+              <td class="nowrap">{{ dateText(row.expectedDate) }}</td>
+              <td><span [class]="statusClass(row.status)">{{ oppLabel('status', row.status) }}</span></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+}
+
+<app-filter-bar>
+  <app-search-input
+    search
+    [formControl]="searchControl"
+    [placeholder]="'partnerships.renewalsSearchPlaceholder' | t"
+    [ariaLabel]="'common.search' | t"
+    [clearLabel]="'common.clearSearch' | t"
+  />
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.school' | t }}</mat-label>
+    <mat-select [formControl]="institutionControl">
+      <mat-option value="">{{ 'partnerships.allInstitutions' | t }}</mat-option>
+      @for (item of institutions(); track item.id) {
+        <mat-option [value]="item.id">{{ item.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.renewalsOwner' | t }}</mat-label>
+    <mat-select [formControl]="ownerControl">
+      <mat-option value="">{{ 'partnerships.renewalsAllOwners' | t }}</mat-option>
+      @for (item of owners(); track item.id) {
+        <mat-option [value]="item.id">{{ item.displayName }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.renewalsColType' | t }}</mat-label>
+    <mat-select [formControl]="typeControl">
+      <mat-option value="">{{ 'partnerships.renewalsAllTypes' | t }}</mat-option>
+      @for (item of opportunityTypes; track item) {
+        <mat-option [value]="item">{{ oppLabel('type', item) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'common.status' | t }}</mat-label>
+    <mat-select [formControl]="statusControl">
+      <mat-option value="">{{ 'common.allStatuses' | t }}</mat-option>
+      @for (item of opportunityStatuses; track item) {
+        <mat-option [value]="item">{{ oppLabel('status', item) }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.renewalsExpectedFrom' | t }}</mat-label>
+    <input matInput type="date" [formControl]="dateFromControl" />
+  </mat-form-field>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>{{ 'partnerships.renewalsExpectedTo' | t }}</mat-label>
+    <input matInput type="date" [formControl]="dateToControl" />
+  </mat-form-field>
+  <button mat-stroked-button type="button" (click)="clearFilters()">
+    {{ 'common.clearFilters' | t }}
+  </button>
+</app-filter-bar>
+
+@if (loading()) {
+  <app-loading-skeleton variant="table" [label]="'partnerships.renewalsLoading' | t" />
+} @else if (errorMessage(); as message) {
+  <app-error-state
+    [title]="'partnerships.renewalsLoadError' | t"
+    [message]="message"
+    (retry)="load()"
+  />
+} @else if (result().items.length === 0) {
+  <app-empty-state
+    icon="autorenew"
+    [title]="'partnerships.renewalsEmptyTitle' | t"
+    [message]="'partnerships.renewalsEmptyMessage' | t"
+  >
+    @if (permissions.canWrite()) {
+      <a mat-flat-button color="primary" routerLink="/partnerships/renewals/new">{{
+        'partnerships.renewalsAdd' | t
+      }}</a>
+    }
+  </app-empty-state>
+} @else {
+  <div class="ra-results-meta">
+    <h2 class="ra-results-title">{{ 'partnerships.renewalsTitle' | t }}</h2>
+    <p class="ra-results-count">{{ 'common.resultsCount' | t: { count: result().total } }}</p>
+  </div>
+  <div class="ra-table-wrap renewals-table-wrap">
+    <table class="renewals-table">
+      <thead>
+        <tr>
+          <th>{{ 'partnerships.renewalsColOpportunity' | t }}</th>
+          <th>{{ 'partnerships.school' | t }}</th>
+          <th>{{ 'partnerships.renewalsColType' | t }}</th>
+          <th>{{ 'partnerships.renewalsColPrevious' | t }}</th>
+          <th>{{ 'partnerships.renewalsOwner' | t }}</th>
+          <th>{{ 'partnerships.renewalsColExpectedDate' | t }}</th>
+          <th>{{ 'common.status' | t }}</th>
+          <th>{{ 'common.actions' | t }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of result().items; track row.id) {
+          <tr>
+            <td>
+              <a class="report-link" [routerLink]="['/partnerships/renewals', row.id]">{{
+                row.opportunityNumber
+              }}</a>
+              <div class="report-title">{{ row.title }}</div>
+            </td>
+            <td>
+              <a class="muted-link" [routerLink]="['/partnerships/institutions', row.institutionId]">{{
+                row.institutionName
+              }}</a>
+            </td>
+            <td><span [class]="typeClass(row.type)">{{ oppLabel('type', row.type) }}</span></td>
+            <td>{{ previousPartnership(row) }}</td>
+            <td>{{ row.ownerName || '—' }}</td>
+            <td class="nowrap">{{ dateText(row.expectedDate) }}</td>
+            <td>
+              <span [class]="statusClass(row.status)">{{ oppLabel('status', row.status) }}</span>
+            </td>
+            <td class="actions">
+              <a mat-button [routerLink]="['/partnerships/renewals', row.id]">{{ 'common.view' | t }}</a>
+              @if (permissions.canWrite()) {
+                <a mat-button [routerLink]="['/partnerships/renewals', row.id, 'edit']">{{
+                  'common.edit' | t
+                }}</a>
+                @if (canCreateProposal(row)) {
+                  <button
+                    mat-button
+                    type="button"
+                    [disabled]="busyId() === row.id"
+                    (click)="createProposal(row, $event)"
+                  >
+                    {{ 'partnerships.renewalsCreateProposal' | t }}
+                  </button>
+                }
+                <button
+                  mat-button
+                  type="button"
+                  [disabled]="busyId() === row.id"
+                  (click)="archive(row, $event)"
+                >
+                  {{ 'partnerships.renewalsArchive' | t }}
+                </button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <mat-paginator
+    [length]="result().total"
+    [pageIndex]="result().page - 1"
+    [pageSize]="result().pageSize"
+    [pageSizeOptions]="[10, 20, 50]"
+    [attr.aria-label]="'partnerships.renewalsTitle' | t"
+    (page)="onPage($event)"
+  />
+}

@@ -8,7 +8,7 @@ import {
   PartnershipProgramLevel,
   PartnershipProposalStatus,
 } from '@prisma/client';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -24,6 +24,9 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
+
+const emptyToUndefined = ({ value }: { value: unknown }) =>
+  value === '' || value === null || value === undefined ? undefined : value;
 
 export class ProposalLineInputDto {
   @ApiPropertyOptional()
@@ -331,6 +334,12 @@ export class QueryProposalsDto {
   @IsOptional()
   @IsUUID()
   institutionId?: string;
+
+  @ApiPropertyOptional({ description: 'Filter proposals that include this offering.' })
+  @Transform(emptyToUndefined)
+  @IsOptional()
+  @IsUUID()
+  offeringId?: string;
 
   @ApiPropertyOptional({ enum: PartnershipProposalStatus })
   @IsOptional()

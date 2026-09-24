@@ -464,10 +464,47 @@ export type PartnershipDashboard = {
   noResponse: number;
   followUpsDueToday: number;
   overdueFollowUps: number;
+  proposalsTotal: number;
+  proposalsAccepted: number;
+  sowsActive: number;
+  deliveriesActive: number;
+  reportsPublished: number;
+  renewalsOpen: number;
+  attentionProposalFollowUp: number;
+  attentionSowPendingSignature: number;
+  attentionDeliveryPaused: number;
+  attentionReportInReview: number;
+  attentionRenewalPlanning: number;
   institutionsByGovernorate: NamedCount[];
   institutionsByType: NamedCount[];
   leadsByStatus: NamedCount[];
   leadsByPriority: NamedCount[];
+};
+
+export type PartnershipSearchHit = {
+  id: string;
+  label: string;
+  subtitle: string;
+  path: string;
+};
+
+export type PartnershipSearchGroup = {
+  group:
+    | 'institutions'
+    | 'contacts'
+    | 'leads'
+    | 'proposals'
+    | 'sows'
+    | 'deliveries'
+    | 'reports'
+    | 'renewals'
+    | string;
+  items: PartnershipSearchHit[];
+};
+
+export type PartnershipSearchResult = {
+  query: string;
+  groups: PartnershipSearchGroup[];
 };
 
 export type Source = {

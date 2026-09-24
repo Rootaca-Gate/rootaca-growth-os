@@ -3,6 +3,7 @@
 } @else if (error(); as message) {
   <app-error-state [title]="'partnerships.loadError' | t" [message]="message" (retry)="reload()" />
 } @else if (institution(); as current) {
+  <app-partnership-breadcrumbs [items]="breadcrumbs()" />
   <app-page-header [title]="current.name" [subtitle]="meta(current)">
     <a mat-stroked-button routerLink="/partnerships/institutions">{{ 'common.back' | t }}</a>
     @if (permissions.canWrite()) {
@@ -123,6 +124,244 @@
       }
     </section>
   }
+
+  <section class="ra-card block hub">
+    <mat-tab-group animationDuration="200ms" [dir]="i18n.direction()">
+      <mat-tab [label]="'partnerships.institutionHubProposals' | t">
+        <div class="hub-panel">
+          @if (proposals().length === 0) {
+            <app-empty-state
+              [title]="'partnerships.institutionHubProposalsEmptyTitle' | t"
+              [message]="'partnerships.institutionHubProposalsEmptyMessage' | t"
+              icon="description"
+            >
+              @if (permissions.canWrite()) {
+                <a
+                  mat-flat-button
+                  color="primary"
+                  routerLink="/partnerships/proposals/new"
+                  [queryParams]="{ institutionId: current.id }"
+                  >{{ 'partnerships.institutionHubCreateProposal' | t }}</a
+                >
+              }
+            </app-empty-state>
+          } @else {
+            <div class="ra-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{{ 'partnerships.proposalNumber' | t }}</th>
+                    <th>{{ 'common.title' | t }}</th>
+                    <th>{{ 'common.status' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of proposals(); track row.id) {
+                    <tr>
+                      <td>
+                        <a class="row-link" [routerLink]="['/partnerships/proposals', row.id]">{{
+                          row.proposalNumber
+                        }}</a>
+                      </td>
+                      <td>{{ row.title }}</td>
+                      <td><span class="soft-badge">{{ label(row.status) }}</span></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <a class="view-all" routerLink="/partnerships/proposals" [queryParams]="{ institutionId: current.id }">{{
+              'partnerships.institutionHubViewAll' | t
+            }}</a>
+          }
+        </div>
+      </mat-tab>
+
+      <mat-tab [label]="'partnerships.institutionHubSows' | t">
+        <div class="hub-panel">
+          @if (sows().length === 0) {
+            <app-empty-state
+              [title]="'partnerships.institutionHubSowsEmptyTitle' | t"
+              [message]="'partnerships.institutionHubSowsEmptyMessage' | t"
+              icon="assignment"
+            />
+          } @else {
+            <div class="ra-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{{ 'partnerships.sowNumber' | t }}</th>
+                    <th>{{ 'common.title' | t }}</th>
+                    <th>{{ 'common.status' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of sows(); track row.id) {
+                    <tr>
+                      <td>
+                        <a class="row-link" [routerLink]="['/partnerships/sows', row.id]">{{ row.sowNumber }}</a>
+                      </td>
+                      <td>{{ row.title }}</td>
+                      <td><span class="soft-badge">{{ label(row.status) }}</span></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <a class="view-all" routerLink="/partnerships/sows" [queryParams]="{ institutionId: current.id }">{{
+              'partnerships.institutionHubViewAll' | t
+            }}</a>
+          }
+        </div>
+      </mat-tab>
+
+      <mat-tab [label]="'partnerships.institutionHubDeliveries' | t">
+        <div class="hub-panel">
+          @if (deliveries().length === 0) {
+            <app-empty-state
+              [title]="'partnerships.institutionHubDeliveriesEmptyTitle' | t"
+              [message]="'partnerships.institutionHubDeliveriesEmptyMessage' | t"
+              icon="local_shipping"
+            />
+          } @else {
+            <div class="ra-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{{ 'partnerships.deliveryNumber' | t }}</th>
+                    <th>{{ 'common.name' | t }}</th>
+                    <th>{{ 'common.status' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of deliveries(); track row.id) {
+                    <tr>
+                      <td>
+                        <a class="row-link" [routerLink]="['/partnerships/delivery', row.id]">{{
+                          row.deliveryNumber
+                        }}</a>
+                      </td>
+                      <td>{{ row.name }}</td>
+                      <td><span class="soft-badge">{{ label(row.status) }}</span></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <a class="view-all" routerLink="/partnerships/delivery" [queryParams]="{ institutionId: current.id }">{{
+              'partnerships.institutionHubViewAll' | t
+            }}</a>
+          }
+        </div>
+      </mat-tab>
+
+      <mat-tab [label]="'partnerships.institutionHubReports' | t">
+        <div class="hub-panel">
+          @if (reports().length === 0) {
+            <app-empty-state
+              [title]="'partnerships.institutionHubReportsEmptyTitle' | t"
+              [message]="'partnerships.institutionHubReportsEmptyMessage' | t"
+              icon="summarize"
+            />
+          } @else {
+            <div class="ra-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{{ 'partnerships.reportsColReport' | t }}</th>
+                    <th>{{ 'common.title' | t }}</th>
+                    <th>{{ 'common.status' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of reports(); track row.id) {
+                    <tr>
+                      <td>
+                        <a class="row-link" [routerLink]="['/partnerships/reports', row.id]">{{
+                          row.reportNumber
+                        }}</a>
+                      </td>
+                      <td>{{ row.title }}</td>
+                      <td><span class="soft-badge">{{ label(row.status) }}</span></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <a class="view-all" routerLink="/partnerships/reports" [queryParams]="{ institutionId: current.id }">{{
+              'partnerships.institutionHubViewAll' | t
+            }}</a>
+          }
+        </div>
+      </mat-tab>
+
+      <mat-tab [label]="'partnerships.institutionHubRenewals' | t">
+        <div class="hub-panel">
+          @if (opportunities().length === 0) {
+            <app-empty-state
+              [title]="'partnerships.institutionHubRenewalsEmptyTitle' | t"
+              [message]="'partnerships.institutionHubRenewalsEmptyMessage' | t"
+              icon="autorenew"
+            />
+          } @else {
+            <div class="ra-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{{ 'partnerships.renewalsColOpportunity' | t }}</th>
+                    <th>{{ 'common.title' | t }}</th>
+                    <th>{{ 'common.status' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of opportunities(); track row.id) {
+                    <tr>
+                      <td>
+                        <a class="row-link" [routerLink]="['/partnerships/renewals', row.id]">{{
+                          row.opportunityNumber
+                        }}</a>
+                      </td>
+                      <td>{{ row.title }}</td>
+                      <td><span class="soft-badge">{{ label(row.status) }}</span></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <a class="view-all" routerLink="/partnerships/renewals" [queryParams]="{ institutionId: current.id }">{{
+              'partnerships.institutionHubViewAll' | t
+            }}</a>
+          }
+        </div>
+      </mat-tab>
+
+      <mat-tab [label]="'partnerships.institutionHubActivity' | t">
+        <div class="hub-panel">
+          @if (timeline().length === 0) {
+            <app-empty-state
+              [title]="'partnerships.institutionHubActivityEmptyTitle' | t"
+              [message]="'partnerships.institutionHubActivityEmptyMessage' | t"
+              icon="timeline"
+            />
+          } @else {
+            <ul class="hub-timeline">
+              @for (item of timeline(); track item.id) {
+                <li>
+                  <div class="hub-timeline-head">
+                    <strong>{{ item.title }}</strong>
+                    <span class="hub-timeline-date">{{ item.date | date: 'medium' }}</span>
+                  </div>
+                  @if (item.description) {
+                    <p class="hub-timeline-desc">{{ item.description }}</p>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </section>
 
   <section class="ra-card block">
     <h2>{{ 'partnerships.overview' | t }}</h2>

@@ -13,7 +13,11 @@
 
     <nav aria-label="Main">
       @for (section of nav; track section.titleKey) {
-        <div class="nav-section" [class.is-open]="isSectionExpanded(section)">
+        <div
+          class="nav-section"
+          [class.is-open]="isSectionExpanded(section)"
+          [class.is-partnerships]="section.showJourney"
+        >
           <button
             type="button"
             class="section-toggle"
@@ -27,18 +31,58 @@
           </button>
 
           @if (isSectionExpanded(section)) {
+            @if (section.showJourney) {
+              <div class="journey" aria-hidden="true">
+                @for (step of journeySteps; track step; let last = $last) {
+                  <span class="journey-step">{{ step | t }}</span>
+                  @if (!last) {
+                    <span class="journey-arrow">↓</span>
+                  }
+                }
+              </div>
+            }
+
             <div class="section-items">
-              @for (item of section.items; track item.path) {
-                <a
-                  [routerLink]="item.path"
-                  routerLinkActive="active"
-                  [routerLinkActiveOptions]="{ exact: item.exact === true }"
-                  [class.active]="isItemActive(item.path, item.exact)"
-                  (click)="onNavLinkClick()"
-                >
-                  <mat-icon>{{ item.icon }}</mat-icon>
-                  <span>{{ item.labelKey | t }}</span>
-                </a>
+              @if (section.groups; as groups) {
+                @for (group of groups; track group.titleKey) {
+                  <div class="nav-group">
+                    <div class="group-header">
+                      @if (group.stage) {
+                        <span class="group-stage">{{ group.stage }}</span>
+                      }
+                      <span class="group-title">{{ group.titleKey | t }}</span>
+                    </div>
+                    @for (item of group.items; track item.path) {
+                      <a
+                        [routerLink]="item.path"
+                        routerLinkActive="active"
+                        [routerLinkActiveOptions]="{ exact: item.exact === true }"
+                        [class.active]="isItemActive(item.path, item.exact)"
+                        [matTooltip]="item.labelKey | t"
+                        matTooltipShowDelay="400"
+                        (click)="onNavLinkClick()"
+                      >
+                        <mat-icon>{{ item.icon }}</mat-icon>
+                        <span>{{ item.labelKey | t }}</span>
+                      </a>
+                    }
+                  </div>
+                }
+              } @else {
+                @for (item of section.items; track item.path) {
+                  <a
+                    [routerLink]="item.path"
+                    routerLinkActive="active"
+                    [routerLinkActiveOptions]="{ exact: item.exact === true }"
+                    [class.active]="isItemActive(item.path, item.exact)"
+                    [matTooltip]="item.labelKey | t"
+                    matTooltipShowDelay="400"
+                    (click)="onNavLinkClick()"
+                  >
+                    <mat-icon>{{ item.icon }}</mat-icon>
+                    <span>{{ item.labelKey | t }}</span>
+                  </a>
+                }
               }
             </div>
           }
@@ -47,12 +91,21 @@
     </nav>
 
     <div class="sidebar-footer">
+      <div class="footer-brand">
+        <strong>{{ 'nav.adminBrand' | t }}</strong>
+        @if (auth.currentUser(); as user) {
+          <a class="footer-email" [href]="'mailto:' + user.email">{{ user.email }}</a>
+        }
+      </div>
       <button type="button" class="footer-action" (click)="toggleDirection()">
         {{ direction() === 'rtl' ? ('common.switchToEnglish' | t) : ('common.switchToArabic' | t) }}
       </button>
-      @if (auth.currentUser(); as user) {
-        <a class="footer-email" [href]="'mailto:' + user.email">{{ user.email }}</a>
-      }
+      <a
+        class="footer-action footer-link"
+        routerLink="/settings"
+        (click)="onNavLinkClick()"
+        >{{ 'nav.settings' | t }}</a
+      >
       <button type="button" class="footer-action" (click)="logout()">{{ 'nav.logout' | t }}</button>
     </div>
   </mat-sidenav>

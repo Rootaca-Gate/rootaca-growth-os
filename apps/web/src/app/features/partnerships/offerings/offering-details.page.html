@@ -8,6 +8,7 @@
   />
 } @else if (offering(); as current) {
   <header class="profile-header">
+    <app-partnership-breadcrumbs [items]="breadcrumbs()" />
     <div class="eyebrow">{{ 'partnerships.schoolPartnershipOffering' | t }}</div>
     <div class="header-row">
       <div class="titles">
@@ -374,6 +375,49 @@
           </article>
         }
       </div>
+    }
+  </section>
+
+  <section class="profile-card">
+    <h2>{{ 'partnerships.offeringProposalsTitle' | t }}</h2>
+    <p class="empty">{{ 'partnerships.offeringProposalsSubtitle' | t }}</p>
+    @if (usedInProposals().length) {
+      <div class="ra-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>{{ 'partnerships.proposalNumber' | t }}</th>
+              <th>{{ 'common.title' | t }}</th>
+              <th>{{ 'partnerships.school' | t }}</th>
+              <th>{{ 'common.status' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (proposal of usedInProposals(); track proposal.id) {
+              <tr>
+                <td>
+                  <a [routerLink]="['/partnerships/proposals', proposal.id]">{{
+                    proposal.proposalNumber
+                  }}</a>
+                </td>
+                <td>{{ proposal.title }}</td>
+                <td>
+                  <a [routerLink]="['/partnerships/institutions', proposal.institutionId]">{{
+                    proposal.institutionName
+                  }}</a>
+                </td>
+                <td>{{ proposalLabel('status', proposal.status) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <app-empty-state
+        icon="request_quote"
+        [title]="'partnerships.offeringProposalsEmptyTitle' | t"
+        [message]="'partnerships.offeringProposalsEmptyMessage' | t"
+      />
     }
   </section>
 }

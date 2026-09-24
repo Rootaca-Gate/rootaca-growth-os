@@ -8,6 +8,8 @@ import { DeliveriesController } from './delivery/deliveries.controller';
 import { DeliveriesService } from './delivery/deliveries.service';
 import { ReportsController } from './reports/reports.controller';
 import { ReportsService } from './reports/reports.service';
+import { RenewalsController } from './renewals/renewals.controller';
+import { RenewalsService } from './renewals/renewals.service';
 import { PartnershipDashboardController } from './dashboard/dashboard.controller';
 import { PartnershipDashboardService } from './dashboard/dashboard.service';
 import { FollowUpsController } from './followups/followups.controller';
@@ -50,6 +52,7 @@ import { TimelineService } from './timeline/timeline.service';
     SowsController,
     DeliveriesController,
     ReportsController,
+    RenewalsController,
     TimelineController,
     PartnershipDashboardController,
     ImportController,
@@ -70,6 +73,7 @@ import { TimelineService } from './timeline/timeline.service';
     SowsService,
     DeliveriesService,
     ReportsService,
+    RenewalsService,
     TimelineService,
     PartnershipDashboardService,
     ImportService,

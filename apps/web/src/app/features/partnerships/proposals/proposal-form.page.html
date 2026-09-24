@@ -21,6 +21,15 @@
     <button mat-stroked-button type="button" (click)="cancel()">{{ 'common.back' | t }}</button>
   </app-page-header>
 
+  @if (opportunityId) {
+    <div class="meta-banner">
+      <span>{{ 'partnerships.renewalsProposalFromOpportunity' | t }}</span>
+      <a [routerLink]="['/partnerships/renewals', opportunityId]">{{
+        'partnerships.renewalsBackToOpportunity' | t
+      }}</a>
+    </div>
+  }
+
   @if (proposalMeta(); as meta) {
     <div class="meta-banner">
       <span>{{ meta.proposalNumber }}</span>

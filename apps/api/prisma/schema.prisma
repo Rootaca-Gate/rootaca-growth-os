@@ -133,6 +133,9 @@ model User {
   partnershipReportsPublished    PartnershipReport[]              @relation("PartnershipReportPublishedBy")
   partnershipReportVersions      PartnershipReportVersion[]       @relation("PartnershipReportVersionAuthor")
   partnershipReportActivityLogs  PartnershipReportActivityLog[]   @relation("PartnershipReportActivityActor")
+  partnershipOpportunitiesOwned  PartnershipOpportunity[]         @relation("PartnershipOpportunityOwner")
+  partnershipOpportunityTimeline PartnershipOpportunityTimelineEvent[] @relation("PartnershipOpportunityTimelineActor")
+  partnershipOpportunityActivityLogs PartnershipOpportunityActivityLog[] @relation("PartnershipOpportunityActivityActor")
 
   @@index([role])
 }
@@ -717,7 +720,7 @@ model ProgressReview {
 
 // ---------------------------------------------------------------------------
 // Partnership CRM (School Partnerships)
-// Additive domain — does not alter Growth OS student/learning models.
+// Additive domain â does not alter Growth OS student/learning models.
 // Delete policy: Restrict on institution/contact/lead parents so CRM history
 // is never cascade-wiped. Optional FKs use SetNull. User refs use Restrict
 // (or SetNull where optional) so users cannot be removed while CRM rows exist.
@@ -883,6 +886,7 @@ enum PartnershipAuditEntityType {
   SOW
   DELIVERY
   REPORT
+  OPPORTUNITY
 }
 
 enum PartnershipAuditAction {
@@ -958,6 +962,16 @@ enum PartnershipAuditAction {
   REPORT_PDF_GENERATED
   REPORT_ARCHIVED
   REPORT_DUPLICATED
+  OPPORTUNITY_CREATED
+  OPPORTUNITY_UPDATED
+  OPPORTUNITY_STATUS_CHANGED
+  OPPORTUNITY_PROPOSAL_CREATED
+  OPPORTUNITY_PROPOSAL_LINKED
+  OPPORTUNITY_PROPOSAL_ACCEPTED
+  OPPORTUNITY_SOW_CREATED
+  OPPORTUNITY_CONVERTED
+  OPPORTUNITY_CLOSED
+  OPPORTUNITY_ARCHIVED
 }
 
 model PartnershipSource {
@@ -1041,6 +1055,8 @@ model PartnershipInstitution {
   sows                    PartnershipSow[]
   deliveries              PartnershipDelivery[]
   partnershipReports      PartnershipReport[]
+  opportunitiesAsSchool   PartnershipOpportunity[] @relation("OpportunityInstitution")
+  opportunitiesAsCampus   PartnershipOpportunity[] @relation("OpportunityCampus")
 
   @@index([status])
   @@index([institutionType])
@@ -1256,7 +1272,7 @@ enum PartnershipImportRowResult {
   INVALID
 }
 
-/// Staged CSV import job (preview → decisions → execute). File bytes are not retained.
+/// Staged CSV import job (preview â decisions â execute). File bytes are not retained.
 model PartnershipImportJob {
   id            String                  @id @default(uuid()) @db.Uuid
   fileName      String
@@ -1565,7 +1581,7 @@ enum PartnershipProgramDocumentStatus {
 //     recommendedLevel, learnerProfile) when non-null;
 //   * describe commercial/delivery logistics (duration, sessions, groups...);
 //   * optionally narrow the inherited curriculum via selection join tables.
-// Offerings intentionally carry NO pricing data — only an internal
+// Offerings intentionally carry NO pricing data â only an internal
 // commercialNotes string. See offerings.service.ts for the read-time
 // inheritance resolution rules.
 
@@ -1755,7 +1771,7 @@ model PartnershipProgramDocument {
 model PartnershipOffering {
   id        String                    @id @default(uuid()) @db.Uuid
   name      String
-  // Live link to the source program — always resolve the latest program row
+  // Live link to the source program â always resolve the latest program row
   // for any inherited field. Restrict prevents deleting a program that still
   // has offerings hanging off it.
   programId String                    @db.Uuid
@@ -1800,7 +1816,7 @@ model PartnershipOffering {
   studentProgressReport    Boolean @default(true)
   schoolSummaryReport      Boolean @default(true)
 
-  // --- Internal / commercial (NO pricing — commercialNotes is a plain note) ---
+  // --- Internal / commercial (NO pricing â commercialNotes is a plain note) ---
   internalNotes   String @default("")
   commercialNotes String @default("")
   displayOrder    Int    @default(0)
@@ -1873,7 +1889,7 @@ model PartnershipOfferingRequirement {
 // Offerings remain live-linked for admin editing while DRAFT; at send time
 // (and whenever a line is added) we freeze an immutable offering snapshot so
 // later Program/Offering edits never mutate a sent proposal.
-// Pricing lives ONLY here — never on Program or Offering.
+// Pricing lives ONLY here â never on Program or Offering.
 
 enum PartnershipProposalStatus {
   DRAFT
@@ -1929,7 +1945,7 @@ model PartnershipProposal {
   startDate DateTime?
   endDate   DateTime?
 
-  // Commercial header — currency has NO default (must be set explicitly)
+  // Commercial header â currency has NO default (must be set explicitly)
   currency            String?
   taxEnabled          Boolean                   @default(false)
   taxRate             Decimal?                  @db.Decimal(8, 4)
@@ -1948,7 +1964,7 @@ model PartnershipProposal {
 
   sentAt     DateTime?
   viewedAt   DateTime?
-  // Locked once sent (or beyond) — edits require a new version / draft revision
+  // Locked once sent (or beyond) â edits require a new version / draft revision
   isLocked   Boolean   @default(false)
   archivedAt DateTime?
 
@@ -1962,6 +1978,8 @@ model PartnershipProposal {
   sows           PartnershipSow[]
   deliveries     PartnershipDelivery[]
   partnershipReports PartnershipReport[]
+  opportunitiesAsPrevious PartnershipOpportunity[] @relation("OpportunityPreviousProposal")
+  opportunitiesAsNew      PartnershipOpportunity[] @relation("OpportunityNewProposal")
 
   @@index([institutionId])
   @@index([status])
@@ -2064,10 +2082,10 @@ model PartnershipProposalVersion {
 }
 
 // =============================================================================
-// PartnershipSow — Statement of Work (execution agreement after approved Proposal)
+// PartnershipSow â Statement of Work (execution agreement after approved Proposal)
 // Program = what we offer | Offering = how we deliver | Proposal = commercial offer
 // SOW = what was agreed and how it will be executed. Do not mix layers.
-// Pricing is NEVER recalculated here — commercial reference only from Proposal.
+// Pricing is NEVER recalculated here â commercial reference only from Proposal.
 // =============================================================================
 
 enum PartnershipSowStatus {
@@ -2142,7 +2160,7 @@ model PartnershipSow {
   assessmentNotes     String @default("")
   reportingNotes      String @default("")
 
-  // Parties — copied from institution/proposal at create; never invent
+  // Parties â copied from institution/proposal at create; never invent
   clientName          String @default("")
   clientAddress       String @default("")
   primaryContactName  String @default("")
@@ -2164,10 +2182,10 @@ model PartnershipSow {
   accountsAccessRequirements  String @default("")
   facultyLiaisonRequirements  String @default("")
 
-  // Terms (configurable template content — not invented legal wording)
+  // Terms (configurable template content â not invented legal wording)
   termsAndConditions String @default("")
 
-  // Commercial reference snapshot from Proposal (display only — no recalculation)
+  // Commercial reference snapshot from Proposal (display only â no recalculation)
   proposalNumberSnapshot String  @default("")
   agreedValueSnapshot    Decimal? @db.Decimal(14, 2)
   currencySnapshot       String?
@@ -2201,6 +2219,8 @@ model PartnershipSow {
   versions         PartnershipSowVersion[]
   deliveries       PartnershipDelivery[]
   partnershipReports PartnershipReport[]
+  opportunitiesAsPrevious PartnershipOpportunity[] @relation("OpportunityPreviousSow")
+  opportunitiesAsNewSow   PartnershipOpportunity[] @relation("OpportunityNewSow")
 
   @@index([institutionId])
   @@index([proposalId])
@@ -2363,7 +2383,7 @@ model PartnershipSowVersion {
 }
 
 // =============================================================================
-// PartnershipDelivery — Execution plan after Active SOW
+// PartnershipDelivery â Execution plan after Active SOW
 // Does NOT duplicate Program/Offering/Proposal/SOW. Snapshots scope at create.
 // Progress is COMPUTED from phases/milestones/tasks/sessions/deliverables.
 // =============================================================================
@@ -2551,6 +2571,7 @@ model PartnershipDelivery {
   documents       PartnershipDeliveryDocument[]
   activityLogs    PartnershipDeliveryActivityLog[]
   partnershipReports PartnershipReport[]
+  opportunitiesAsPrevious PartnershipOpportunity[] @relation("OpportunityPreviousDelivery")
 
   @@index([institutionId])
   @@index([sowId])
@@ -2878,7 +2899,7 @@ model PartnershipDeliveryActivityLog {
 }
 
 // =============================================================================
-// Partnership Reports (lifecycle � Outcome Layer after Delivery)
+// Partnership Reports (lifecycle ï¿½ Outcome Layer after Delivery)
 // Aggregates Delivery execution data. Never mutates Program/Offering/Proposal/SOW/Delivery.
 // Distinct from PartnershipDeliveryReport (operational artifacts attached to a delivery).
 // =============================================================================
@@ -2904,7 +2925,7 @@ enum PartnershipReportRecommendationPriority {
   HIGH
 }
 
-/// Student progress row status � computed from measurable delivery data only.
+/// Student progress row status ï¿½ computed from measurable delivery data only.
 enum PartnershipReportStudentTrackStatus {
   ON_TRACK
   NEEDS_ATTENTION
@@ -2941,7 +2962,7 @@ model PartnershipReport {
   periodLabel String @default("")
   preparedBy  String @default("")
 
-  // Editable narrative (manual � not invented)
+  // Editable narrative (manual ï¿½ not invented)
   executiveSummary String @default("")
   achievements     String @default("")
   nextSteps        String @default("")
@@ -2963,6 +2984,7 @@ model PartnershipReport {
   recommendations PartnershipReportRecommendation[]
   versions        PartnershipReportVersion[]
   activityLogs    PartnershipReportActivityLog[]
+  opportunitiesAsPrevious PartnershipOpportunity[] @relation("OpportunityPreviousReport")
 
   @@index([institutionId])
   @@index([deliveryId])
@@ -3021,5 +3043,178 @@ model PartnershipReportActivityLog {
   createdAt     DateTime          @default(now())
 
   @@index([reportId, createdAt])
+  @@index([performedById])
+}
+
+enum PartnershipOpportunityType {
+  RENEWAL
+  EXPANSION
+  RENEWAL_AND_EXPANSION
+}
+
+enum PartnershipOpportunityStatus {
+  IDENTIFIED
+  PLANNING
+  PROPOSAL_DRAFT
+  PROPOSAL_SENT
+  NEGOTIATION
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CONVERTED
+  CLOSED
+}
+
+enum PartnershipOpportunityExpansionKind {
+  NEW_PROGRAM
+  MORE_STUDENTS
+  MORE_GROUPS
+  NEW_GRADES
+  NEW_CAMPUS
+  NEW_DELIVERY_FORMAT
+  EXTENDED_DURATION
+  CUSTOMIZED_PROGRAM
+}
+
+enum PartnershipOpportunityTimelineKind {
+  OPPORTUNITY_CREATED
+  PREVIOUS_REPORT_REVIEWED
+  SCHOOL_CONTACTED
+  MEETING
+  REQUIREMENT_RECEIVED
+  PROPOSAL_CREATED
+  PROPOSAL_SENT
+  NEGOTIATION
+  ACCEPTED
+  REJECTED
+  CONVERTED
+  CLOSED
+  CUSTOM
+}
+
+model PartnershipOpportunity {
+  id                String                       @id @default(uuid()) @db.Uuid
+  opportunityNumber String                       @unique
+  title             String
+  type              PartnershipOpportunityType
+  status            PartnershipOpportunityStatus @default(IDENTIFIED)
+
+  institutionId       String                 @db.Uuid
+  institution         PartnershipInstitution @relation("OpportunityInstitution", fields: [institutionId], references: [id], onDelete: Restrict)
+  campusInstitutionId String?                @db.Uuid
+  campusInstitution   PartnershipInstitution? @relation("OpportunityCampus", fields: [campusInstitutionId], references: [id], onDelete: SetNull)
+
+  previousProposalId String?             @db.Uuid
+  previousProposal   PartnershipProposal? @relation("OpportunityPreviousProposal", fields: [previousProposalId], references: [id], onDelete: SetNull)
+  previousSowId      String?             @db.Uuid
+  previousSow        PartnershipSow?      @relation("OpportunityPreviousSow", fields: [previousSowId], references: [id], onDelete: SetNull)
+  previousDeliveryId String?             @db.Uuid
+  previousDelivery   PartnershipDelivery? @relation("OpportunityPreviousDelivery", fields: [previousDeliveryId], references: [id], onDelete: SetNull)
+  previousReportId   String?             @db.Uuid
+  previousReport     PartnershipReport?   @relation("OpportunityPreviousReport", fields: [previousReportId], references: [id], onDelete: SetNull)
+
+  newProposalId String?             @db.Uuid
+  newProposal   PartnershipProposal? @relation("OpportunityNewProposal", fields: [newProposalId], references: [id], onDelete: SetNull)
+  newSowId      String?             @db.Uuid
+  newSow        PartnershipSow?      @relation("OpportunityNewSow", fields: [newSowId], references: [id], onDelete: SetNull)
+
+  ownerId String? @db.Uuid
+  owner   User?   @relation("PartnershipOpportunityOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  expectedDate       DateTime?
+  historicalSnapshot Json?
+  renewalProgramIds  Json?
+  renewalOfferingIds Json?
+
+  renewalGrades       String @default("")
+  renewalGroupsNote   String @default("")
+  renewalDurationNote String @default("")
+  renewalDeliveryMode String @default("")
+  renewalScopeNotes   String @default("")
+  expansionScopeNotes String @default("")
+  proposedScopeNotes  String @default("")
+  existingScopeNotes  String @default("")
+
+  reason           String @default("")
+  schoolFeedback   String @default("")
+  successFactors   String @default("")
+  challenges       String @default("")
+  requestedChanges String @default("")
+  internalNotes    String @default("")
+  nextSteps        String @default("")
+
+  feedbackSummary           String   @default("")
+  feedbackScore             Decimal? @db.Decimal(4, 2)
+  feedbackRequestedPrograms String   @default("")
+  feedbackRequestedChanges  String   @default("")
+  feedbackKeyComments       String   @default("")
+  feedbackDate              DateTime?
+  feedbackRecordedBy        String   @default("")
+
+  archivedAt  DateTime?
+  convertedAt DateTime?
+  closedAt    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  expansionKinds PartnershipOpportunityExpansionType[]
+  timeline       PartnershipOpportunityTimelineEvent[]
+  activityLogs   PartnershipOpportunityActivityLog[]
+
+  @@index([institutionId])
+  @@index([campusInstitutionId])
+  @@index([previousProposalId])
+  @@index([previousSowId])
+  @@index([previousDeliveryId])
+  @@index([previousReportId])
+  @@index([newProposalId])
+  @@index([newSowId])
+  @@index([ownerId])
+  @@index([type])
+  @@index([status])
+  @@index([expectedDate])
+  @@index([createdAt])
+  @@index([title])
+}
+
+model PartnershipOpportunityExpansionType {
+  id            String                              @id @default(uuid()) @db.Uuid
+  opportunityId String                              @db.Uuid
+  opportunity   PartnershipOpportunity              @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  kind          PartnershipOpportunityExpansionKind
+  notes         String                              @default("")
+  sortOrder     Int                                 @default(0)
+
+  @@unique([opportunityId, kind])
+  @@index([opportunityId, sortOrder])
+}
+
+model PartnershipOpportunityTimelineEvent {
+  id            String                             @id @default(uuid()) @db.Uuid
+  opportunityId String                             @db.Uuid
+  opportunity   PartnershipOpportunity             @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  kind          PartnershipOpportunityTimelineKind
+  occurredAt    DateTime                           @default(now())
+  note          String                             @default("")
+  performedById String?                            @db.Uuid
+  performedBy   User?                              @relation("PartnershipOpportunityTimelineActor", fields: [performedById], references: [id], onDelete: SetNull)
+  createdAt     DateTime                           @default(now())
+
+  @@index([opportunityId, occurredAt])
+  @@index([performedById])
+}
+
+model PartnershipOpportunityActivityLog {
+  id            String                 @id @default(uuid()) @db.Uuid
+  opportunityId String                 @db.Uuid
+  opportunity   PartnershipOpportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  action        String
+  summary       String                 @default("")
+  metadata      Json?
+  performedById String?                @db.Uuid
+  performedBy   User?                  @relation("PartnershipOpportunityActivityActor", fields: [performedById], references: [id], onDelete: SetNull)
+  createdAt     DateTime               @default(now())
+
+  @@index([opportunityId, createdAt])
   @@index([performedById])
 }

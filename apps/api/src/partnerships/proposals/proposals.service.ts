@@ -805,6 +805,9 @@ export class ProposalsService {
     if (query.institutionId) {
       and.push({ institutionId: query.institutionId });
     }
+    if (query.offeringId) {
+      and.push({ offerings: { some: { offeringId: query.offeringId } } });
+    }
     if (query.status) {
       and.push({ status: query.status });
     }

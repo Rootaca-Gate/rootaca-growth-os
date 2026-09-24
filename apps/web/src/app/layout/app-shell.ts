@@ -4,12 +4,19 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { AuthService } from '../core/auth/auth.service';
 import { DirectionService } from '../core/direction.service';
 import { TPipe } from '../core/i18n/t.pipe';
-import { APP_NAV, findActiveNavSection, isNavItemActive, NavSection } from './nav';
+import {
+  APP_NAV,
+  PARTNERSHIP_JOURNEY_STEPS,
+  findActiveNavSection,
+  isNavItemActive,
+  NavSection,
+} from './nav';
 
 @Component({
   selector: 'app-shell',
@@ -20,6 +27,7 @@ import { APP_NAV, findActiveNavSection, isNavItemActive, NavSection } from './na
     MatSidenavModule,
     MatButtonModule,
     MatIconModule,
+    MatTooltipModule,
     TPipe,
   ],
   templateUrl: './app-shell.html',
@@ -33,6 +41,7 @@ export class AppShell {
   readonly i18n = this.directionService;
   readonly direction = this.directionService.direction;
   readonly nav = APP_NAV;
+  readonly journeySteps = PARTNERSHIP_JOURNEY_STEPS;
   readonly sidenav = viewChild<MatSidenav>('sidenav');
 
   readonly isMobile = toSignal(
@@ -79,7 +88,7 @@ export class AppShell {
   }
 
   isItemActive(path: string, exact?: boolean): boolean {
-    return isNavItemActive(this.currentUrl(), { labelKey: '', path, icon: '', exact });
+    return isNavItemActive(this.currentUrl(), { path, exact });
   }
 
   toggleSection(section: NavSection, event: Event): void {

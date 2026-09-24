@@ -593,3 +593,68 @@ export function reportEnumLabel(
   const translated = translate(key);
   return translated !== key ? translated : enumLabel(value);
 }
+
+export const OPPORTUNITY_TYPES = [
+  'RENEWAL',
+  'EXPANSION',
+  'RENEWAL_AND_EXPANSION',
+] as const;
+
+export const OPPORTUNITY_STATUSES = [
+  'IDENTIFIED',
+  'PLANNING',
+  'PROPOSAL_DRAFT',
+  'PROPOSAL_SENT',
+  'NEGOTIATION',
+  'ACCEPTED',
+  'REJECTED',
+  'EXPIRED',
+  'CONVERTED',
+  'CLOSED',
+] as const;
+
+export const OPPORTUNITY_EXPANSION_KINDS = [
+  'NEW_PROGRAM',
+  'MORE_STUDENTS',
+  'MORE_GROUPS',
+  'NEW_GRADES',
+  'NEW_CAMPUS',
+  'NEW_DELIVERY_FORMAT',
+  'EXTENDED_DURATION',
+  'CUSTOMIZED_PROGRAM',
+] as const;
+
+export const OPPORTUNITY_TIMELINE_KINDS = [
+  'OPPORTUNITY_CREATED',
+  'PREVIOUS_REPORT_REVIEWED',
+  'SCHOOL_CONTACTED',
+  'MEETING',
+  'REQUIREMENT_RECEIVED',
+  'PROPOSAL_CREATED',
+  'PROPOSAL_SENT',
+  'NEGOTIATION',
+  'ACCEPTED',
+  'REJECTED',
+  'CONVERTED',
+  'CLOSED',
+  'CUSTOM',
+] as const;
+
+export type OpportunityEnumCategory =
+  | 'type'
+  | 'status'
+  | 'expansionKind'
+  | 'timelineKind';
+
+export function opportunityEnumLabel(
+  translate: (key: string) => string,
+  category: OpportunityEnumCategory,
+  value: string | null | undefined,
+): string {
+  if (!value) {
+    return '—';
+  }
+  const key = `partnerships.opportunityEnums.${category}.${value}`;
+  const translated = translate(key);
+  return translated !== key ? translated : enumLabel(value);
+}

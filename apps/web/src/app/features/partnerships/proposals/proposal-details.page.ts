@@ -32,6 +32,13 @@ import {
 } from './proposal.models';
 import { buildProposalPdfHtml, openProposalPdfWindow } from './proposal-pdf';
 import { buildProposalPdfLabels } from './proposal-pdf-labels';
+import { SowListItem } from '../sows/sow.models';
+import { EmptyState } from '../../../shared/empty-state';
+import {
+  PartnershipBreadcrumb,
+  PartnershipBreadcrumbs,
+  partnershipJourneyCrumbs,
+} from '../shared/partnership-breadcrumbs';
 
 /** Allowed UI transitions (ARCHIVED via archive; SENT prefer send). */
 const STATUS_TRANSITIONS: Record<PartnershipProposalStatus, PartnershipProposalStatus[]> = {
@@ -56,6 +63,8 @@ const STATUS_TRANSITIONS: Record<PartnershipProposalStatus, PartnershipProposalS
     MatSelectModule,
     ErrorState,
     LoadingSkeleton,
+    EmptyState,
+    PartnershipBreadcrumbs,
     TPipe,
   ],
   templateUrl: './proposal-details.page.html',
@@ -73,8 +82,23 @@ export class ProposalDetailsPage {
   readonly error = signal<string | null>(null);
   readonly busy = signal(false);
   readonly proposal = signal<PartnershipProposal | null>(null);
+  readonly relatedSows = signal<SowListItem[]>([]);
   readonly statusControl = new FormControl<PartnershipProposalStatus | ''>('', {
     nonNullable: true,
+  });
+
+  readonly breadcrumbs = computed<PartnershipBreadcrumb[]>(() => {
+    const current = this.proposal();
+    if (!current) {
+      return [];
+    }
+    return partnershipJourneyCrumbs(
+      (key) => this.i18n.t(key),
+      'sales',
+      'nav.proposals',
+      '/partnerships/proposals',
+      current.proposalNumber || this.i18n.t('partnerships.breadcrumbProposal'),
+    );
   });
 
   readonly nextStatuses = computed(() => {
@@ -155,6 +179,7 @@ export class ProposalDetailsPage {
         this.proposal.set(proposal);
         this.statusControl.setValue('');
         this.loading.set(false);
+        this.loadRelatedSows(proposal.id);
       },
       error: (err: unknown) => {
         this.loading.set(false);
@@ -162,6 +187,14 @@ export class ProposalDetailsPage {
           partnershipErrorMessage(err, this.i18n.t('partnerships.proposalsLoadError')),
         );
       },
+    });
+  }
+
+  private loadRelatedSows(proposalId: string): void {
+    this.relatedSows.set([]);
+    this.api.listSows({ proposalId, pageSize: 20 }).subscribe({
+      next: (page) => this.relatedSows.set(page.items),
+      error: () => this.relatedSows.set([]),
     });
   }
 

@@ -1,0 +1,248 @@
+@if (loading()) {
+  <app-loading-skeleton [rows]="14" [label]="'partnerships.renewalsLoading' | t" />
+} @else if (error(); as message) {
+  <app-error-state
+    [title]="'partnerships.renewalsLoadError' | t"
+    [message]="message"
+    (retry)="reload()"
+  />
+} @else if (opportunity(); as current) {
+  <header class="profile-header">
+    <app-partnership-breadcrumbs [items]="breadcrumbs()" />
+    <div class="eyebrow">{{ 'partnerships.renewalsTitle' | t }}</div>
+    <div class="header-row">
+      <div class="titles">
+        <h1>{{ current.title }}</h1>
+        <div class="meta-row">
+          <span class="soft-badge">{{ current.opportunityNumber }}</span>
+          <span [class]="typeClass(current.type)">{{ oppLabel('type', current.type) }}</span>
+          <span [class]="statusClass(current.status)">
+            {{ 'common.status' | t }}: {{ oppLabel('status', current.status) }}
+          </span>
+          @if (current.archivedAt) {
+            <span class="soft-badge">{{ 'partnerships.renewalsArchivedBadge' | t }}</span>
+          }
+        </div>
+        <div class="dates">
+          <span>{{ 'partnerships.school' | t }}: {{ current.institutionName }}</span>
+          <span>{{ 'partnerships.renewalsOwner' | t }}: {{ current.ownerName || '—' }}</span>
+          <span
+            >{{ 'partnerships.renewalsColExpectedDate' | t }}:
+            {{ dateText(current.expectedDate) }}</span
+          >
+          <span>{{ 'common.updated' | t }}: {{ current.updatedAt | date: 'medium' }}</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button mat-stroked-button type="button" (click)="back()">{{ 'common.back' | t }}</button>
+        @if (permissions.canWrite() && !current.archivedAt && current.status !== 'CONVERTED' && current.status !== 'CLOSED') {
+          <a mat-stroked-button [routerLink]="['/partnerships/renewals', current.id, 'edit']">{{
+            'common.edit' | t
+          }}</a>
+        }
+        @if (permissions.canWrite()) {
+          @if (canCreateProposal(current)) {
+            <button mat-flat-button color="primary" type="button" [disabled]="busy()" (click)="createProposal()">
+              {{ 'partnerships.renewalsCreateProposal' | t }}
+            </button>
+          }
+          @if (canCreateSow(current)) {
+            <button mat-flat-button color="primary" type="button" [disabled]="busy()" (click)="createSow()">
+              {{ 'partnerships.renewalsCreateSow' | t }}
+            </button>
+          }
+          @if (!current.archivedAt) {
+            <button mat-stroked-button type="button" [disabled]="busy()" (click)="archive()">
+              {{ 'partnerships.renewalsArchive' | t }}
+            </button>
+          }
+        }
+      </div>
+    </div>
+  </header>
+
+  @if (permissions.canWrite() && nextStatuses().length) {
+    <section class="panel status-panel">
+      <h2>{{ 'partnerships.renewalsChangeStatus' | t }}</h2>
+      <div class="status-row">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>{{ 'partnerships.renewalsNextStatus' | t }}</mat-label>
+          <mat-select [formControl]="statusControl">
+            @for (status of nextStatuses(); track status) {
+              <mat-option [value]="status">{{ oppLabel('status', status) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <button
+          mat-flat-button
+          color="primary"
+          type="button"
+          [disabled]="busy() || !statusControl.value"
+          (click)="changeStatus()"
+        >
+          {{ 'partnerships.renewalsApplyStatus' | t }}
+        </button>
+      </div>
+    </section>
+  }
+
+  <section class="panel">
+    <h2>{{ 'partnerships.renewalsSourceSection' | t }}</h2>
+    <div class="chain">
+      @if (current.previousProposal?.id) {
+        <a class="chain-item" [routerLink]="['/partnerships/proposals', current.previousProposal!.id]">
+          <span class="chain-label">{{ 'nav.proposals' | t }}</span>
+          <span class="chain-value">{{ current.previousProposal!.number || current.previousProposal!.title }}</span>
+        </a>
+      }
+      @if (current.previousSow?.id) {
+        <a class="chain-item" [routerLink]="['/partnerships/sows', current.previousSow!.id]">
+          <span class="chain-label">{{ 'nav.sows' | t }}</span>
+          <span class="chain-value">{{ current.previousSow!.number || current.previousSow!.title }}</span>
+        </a>
+      }
+      @if (current.previousDelivery?.id) {
+        <a class="chain-item" [routerLink]="['/partnerships/delivery', current.previousDelivery!.id]">
+          <span class="chain-label">{{ 'nav.delivery' | t }}</span>
+          <span class="chain-value">{{ current.previousDelivery!.number || current.previousDelivery!.title }}</span>
+        </a>
+      }
+      @if (current.previousReport?.id) {
+        <a class="chain-item" [routerLink]="['/partnerships/reports', current.previousReport!.id]">
+          <span class="chain-label">{{ 'nav.reports' | t }}</span>
+          <span class="chain-value">{{ current.previousReport!.number || current.previousReport!.title }}</span>
+        </a>
+      }
+      @if (!current.previousProposal && !current.previousSow && !current.previousDelivery && !current.previousReport) {
+        <p class="muted">{{ 'partnerships.renewalsNoSource' | t }}</p>
+      }
+    </div>
+    @if (current.newProposal?.id || current.newSow?.id) {
+      <div class="chain new-chain">
+        @if (current.newProposal?.id) {
+          <a class="chain-item" [routerLink]="['/partnerships/proposals', current.newProposal!.id]">
+            <span class="chain-label">{{ 'partnerships.renewalsNewProposal' | t }}</span>
+            <span class="chain-value">{{ current.newProposal!.number || current.newProposal!.title }}</span>
+          </a>
+        }
+        @if (current.newSow?.id) {
+          <a class="chain-item" [routerLink]="['/partnerships/sows', current.newSow!.id]">
+            <span class="chain-label">{{ 'partnerships.renewalsNewSow' | t }}</span>
+            <span class="chain-value">{{ current.newSow!.number || current.newSow!.title }}</span>
+          </a>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="panel">
+    <h2>{{ 'partnerships.renewalsHistoricalSnapshot' | t }}</h2>
+    @if (snapshot(); as snap) {
+      <div class="snapshot-meta">
+        <span>{{ 'partnerships.renewalsSnapshotSource' | t }}: {{ snap.source }}</span>
+        @if (snap.programNames.length) {
+          <span>{{ 'partnerships.renewalsPrograms' | t }}: {{ snap.programNames.join(', ') }}</span>
+        }
+        <span>{{ 'partnerships.reportsPeriod' | t }}: {{ dateText(snap.periodStart) }} → {{ dateText(snap.periodEnd) }}</span>
+      </div>
+      <div class="kpi-grid">
+        <article class="kpi-card">
+          <span class="kpi-value">{{ count(snap.kpis.students) }}</span>
+          <span class="kpi-label">{{ 'partnerships.reportsKpiStudents' | t }}</span>
+        </article>
+        <article class="kpi-card">
+          <span class="kpi-value">{{ count(snap.kpis.groups) }}</span>
+          <span class="kpi-label">{{ 'partnerships.reportsKpiGroups' | t }}</span>
+        </article>
+        <article class="kpi-card">
+          <span class="kpi-value">{{ count(snap.kpis.sessions) }}</span>
+          <span class="kpi-label">{{ 'partnerships.reportsKpiSessions' | t }}</span>
+        </article>
+        <article class="kpi-card">
+          <span class="kpi-value">{{ pct(snap.kpis.attendancePercent) }}</span>
+          <span class="kpi-label">{{ 'partnerships.reportsKpiAttendance' | t }}</span>
+        </article>
+        <article class="kpi-card">
+          <span class="kpi-value">{{ pct(snap.kpis.completionPercent) }}</span>
+          <span class="kpi-label">{{ 'partnerships.reportsKpiCompletion' | t }}</span>
+        </article>
+        <article class="kpi-card">
+          <span class="kpi-value">{{ count(snap.kpis.deliverables) }}</span>
+          <span class="kpi-label">{{ 'partnerships.reportsKpiDeliverables' | t }}</span>
+        </article>
+      </div>
+    } @else {
+      <app-empty-state
+        icon="history"
+        [title]="'partnerships.renewalsSnapshotEmpty' | t"
+        [message]="'partnerships.renewalsSnapshotEmptyMessage' | t"
+      />
+    }
+  </section>
+
+  <section class="panel">
+    <h2>{{ 'partnerships.renewalsScopeSection' | t }}</h2>
+    <div class="scope-grid">
+      <div class="scope-col">
+        <h3>{{ 'partnerships.renewalsExistingScope' | t }}</h3>
+        <p>{{ blank(current.existingScopeNotes) }}</p>
+      </div>
+      <div class="scope-col">
+        <h3>{{ 'partnerships.renewalsProposedScope' | t }}</h3>
+        <p>{{ blank(current.proposedScopeNotes) }}</p>
+      </div>
+    </div>
+    @if (current.expansionKinds.length) {
+      <div class="chips">
+        @for (kind of current.expansionKinds; track kind.id) {
+          <span class="chip">{{ oppLabel('expansionKind', kind.kind) }}</span>
+        }
+      </div>
+    }
+  </section>
+
+  @if (current.schoolFeedback || current.feedbackSummary || current.feedbackScore !== null) {
+    <section class="panel">
+      <h2>{{ 'partnerships.renewalsFeedbackSection' | t }}</h2>
+      <dl class="detail-list">
+        <div><dt>{{ 'partnerships.renewalsSchoolFeedback' | t }}</dt><dd>{{ blank(current.schoolFeedback) }}</dd></div>
+        <div><dt>{{ 'partnerships.renewalsFeedbackScore' | t }}</dt><dd>{{ current.feedbackScore === null ? '—' : current.feedbackScore }}</dd></div>
+        <div><dt>{{ 'partnerships.renewalsFeedbackRequestedPrograms' | t }}</dt><dd>{{ blank(current.feedbackRequestedPrograms) }}</dd></div>
+        <div><dt>{{ 'partnerships.renewalsFeedbackRequestedChanges' | t }}</dt><dd>{{ blank(current.feedbackRequestedChanges) }}</dd></div>
+      </dl>
+    </section>
+  }
+
+  <section class="panel">
+    <h2>{{ 'partnerships.renewalsTimeline' | t }}</h2>
+    @if (current.timeline.length) {
+      <ul class="log-list">
+        @for (event of current.timeline; track event.id) {
+          <li>
+            <strong>{{ oppLabel('timelineKind', event.kind) }}</strong>
+            @if (event.note) { — {{ event.note }} }
+            <span class="muted">{{ event.occurredAt | date: 'medium' }}</span>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="muted">{{ 'partnerships.renewalsNoTimeline' | t }}</p>
+    }
+  </section>
+
+  <section class="panel">
+    <h2>{{ 'partnerships.renewalsActivityLog' | t }}</h2>
+    @if (current.activityLogs.length) {
+      <ul class="log-list">
+        @for (log of current.activityLogs; track log.id) {
+          <li>
+            {{ log.summary }}
+            <span class="muted">{{ log.createdAt | date: 'medium' }}</span>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="muted">{{ 'partnerships.renewalsNoActivity' | t }}</p>
+    }
+  </section>
+}

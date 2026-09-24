@@ -5,20 +5,36 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DirectionService } from '../../../core/direction.service';
 import { TPipe } from '../../../core/i18n/t.pipe';
+import { EmptyState } from '../../../shared/empty-state';
 import { ErrorState } from '../../../shared/error-state';
 import { LoadingSkeleton } from '../../../shared/loading-skeleton';
-import { offeringEnumLabel, programEnumLabel } from '../partnership.labels';
+import { offeringEnumLabel, programEnumLabel, proposalEnumLabel } from '../partnership.labels';
 import { usePartnershipPermissions } from '../partnership.permissions';
 import { PartnershipsApi } from '../partnerships.api';
 import { partnershipErrorMessage } from '../partnership.util';
 import { formatDuration, formatGroupSize, offeringFieldDisplay, skillTags } from './offering-display';
 import { PartnershipOffering } from './offering.models';
+import { ProposalListItem } from '../proposals/proposal.models';
 import { buildOfferingPdfHtml, openOfferingPdfWindow } from './offering-pdf';
 import { buildOfferingPdfLabels } from './offering-pdf-labels';
+import {
+  PartnershipBreadcrumb,
+  PartnershipBreadcrumbs,
+  partnershipJourneyCrumbs,
+} from '../shared/partnership-breadcrumbs';
 
 @Component({
   selector: 'app-offering-details-page',
-  imports: [DatePipe, RouterLink, MatButtonModule, ErrorState, LoadingSkeleton, TPipe],
+  imports: [
+    DatePipe,
+    RouterLink,
+    MatButtonModule,
+    EmptyState,
+    ErrorState,
+    LoadingSkeleton,
+    PartnershipBreadcrumbs,
+    TPipe,
+  ],
   templateUrl: './offering-details.page.html',
   styleUrl: './offering-details.page.scss',
 })
@@ -34,6 +50,21 @@ export class OfferingDetailsPage {
   readonly error = signal<string | null>(null);
   readonly archiving = signal(false);
   readonly offering = signal<PartnershipOffering | null>(null);
+  readonly usedInProposals = signal<ProposalListItem[]>([]);
+
+  readonly breadcrumbs = computed<PartnershipBreadcrumb[]>(() => {
+    const current = this.offering();
+    if (!current) {
+      return [];
+    }
+    return partnershipJourneyCrumbs(
+      (key) => this.i18n.t(key),
+      'catalog',
+      'nav.offerings',
+      '/partnerships/offerings',
+      current.name || this.i18n.t('partnerships.breadcrumbOffering'),
+    );
+  });
 
   readonly durationText = computed(() => {
     const current = this.offering();
@@ -56,6 +87,11 @@ export class OfferingDetailsPage {
     value: string | null | undefined,
   ) => offeringEnumLabel((key) => this.i18n.t(key), category, value);
 
+  proposalLabel = (
+    category: Parameters<typeof proposalEnumLabel>[1],
+    value: string | null | undefined,
+  ) => proposalEnumLabel((key) => this.i18n.t(key), category, value);
+
   reload(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
@@ -67,11 +103,20 @@ export class OfferingDetailsPage {
       next: (offering) => {
         this.offering.set(offering);
         this.loading.set(false);
+        this.loadUsedInProposals(offering.id);
       },
       error: (err: unknown) => {
         this.loading.set(false);
         this.error.set(partnershipErrorMessage(err, this.i18n.t('partnerships.offeringsLoadError')));
       },
+    });
+  }
+
+  private loadUsedInProposals(offeringId: string): void {
+    this.usedInProposals.set([]);
+    this.api.listProposals({ offeringId, pageSize: 20 }).subscribe({
+      next: (page) => this.usedInProposals.set(page.items),
+      error: () => this.usedInProposals.set([]),
     });
   }
 

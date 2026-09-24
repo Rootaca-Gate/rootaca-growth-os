@@ -1,0 +1,270 @@
+@if (loading()) {
+  <app-loading-skeleton [rows]="12" [label]="'partnerships.renewalsLoading' | t" />
+} @else if (error(); as message) {
+  <app-error-state
+    [title]="'partnerships.renewalsLoadError' | t"
+    [message]="message"
+  />
+} @else if (!isEdit) {
+  <app-page-header
+    [title]="'partnerships.renewalsCreateTitle' | t"
+    [subtitle]="'partnerships.renewalsCreateSubtitle' | t"
+  />
+  <form class="opportunity-form" [formGroup]="createForm" (ngSubmit)="create()">
+    <div class="grid-2">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsColType' | t }}</mat-label>
+        <mat-select formControlName="type">
+          @for (item of opportunityTypes; track item) {
+            <mat-option [value]="item">{{ oppLabel('type', item) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.school' | t }}</mat-label>
+        <mat-select formControlName="institutionId">
+          @for (item of institutions(); track item.id) {
+            <mat-option [value]="item.id">{{ item.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.renewalsFieldTitle' | t }}</mat-label>
+      <input matInput formControlName="title" [placeholder]="'partnerships.renewalsTitleAutoHint' | t" />
+    </mat-form-field>
+
+    <h3 class="section-title">{{ 'partnerships.renewalsSourceSection' | t }}</h3>
+    <div class="grid-2">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsPreviousDelivery' | t }}</mat-label>
+        <mat-select formControlName="previousDeliveryId">
+          <mat-option value="">{{ 'partnerships.noValue' | t }}</mat-option>
+          @for (item of deliveries(); track item.id) {
+            <mat-option [value]="item.id">{{ item.deliveryNumber }} — {{ item.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsPreviousReport' | t }}</mat-label>
+        <mat-select formControlName="previousReportId">
+          <mat-option value="">{{ 'partnerships.noValue' | t }}</mat-option>
+          @for (item of reports(); track item.id) {
+            <mat-option [value]="item.id">{{ item.reportNumber }} — {{ item.title }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsPreviousSow' | t }}</mat-label>
+        <mat-select formControlName="previousSowId">
+          <mat-option value="">{{ 'partnerships.noValue' | t }}</mat-option>
+          @for (item of sows(); track item.id) {
+            <mat-option [value]="item.id">{{ item.sowNumber }} — {{ item.title }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsPreviousProposal' | t }}</mat-label>
+        <mat-select formControlName="previousProposalId">
+          <mat-option value="">{{ 'partnerships.noValue' | t }}</mat-option>
+          @for (item of proposals(); track item.id) {
+            <mat-option [value]="item.id">{{ item.proposalNumber }} — {{ item.title }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="grid-2">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsOwner' | t }}</mat-label>
+        <mat-select formControlName="ownerId">
+          <mat-option value="">{{ 'partnerships.noValue' | t }}</mat-option>
+          @for (item of owners(); track item.id) {
+            <mat-option [value]="item.id">{{ item.displayName }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsColExpectedDate' | t }}</mat-label>
+        <input matInput type="date" formControlName="expectedDate" />
+      </mat-form-field>
+    </div>
+
+    <div class="actions">
+      <a mat-stroked-button routerLink="/partnerships/renewals">{{ 'common.cancel' | t }}</a>
+      <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+        {{ 'partnerships.renewalsCreate' | t }}
+      </button>
+    </div>
+  </form>
+} @else {
+  <app-page-header
+    [title]="'partnerships.renewalsEditTitle' | t"
+    [subtitle]="'partnerships.renewalsEditSubtitle' | t"
+  />
+  <form class="opportunity-form" [formGroup]="editForm" (ngSubmit)="save()">
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.renewalsFieldTitle' | t }}</mat-label>
+      <input matInput formControlName="title" />
+    </mat-form-field>
+    <div class="grid-2">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsOwner' | t }}</mat-label>
+        <mat-select formControlName="ownerId">
+          <mat-option value="">{{ 'partnerships.noValue' | t }}</mat-option>
+          @for (item of owners(); track item.id) {
+            <mat-option [value]="item.id">{{ item.displayName }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsColExpectedDate' | t }}</mat-label>
+        <input matInput type="date" formControlName="expectedDate" />
+      </mat-form-field>
+    </div>
+
+    <h3 class="section-title">{{ 'partnerships.renewalsSourceSection' | t }}</h3>
+    <div class="grid-2">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsPreviousDelivery' | t }}</mat-label>
+        <mat-select formControlName="previousDeliveryId">
+          <mat-option value="">{{ 'partnerships.noValue' | t }}</mat-option>
+          @for (item of deliveries(); track item.id) {
+            <mat-option [value]="item.id">{{ item.deliveryNumber }} — {{ item.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsPreviousReport' | t }}</mat-label>
+        <mat-select formControlName="previousReportId">
+          <mat-option value="">{{ 'partnerships.noValue' | t }}</mat-option>
+          @for (item of reports(); track item.id) {
+            <mat-option [value]="item.id">{{ item.reportNumber }} — {{ item.title }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsPreviousSow' | t }}</mat-label>
+        <mat-select formControlName="previousSowId">
+          <mat-option value="">{{ 'partnerships.noValue' | t }}</mat-option>
+          @for (item of sows(); track item.id) {
+            <mat-option [value]="item.id">{{ item.sowNumber }} — {{ item.title }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsPreviousProposal' | t }}</mat-label>
+        <mat-select formControlName="previousProposalId">
+          <mat-option value="">{{ 'partnerships.noValue' | t }}</mat-option>
+          @for (item of proposals(); track item.id) {
+            <mat-option [value]="item.id">{{ item.proposalNumber }} — {{ item.title }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <h3 class="section-title">{{ 'partnerships.renewalsPlanningSection' | t }}</h3>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.renewalsExpansionKinds' | t }}</mat-label>
+      <mat-select formControlName="expansionKinds" multiple>
+        @for (item of expansionKinds; track item) {
+          <mat-option [value]="item">{{ oppLabel('expansionKind', item) }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <div class="grid-2">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsGrades' | t }}</mat-label>
+        <input matInput formControlName="renewalGrades" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsDeliveryMode' | t }}</mat-label>
+        <input matInput formControlName="renewalDeliveryMode" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsGroupsNote' | t }}</mat-label>
+        <input matInput formControlName="renewalGroupsNote" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsDurationNote' | t }}</mat-label>
+        <input matInput formControlName="renewalDurationNote" />
+      </mat-form-field>
+    </div>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.renewalsExistingScope' | t }}</mat-label>
+      <textarea matInput rows="3" formControlName="existingScopeNotes"></textarea>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.renewalsProposedScope' | t }}</mat-label>
+      <textarea matInput rows="3" formControlName="proposedScopeNotes"></textarea>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.renewalsRenewalScopeNotes' | t }}</mat-label>
+      <textarea matInput rows="3" formControlName="renewalScopeNotes"></textarea>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.renewalsExpansionScopeNotes' | t }}</mat-label>
+      <textarea matInput rows="3" formControlName="expansionScopeNotes"></textarea>
+    </mat-form-field>
+
+    <h3 class="section-title">{{ 'partnerships.renewalsNotesSection' | t }}</h3>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.renewalsReason' | t }}</mat-label>
+      <textarea matInput rows="2" formControlName="reason"></textarea>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.renewalsNextSteps' | t }}</mat-label>
+      <textarea matInput rows="2" formControlName="nextSteps"></textarea>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.renewalsInternalNotes' | t }}</mat-label>
+      <textarea matInput rows="2" formControlName="internalNotes"></textarea>
+    </mat-form-field>
+
+    <h3 class="section-title">{{ 'partnerships.renewalsFeedbackSection' | t }}</h3>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.renewalsSchoolFeedback' | t }}</mat-label>
+      <textarea matInput rows="3" formControlName="schoolFeedback"></textarea>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.renewalsFeedbackSummary' | t }}</mat-label>
+      <textarea matInput rows="2" formControlName="feedbackSummary"></textarea>
+    </mat-form-field>
+    <div class="grid-2">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsFeedbackScore' | t }}</mat-label>
+        <input matInput type="number" min="0" max="100" formControlName="feedbackScore" />
+        <mat-hint>{{ 'partnerships.renewalsFeedbackScoreHint' | t }}</mat-hint>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsFeedbackDate' | t }}</mat-label>
+        <input matInput type="date" formControlName="feedbackDate" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsFeedbackRequestedPrograms' | t }}</mat-label>
+        <input matInput formControlName="feedbackRequestedPrograms" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'partnerships.renewalsFeedbackRequestedChanges' | t }}</mat-label>
+        <input matInput formControlName="feedbackRequestedChanges" />
+      </mat-form-field>
+    </div>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.renewalsFeedbackKeyComments' | t }}</mat-label>
+      <textarea matInput rows="2" formControlName="feedbackKeyComments"></textarea>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="full">
+      <mat-label>{{ 'partnerships.renewalsFeedbackRecordedBy' | t }}</mat-label>
+      <input matInput formControlName="feedbackRecordedBy" />
+    </mat-form-field>
+
+    <div class="actions">
+      <a mat-stroked-button [routerLink]="['/partnerships/renewals', editId]">{{
+        'common.cancel' | t
+      }}</a>
+      <button mat-flat-button color="primary" type="submit" [disabled]="submitting()">
+        {{ 'common.save' | t }}
+      </button>
+    </div>
+  </form>
+}

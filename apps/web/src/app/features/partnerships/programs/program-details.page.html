@@ -8,6 +8,7 @@
   />
 } @else if (program(); as current) {
   <header class="profile-header">
+    <app-partnership-breadcrumbs [items]="breadcrumbs()" />
     <div class="eyebrow">{{ 'partnerships.schoolPartnershipProgram' | t }}</div>
     <div class="header-row">
       <div class="titles">
@@ -375,6 +376,66 @@
           </tbody>
         </table>
       </div>
+    }
+  </section>
+
+  <section class="profile-card">
+    <div class="offerings-head">
+      <div>
+        <h2>{{ 'partnerships.programOfferingsTitle' | t }}</h2>
+        <p class="empty">{{ 'partnerships.programOfferingsSubtitle' | t }}</p>
+      </div>
+      @if (permissions.canWrite()) {
+        <a
+          mat-flat-button
+          color="primary"
+          [routerLink]="['/partnerships/offerings/new']"
+          [queryParams]="{ programId: current.id }"
+        >
+          {{ 'partnerships.programOfferingsCreate' | t }}
+        </a>
+      }
+    </div>
+    @if (offerings().length) {
+      <div class="ra-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>{{ 'common.name' | t }}</th>
+              <th>{{ 'partnerships.deliveryFormat' | t }}</th>
+              <th>{{ 'common.status' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (offering of offerings(); track offering.id) {
+              <tr>
+                <td>
+                  <a [routerLink]="['/partnerships/offerings', offering.id]">{{ offering.name }}</a>
+                </td>
+                <td>{{ enumLabel('deliveryFormat', offering.deliveryFormat) }}</td>
+                <td><span class="soft-badge">{{ offering.status }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <app-empty-state
+        icon="inventory_2"
+        [title]="'partnerships.programOfferingsEmptyTitle' | t"
+        [message]="'partnerships.programOfferingsEmptyMessage' | t"
+      >
+        @if (permissions.canWrite()) {
+          <a
+            mat-flat-button
+            color="primary"
+            [routerLink]="['/partnerships/offerings/new']"
+            [queryParams]="{ programId: current.id }"
+          >
+            {{ 'partnerships.programOfferingsCreate' | t }}
+          </a>
+        }
+      </app-empty-state>
     }
   </section>
 }

@@ -371,6 +371,34 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'partnerships/renewals',
+        loadComponent: () =>
+          import('./features/partnerships/renewals/renewals-list.page').then(
+            (m) => m.RenewalsListPage,
+          ),
+      },
+      {
+        path: 'partnerships/renewals/new',
+        loadComponent: () =>
+          import('./features/partnerships/renewals/opportunity-form.page').then(
+            (m) => m.OpportunityFormPage,
+          ),
+      },
+      {
+        path: 'partnerships/renewals/:id/edit',
+        loadComponent: () =>
+          import('./features/partnerships/renewals/opportunity-form.page').then(
+            (m) => m.OpportunityFormPage,
+          ),
+      },
+      {
+        path: 'partnerships/renewals/:id',
+        loadComponent: () =>
+          import('./features/partnerships/renewals/opportunity-details.page').then(
+            (m) => m.OpportunityDetailsPage,
+          ),
+      },
+      {
         path: 'partnerships/contacts',
         loadComponent: () =>
           import('./features/partnerships/contacts-list.page').then((m) => m.ContactsListPage),

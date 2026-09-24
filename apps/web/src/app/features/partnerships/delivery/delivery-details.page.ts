@@ -23,9 +23,27 @@ import {
   DeliveryRelationshipLink,
   formatProgressPercent,
 } from './delivery-display';
-import { PartnershipDelivery, PartnershipDeliveryStatus } from './delivery.models';
+import {
+  PartnershipDelivery,
+  PartnershipDeliveryReportType,
+  PartnershipDeliveryStatus,
+} from './delivery.models';
 import { buildDeliveryPdfHtml, openDeliveryPdfWindow } from './delivery-pdf';
 import { buildDeliveryPdfLabels } from './delivery-pdf-labels';
+import {
+  PartnershipBreadcrumb,
+  PartnershipBreadcrumbs,
+  partnershipJourneyCrumbs,
+} from '../shared/partnership-breadcrumbs';
+
+/** Report types that can be quick-created from a delivery. */
+const REPORT_QUICK_TYPES: Array<{ type: PartnershipDeliveryReportType; labelKey: string }> = [
+  { type: 'STUDENT_PROGRESS', labelKey: 'partnerships.reportTypeCreateStudentProgress' },
+  { type: 'GROUP_PROGRESS', labelKey: 'partnerships.reportTypeCreateGroupProgress' },
+  { type: 'SCHOOL_SUMMARY', labelKey: 'partnerships.reportTypeCreateSchoolSummary' },
+  { type: 'PROGRAM_COMPLETION', labelKey: 'partnerships.reportTypeCreateProgramCompletion' },
+  { type: 'FINAL_PARTNERSHIP', labelKey: 'partnerships.reportTypeCreateFinalPartnership' },
+];
 
 /** Allowed UI transitions mirror the API status machine. */
 const STATUS_TRANSITIONS: Record<PartnershipDeliveryStatus, PartnershipDeliveryStatus[]> = {
@@ -48,6 +66,7 @@ const STATUS_TRANSITIONS: Record<PartnershipDeliveryStatus, PartnershipDeliveryS
     MatTabsModule,
     ErrorState,
     LoadingSkeleton,
+    PartnershipBreadcrumbs,
     TPipe,
   ],
   templateUrl: './delivery-details.page.html',
@@ -98,6 +117,22 @@ export class DeliveryDetailsPage {
         total: b.dim.total,
         ratio: b.dim.ratio as number,
       }));
+  });
+
+  readonly reportQuickTypes = REPORT_QUICK_TYPES;
+
+  readonly breadcrumbs = computed<PartnershipBreadcrumb[]>(() => {
+    const current = this.delivery();
+    if (!current) {
+      return [];
+    }
+    return partnershipJourneyCrumbs(
+      (key) => this.i18n.t(key),
+      'execution',
+      'nav.delivery',
+      '/partnerships/delivery',
+      current.deliveryNumber || this.i18n.t('partnerships.breadcrumbDelivery'),
+    );
   });
 
   readonly relationshipChain = computed<DeliveryRelationshipLink[]>(() => {
@@ -217,6 +252,30 @@ export class DeliveryDetailsPage {
         this.snackBar.open(this.i18n.t('partnerships.deliveryArchived'), this.i18n.t('common.ok'), {
           duration: 2500,
         });
+      },
+      error: (err: unknown) => this.reportError(err),
+    });
+  }
+
+  /** Create a renewal opportunity from this delivery, then open it. */
+  createRenewalOpportunity(): void {
+    const current = this.delivery();
+    if (!current) {
+      return;
+    }
+    if (!confirm(this.i18n.t('partnerships.createRenewalOpportunityConfirm'))) {
+      return;
+    }
+    this.busy.set(true);
+    this.api.createOpportunityFromDelivery(current.id).subscribe({
+      next: (opportunity) => {
+        this.busy.set(false);
+        this.snackBar.open(
+          this.i18n.t('partnerships.renewalOpportunityCreated'),
+          this.i18n.t('common.ok'),
+          { duration: 2500 },
+        );
+        void this.router.navigate(['/partnerships/renewals', opportunity.id]);
       },
       error: (err: unknown) => this.reportError(err),
     });

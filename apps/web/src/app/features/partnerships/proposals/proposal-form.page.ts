@@ -109,6 +109,7 @@ export class ProposalFormPage {
 
   readonly editId = this.route.snapshot.paramMap.get('id');
   readonly isEdit = !!this.editId;
+  readonly opportunityId = this.route.snapshot.queryParamMap.get('opportunityId');
 
   readonly loading = signal(this.isEdit);
   readonly submitting = signal(false);

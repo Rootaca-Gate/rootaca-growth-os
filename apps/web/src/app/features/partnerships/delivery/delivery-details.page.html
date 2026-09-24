@@ -8,6 +8,7 @@
   />
 } @else if (delivery(); as current) {
   <header class="profile-header">
+    <app-partnership-breadcrumbs [items]="breadcrumbs()" />
     <div class="eyebrow">{{ 'partnerships.deliveryTitle' | t }}</div>
     <div class="header-row">
       <div class="titles">
@@ -171,13 +172,48 @@
           </div>
         }
         <div class="follow-on">
-          <button mat-flat-button color="primary" type="button" (click)="createFollowOn('renewal')">
+          <button
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="busy()"
+            (click)="createRenewalOpportunity()"
+          >
+            {{ 'partnerships.createRenewalOpportunity' | t }}
+          </button>
+          <a
+            mat-stroked-button
+            [routerLink]="['/partnerships/renewals/new']"
+            [queryParams]="{ deliveryId: current.id, institutionId: current.institutionId, sowId: current.sowId, type: 'RENEWAL' }"
+          >
+            {{ 'partnerships.renewalsCreateFromSource' | t }}
+          </a>
+          <button mat-stroked-button type="button" (click)="createFollowOn('renewal')">
             {{ 'partnerships.deliveryCreateRenewal' | t }}
           </button>
           <button mat-stroked-button type="button" (click)="createFollowOn('expansion')">
             {{ 'partnerships.deliveryCreateExpansion' | t }}
           </button>
         </div>
+      </div>
+    </section>
+  }
+
+  @if (permissions.canWrite()) {
+    <section class="profile-card">
+      <div class="section-head">
+        <h2>{{ 'partnerships.reportTypeCreateTitle' | t }}</h2>
+      </div>
+      <div class="report-quick-links">
+        @for (item of reportQuickTypes; track item.type) {
+          <a
+            mat-stroked-button
+            [routerLink]="['/partnerships/reports/new']"
+            [queryParams]="{ deliveryId: current.id, type: item.type }"
+          >
+            {{ item.labelKey | t }}
+          </a>
+        }
       </div>
     </section>
   }

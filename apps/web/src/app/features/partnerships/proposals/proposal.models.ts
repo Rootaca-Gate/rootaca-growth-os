@@ -182,6 +182,7 @@ export type PartnershipProposal = ProposalListItem & {
 export type ProposalQuery = {
   search?: string;
   institutionId?: string;
+  offeringId?: string;
   status?: PartnershipProposalStatus | '';
   createdFrom?: string;
   createdTo?: string;

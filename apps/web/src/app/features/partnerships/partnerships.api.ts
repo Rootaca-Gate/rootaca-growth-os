@@ -29,6 +29,7 @@ import {
   NoteWritePayload,
   Paginated,
   PartnershipDashboard,
+  PartnershipSearchResult,
   ResearchCandidate,
   ResearchCandidateWritePayload,
   ResearchDashboard,
@@ -84,6 +85,19 @@ import {
   ReportQuery,
   ReportUpdatePayload,
 } from './reports/report.models';
+import {
+  AddTimelineEventPayload,
+  CreateOpportunityPayload,
+  CreateProposalFromOpportunityPayload,
+  OpportunityDashboard,
+  OpportunityListItem,
+  OpportunityQuery,
+  OpportunityStatus,
+  OpportunityType,
+  OpportunityUserOption,
+  PartnershipOpportunity,
+  UpdateOpportunityPayload,
+} from './renewals/opportunity.models';
 
 function toParams(query: Record<string, unknown>): HttpParams {
   let params = new HttpParams();
@@ -102,6 +116,12 @@ export class PartnershipsApi {
 
   getDashboard(): Observable<PartnershipDashboard> {
     return this.http.get<PartnershipDashboard>(`${this.base}/dashboard`);
+  }
+
+  searchPartnerships(q: string): Observable<PartnershipSearchResult> {
+    return this.http.get<PartnershipSearchResult>(`${this.base}/dashboard/search`, {
+      params: toParams({ q }),
+    });
   }
 
   listInstitutions(query: InstitutionQuery = {}): Observable<Paginated<Institution>> {
@@ -605,5 +625,100 @@ export class PartnershipsApi {
 
   markReportPdfGenerated(id: string): Observable<PartnershipReport> {
     return this.http.post<PartnershipReport>(`${this.base}/reports/${id}/pdf-generated`, {});
+  }
+
+  listOpportunities(
+    query: OpportunityQuery = {},
+  ): Observable<Paginated<OpportunityListItem>> {
+    return this.http.get<Paginated<OpportunityListItem>>(`${this.base}/renewals`, {
+      params: toParams(query as Record<string, unknown>),
+    });
+  }
+
+  getOpportunityDashboard(): Observable<OpportunityDashboard> {
+    return this.http.get<OpportunityDashboard>(`${this.base}/renewals/dashboard`);
+  }
+
+  listOpportunityUsers(): Observable<OpportunityUserOption[]> {
+    return this.http.get<OpportunityUserOption[]>(`${this.base}/renewals/users`);
+  }
+
+  getOpportunity(id: string): Observable<PartnershipOpportunity> {
+    return this.http.get<PartnershipOpportunity>(`${this.base}/renewals/${id}`);
+  }
+
+  createOpportunity(
+    payload: CreateOpportunityPayload,
+  ): Observable<PartnershipOpportunity> {
+    return this.http.post<PartnershipOpportunity>(`${this.base}/renewals`, payload);
+  }
+
+  updateOpportunity(
+    id: string,
+    payload: UpdateOpportunityPayload,
+  ): Observable<PartnershipOpportunity> {
+    return this.http.patch<PartnershipOpportunity>(`${this.base}/renewals/${id}`, payload);
+  }
+
+  changeOpportunityStatus(
+    id: string,
+    status: OpportunityStatus,
+    note?: string,
+  ): Observable<PartnershipOpportunity> {
+    return this.http.post<PartnershipOpportunity>(`${this.base}/renewals/${id}/status`, {
+      status,
+      note,
+    });
+  }
+
+  archiveOpportunity(id: string): Observable<PartnershipOpportunity> {
+    return this.http.post<PartnershipOpportunity>(`${this.base}/renewals/${id}/archive`, {});
+  }
+
+  createOpportunityProposal(
+    id: string,
+    payload: CreateProposalFromOpportunityPayload = {},
+  ): Observable<PartnershipOpportunity> {
+    return this.http.post<PartnershipOpportunity>(
+      `${this.base}/renewals/${id}/create-proposal`,
+      payload,
+    );
+  }
+
+  createOpportunitySow(id: string): Observable<PartnershipOpportunity> {
+    return this.http.post<PartnershipOpportunity>(
+      `${this.base}/renewals/${id}/create-sow`,
+      {},
+    );
+  }
+
+  addOpportunityTimelineEvent(
+    id: string,
+    payload: AddTimelineEventPayload,
+  ): Observable<PartnershipOpportunity> {
+    return this.http.post<PartnershipOpportunity>(
+      `${this.base}/renewals/${id}/timeline`,
+      payload,
+    );
+  }
+
+  createOpportunityFromDelivery(
+    deliveryId: string,
+    type?: OpportunityType,
+  ): Observable<PartnershipOpportunity> {
+    return this.http.post<PartnershipOpportunity>(
+      `${this.base}/renewals/create-from-delivery`,
+      { deliveryId, ...(type ? { type } : {}) },
+    );
+  }
+
+  createOpportunityFromReport(
+    reportId: string,
+    type?: OpportunityType,
+  ): Observable<PartnershipOpportunity> {
+    return this.http.post<PartnershipOpportunity>(
+      `${this.base}/renewals/create-from-report`,
+      { reportId, ...(type ? { type } : {}) },
+    );
   }
 }

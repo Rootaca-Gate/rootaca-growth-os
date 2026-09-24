@@ -36,6 +36,11 @@ import {
 } from './sow.models';
 import { buildSowPdfHtml, openSowPdfWindow } from './sow-pdf';
 import { buildSowPdfLabels } from './sow-pdf-labels';
+import {
+  PartnershipBreadcrumb,
+  PartnershipBreadcrumbs,
+  partnershipJourneyCrumbs,
+} from '../shared/partnership-breadcrumbs';
 
 /** Allowed UI transitions mirror the API ALLOWED_TRANSITIONS map. */
 const STATUS_TRANSITIONS: Record<PartnershipSowStatus, PartnershipSowStatus[]> = {
@@ -60,6 +65,7 @@ const STATUS_TRANSITIONS: Record<PartnershipSowStatus, PartnershipSowStatus[]> =
     MatSelectModule,
     ErrorState,
     LoadingSkeleton,
+    PartnershipBreadcrumbs,
     TPipe,
   ],
   templateUrl: './sow-details.page.html',
@@ -78,6 +84,20 @@ export class SowDetailsPage {
   readonly busy = signal(false);
   readonly sow = signal<PartnershipSow | null>(null);
   readonly showChangeRequestForm = signal(false);
+
+  readonly breadcrumbs = computed<PartnershipBreadcrumb[]>(() => {
+    const current = this.sow();
+    if (!current) {
+      return [];
+    }
+    return partnershipJourneyCrumbs(
+      (key) => this.i18n.t(key),
+      'execution',
+      'nav.sows',
+      '/partnerships/sows',
+      current.sowNumber || this.i18n.t('partnerships.breadcrumbSow'),
+    );
+  });
 
   readonly statusControl = new FormControl<PartnershipSowStatus | ''>('', { nonNullable: true });
 

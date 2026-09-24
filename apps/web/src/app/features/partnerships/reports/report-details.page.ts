@@ -27,6 +27,11 @@ import {
 import { PartnershipReport, PartnershipReportStatus } from './report.models';
 import { buildReportPdfHtml, downloadHtmlAsPdf } from './report-pdf';
 import { buildReportPdfLabels } from './report-pdf-labels';
+import {
+  PartnershipBreadcrumb,
+  PartnershipBreadcrumbs,
+  partnershipJourneyCrumbs,
+} from '../shared/partnership-breadcrumbs';
 
 const STATUS_TRANSITIONS: Record<PartnershipReportStatus, PartnershipReportStatus[]> = {
   DRAFT: ['IN_REVIEW', 'ARCHIVED'],
@@ -47,6 +52,7 @@ const STATUS_TRANSITIONS: Record<PartnershipReportStatus, PartnershipReportStatu
     ErrorState,
     LoadingSkeleton,
     EmptyState,
+    PartnershipBreadcrumbs,
     TPipe,
   ],
   templateUrl: './report-details.page.html',
@@ -78,6 +84,20 @@ export class ReportDetailsPage {
   });
 
   readonly snapshot = computed(() => this.report()?.dataSnapshot ?? null);
+
+  readonly breadcrumbs = computed<PartnershipBreadcrumb[]>(() => {
+    const current = this.report();
+    if (!current) {
+      return [];
+    }
+    return partnershipJourneyCrumbs(
+      (key) => this.i18n.t(key),
+      'results',
+      'nav.reports',
+      '/partnerships/reports',
+      current.title || current.reportNumber || this.i18n.t('partnerships.breadcrumbReport'),
+    );
+  });
 
   constructor() {
     this.reload();
@@ -227,6 +247,30 @@ export class ReportDetailsPage {
       next: (updated) => {
         this.busy.set(false);
         this.report.set(updated);
+      },
+      error: (err: unknown) => this.reportError(err),
+    });
+  }
+
+  /** Create a renewal opportunity from this report, then open it. */
+  createRenewalOpportunity(): void {
+    const current = this.report();
+    if (!current) {
+      return;
+    }
+    if (!confirm(this.i18n.t('partnerships.createRenewalOpportunityConfirm'))) {
+      return;
+    }
+    this.busy.set(true);
+    this.api.createOpportunityFromReport(current.id).subscribe({
+      next: (opportunity) => {
+        this.busy.set(false);
+        this.snackBar.open(
+          this.i18n.t('partnerships.renewalOpportunityCreated'),
+          this.i18n.t('common.ok'),
+          { duration: 2500 },
+        );
+        void this.router.navigate(['/partnerships/renewals', opportunity.id]);
       },
       error: (err: unknown) => this.reportError(err),
     });

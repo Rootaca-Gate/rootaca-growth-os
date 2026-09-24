@@ -8,6 +8,7 @@
   />
 } @else if (proposal(); as current) {
   <header class="profile-header">
+    <app-partnership-breadcrumbs [items]="breadcrumbs()" />
     <div class="eyebrow">{{ 'partnerships.schoolPartnershipProposal' | t }}</div>
     <div class="header-row">
       <div class="titles">
@@ -330,6 +331,56 @@
       </div>
     </section>
   }
+
+  <section class="profile-card">
+    <div class="section-head">
+      <div>
+        <h2>{{ 'partnerships.proposalRelatedSowsTitle' | t }}</h2>
+        <p class="muted">{{ 'partnerships.proposalRelatedSowsSubtitle' | t }}</p>
+      </div>
+      @if (canCreateSow(current)) {
+        <button mat-flat-button color="primary" type="button" [disabled]="busy()" (click)="createSow()">
+          {{ 'partnerships.proposalCreateSow' | t }}
+        </button>
+      }
+    </div>
+    @if (relatedSows().length) {
+      <div class="ra-table-wrap">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th>{{ 'partnerships.sowNumber' | t }}</th>
+              <th>{{ 'common.title' | t }}</th>
+              <th>{{ 'common.status' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (sow of relatedSows(); track sow.id) {
+              <tr>
+                <td>
+                  <a [routerLink]="['/partnerships/sows', sow.id]">{{ sow.sowNumber }}</a>
+                </td>
+                <td>{{ sow.title }}</td>
+                <td><span class="soft-badge">{{ sow.status }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <app-empty-state
+        icon="description"
+        [title]="'partnerships.proposalRelatedSowsEmptyTitle' | t"
+        [message]="'partnerships.proposalRelatedSowsEmptyMessage' | t"
+      >
+        @if (canCreateSow(current)) {
+          <button mat-flat-button color="primary" type="button" [disabled]="busy()" (click)="createSow()">
+            {{ 'partnerships.proposalCreateSow' | t }}
+          </button>
+        }
+      </app-empty-state>
+    }
+  </section>
 
   @if (current.versions.length) {
     <section class="profile-card">

@@ -1,5 +1,4 @@
-import { DatePipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,11 +11,22 @@ import { TPipe } from '../../core/i18n/t.pipe';
 import { ErrorState } from '../../shared/error-state';
 import { LoadingSkeleton } from '../../shared/loading-skeleton';
 import { PageHeader } from '../../shared/page-header';
-import { ACTIVITY_TYPES, FOLLOWUP_PRIORITIES, LEAD_PRIORITIES, LEAD_STATUSES, enumLabel } from './partnership.labels';
+import {
+  ACTIVITY_TYPES,
+  FOLLOWUP_PRIORITIES,
+  LEAD_PRIORITIES,
+  LEAD_STATUSES,
+  enumLabel,
+} from './partnership.labels';
 import { Activity, FollowUp, Lead, LeadStatus } from './partnership.models';
 import { usePartnershipPermissions } from './partnership.permissions';
 import { PartnershipsApi } from './partnerships.api';
 import { partnershipErrorMessage } from './partnership.util';
+import {
+  PartnershipBreadcrumb,
+  PartnershipBreadcrumbs,
+  partnershipJourneyCrumbs,
+} from './shared/partnership-breadcrumbs';
 
 @Component({
   selector: 'app-lead-details-page',
@@ -30,6 +40,7 @@ import { partnershipErrorMessage } from './partnership.util';
     PageHeader,
     ErrorState,
     LoadingSkeleton,
+    PartnershipBreadcrumbs,
     TPipe,
   ],
   template: `
@@ -38,13 +49,53 @@ import { partnershipErrorMessage } from './partnership.util';
     } @else if (error(); as message) {
       <app-error-state [title]="'partnerships.loadError' | t" [message]="message" (retry)="reload()" />
     } @else if (lead(); as current) {
-      <app-page-header [title]="current.institutionName || ('partnerships.lead' | t)" [subtitle]="label(current.status) + ' · ' + label(current.priority)">
+      <app-partnership-breadcrumbs [items]="breadcrumbs()" />
+      <app-page-header
+        [title]="current.institutionName || ('partnerships.lead' | t)"
+        [subtitle]="label(current.status) + ' · ' + label(current.priority)"
+      >
         <a mat-stroked-button routerLink="/partnerships/leads">{{ 'common.back' | t }}</a>
-        <a mat-stroked-button [routerLink]="['/partnerships/institutions', current.institutionId]">{{ 'partnerships.openInstitution' | t }}</a>
+        <a mat-stroked-button [routerLink]="['/partnerships/institutions', current.institutionId]">{{
+          'partnerships.openInstitution' | t
+        }}</a>
         @if (permissions.canWrite()) {
-          <button mat-flat-button color="primary" type="button" (click)="showStatus.set(!showStatus())">{{ 'partnerships.changeStatus' | t }}</button>
+          <a
+            mat-flat-button
+            color="primary"
+            [routerLink]="['/partnerships/proposals/new']"
+            [queryParams]="{ institutionId: current.institutionId, leadId: current.id }"
+            >{{ 'partnerships.leadCreateProposal' | t }}</a
+          >
+          <button mat-stroked-button type="button" (click)="showStatus.set(!showStatus())">
+            {{ 'partnerships.changeStatus' | t }}
+          </button>
         }
       </app-page-header>
+
+      <section class="ra-card block next-steps">
+        <h2>{{ 'partnerships.leadNextStepsTitle' | t }}</h2>
+        <p class="muted">{{ 'partnerships.leadNextStepsHint' | t }}</p>
+        <div class="actions">
+          <a mat-stroked-button [routerLink]="['/partnerships/institutions', current.institutionId]">{{
+            'partnerships.leadOpenInstitutionHub' | t
+          }}</a>
+          <a mat-stroked-button routerLink="/partnerships/programs">{{
+            'partnerships.leadBrowsePrograms' | t
+          }}</a>
+          <a mat-stroked-button routerLink="/partnerships/offerings">{{
+            'partnerships.leadBrowseOfferings' | t
+          }}</a>
+          @if (permissions.canWrite()) {
+            <a
+              mat-flat-button
+              color="primary"
+              [routerLink]="['/partnerships/proposals/new']"
+              [queryParams]="{ institutionId: current.institutionId, leadId: current.id }"
+              >{{ 'partnerships.leadCreateProposal' | t }}</a
+            >
+          }
+        </div>
+      </section>
 
       @if (showStatus()) {
         <section class="ra-card panel">
@@ -68,14 +119,38 @@ import { partnershipErrorMessage } from './partnership.util';
 
       <section class="ra-card block">
         <dl class="facts">
-          <div><dt>{{ 'common.status' | t }}</dt><dd>{{ label(current.status) }}</dd></div>
-          <div><dt>{{ 'partnerships.priority' | t }}</dt><dd>{{ label(current.priority) }}</dd></div>
-          <div><dt>{{ 'partnerships.nextAction' | t }}</dt><dd>{{ current.nextAction || '—' }}</dd></div>
-          <div><dt>{{ 'partnerships.dueDate' | t }}</dt><dd>{{ current.nextActionDate || '—' }}</dd></div>
-          <div><dt>{{ 'partnerships.qualificationReason' | t }}</dt><dd>{{ current.qualificationReason || '—' }}</dd></div>
-          <div><dt>{{ 'partnerships.estimatedStudents' | t }}</dt><dd>{{ current.estimatedStudentCount ?? '—' }}</dd></div>
-          <div><dt>{{ 'partnerships.estimatedOpportunity' | t }}</dt><dd>{{ current.estimatedOpportunity || '—' }}</dd></div>
-          <div><dt>{{ 'partnerships.owner' | t }}</dt><dd>{{ current.ownerId || '—' }}</dd></div>
+          <div>
+            <dt>{{ 'common.status' | t }}</dt>
+            <dd>{{ label(current.status) }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.priority' | t }}</dt>
+            <dd>{{ label(current.priority) }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.nextAction' | t }}</dt>
+            <dd>{{ current.nextAction || '—' }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.dueDate' | t }}</dt>
+            <dd>{{ current.nextActionDate || '—' }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.qualificationReason' | t }}</dt>
+            <dd>{{ current.qualificationReason || '—' }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.estimatedStudents' | t }}</dt>
+            <dd>{{ current.estimatedStudentCount ?? '—' }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.estimatedOpportunity' | t }}</dt>
+            <dd>{{ current.estimatedOpportunity || '—' }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'partnerships.owner' | t }}</dt>
+            <dd>{{ current.ownerId || '—' }}</dd>
+          </div>
         </dl>
       </section>
 
@@ -91,15 +166,24 @@ import { partnershipErrorMessage } from './partnership.util';
                 }
               </mat-select>
             </mat-form-field>
-            <mat-form-field appearance="outline"><mat-label>{{ 'partnerships.subject' | t }}</mat-label><input matInput formControlName="subject" /></mat-form-field>
+            <mat-form-field appearance="outline"
+              ><mat-label>{{ 'partnerships.subject' | t }}</mat-label
+              ><input matInput formControlName="subject"
+            /></mat-form-field>
             <button mat-flat-button color="primary" type="submit">{{ 'common.add' | t }}</button>
           </form>
         </section>
         <section class="ra-card panel">
           <h2>{{ 'partnerships.addFollowUp' | t }}</h2>
           <form class="row" [formGroup]="followUpForm" (ngSubmit)="addFollowUp()">
-            <mat-form-field appearance="outline"><mat-label>{{ 'common.titleField' | t }}</mat-label><input matInput formControlName="title" /></mat-form-field>
-            <mat-form-field appearance="outline"><mat-label>{{ 'partnerships.dueDate' | t }}</mat-label><input matInput type="date" formControlName="dueDate" /></mat-form-field>
+            <mat-form-field appearance="outline"
+              ><mat-label>{{ 'common.titleField' | t }}</mat-label
+              ><input matInput formControlName="title"
+            /></mat-form-field>
+            <mat-form-field appearance="outline"
+              ><mat-label>{{ 'partnerships.dueDate' | t }}</mat-label
+              ><input matInput type="date" formControlName="dueDate"
+            /></mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>{{ 'partnerships.priority' | t }}</mat-label>
               <mat-select formControlName="priority">
@@ -115,11 +199,43 @@ import { partnershipErrorMessage } from './partnership.util';
     }
   `,
   styles: `
-    .block, .panel { padding: 18px 20px; margin-block-end: 14px; }
-    .facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; }
-    .facts dt { color: var(--ra-muted); font-size: 0.8rem; }
-    .facts dd { margin: 2px 0 0; }
-    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .block,
+    .panel {
+      padding: 18px 20px;
+      margin-block-end: 14px;
+    }
+    .next-steps h2 {
+      margin: 0 0 6px;
+      font-size: 1.05rem;
+    }
+    .muted {
+      margin: 0 0 12px;
+      color: var(--ra-muted);
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .facts {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin: 0;
+    }
+    .facts dt {
+      color: var(--ra-muted);
+      font-size: 0.8rem;
+    }
+    .facts dd {
+      margin: 2px 0 0;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
   `,
 })
 export class LeadDetailsPage {
@@ -139,6 +255,17 @@ export class LeadDetailsPage {
   readonly error = signal<string | null>(null);
   readonly lead = signal<Lead | null>(null);
   readonly showStatus = signal(false);
+
+  readonly breadcrumbs = computed<PartnershipBreadcrumb[]>(() => {
+    const current = this.lead();
+    return partnershipJourneyCrumbs(
+      (key) => this.i18n.t(key),
+      'discovery',
+      'nav.leads',
+      '/partnerships/leads',
+      current?.institutionName || this.i18n.t('partnerships.lead'),
+    );
+  });
 
   readonly statusForm = this.fb.nonNullable.group({
     status: ['NEW' as LeadStatus, Validators.required],

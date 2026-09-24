@@ -2,7 +2,24 @@
   [title]="'partnerships.dashboardTitle' | t"
   [subtitle]="'partnerships.dashboardSubtitle' | t"
 >
-  <a mat-flat-button color="primary" routerLink="/partnerships/institutions">{{
+  <div class="header-create" [class.open]="createOpen()">
+    <button mat-flat-button color="primary" type="button" (click)="toggleCreate()">
+      {{ 'partnerships.quickCreate' | t }}
+    </button>
+    @if (createOpen()) {
+      <div class="create-menu" role="menu">
+        @for (item of quickCreateItems; track item.path) {
+          @if (!item.requiresWrite || permissions.canWrite()) {
+            <a role="menuitem" [routerLink]="item.path" (click)="createOpen.set(false)">{{
+              item.labelKey | t
+            }}</a>
+          }
+        }
+        <p class="create-hint">{{ 'partnerships.quickCreateHint' | t }}</p>
+      </div>
+    }
+  </div>
+  <a mat-stroked-button routerLink="/partnerships/institutions">{{
     'partnerships.institutionsTitle' | t
   }}</a>
 </app-page-header>
@@ -12,6 +29,37 @@
 } @else if (error(); as message) {
   <app-error-state [title]="'partnerships.loadError' | t" [message]="message" (retry)="load()" />
 } @else if (dashboard(); as data) {
+  <section class="ra-card block search-block">
+    <app-section-header [title]="'partnerships.globalSearch' | t" />
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>{{ 'partnerships.globalSearchPlaceholder' | t }}</mat-label>
+      <input matInput [formControl]="searchControl" autocomplete="off" />
+    </mat-form-field>
+    @if (searchLoading()) {
+      <p class="hint">{{ 'partnerships.globalSearchLoading' | t }}</p>
+    } @else if (searchResult(); as result) {
+      @if (result.groups.length === 0) {
+        <p class="hint">{{ 'partnerships.globalSearchEmpty' | t }}</p>
+      } @else {
+        <div class="search-groups">
+          @for (group of result.groups; track group.group) {
+            <article>
+              <p class="ra-kicker">{{ searchGroupLabel(group.group) }}</p>
+              <ul class="links">
+                @for (hit of group.items; track hit.id) {
+                  <li>
+                    <a [routerLink]="hit.path">{{ hit.label }}</a>
+                    <span class="hint">{{ hit.subtitle }}</span>
+                  </li>
+                }
+              </ul>
+            </article>
+          }
+        </div>
+      }
+    }
+  </section>
+
   <section class="stats">
     <app-stat-card [label]="'partnerships.totalInstitutions' | t" [value]="'' + data.totalInstitutions" />
     <app-stat-card [label]="'partnerships.totalLeads' | t" [value]="'' + data.totalLeads" />
@@ -24,6 +72,136 @@
     <app-stat-card [label]="'partnerships.partners' | t" [value]="'' + data.partners" />
     <app-stat-card [label]="'partnerships.followUpsDue' | t" [value]="'' + data.followUpsDueToday" />
     <app-stat-card [label]="'partnerships.overdueFollowUps' | t" [value]="'' + data.overdueFollowUps" />
+  </section>
+
+  <section class="ra-card block">
+    <app-section-header [title]="'partnerships.dashboardLifecycleFlow' | t" />
+    <p class="hint">{{ 'partnerships.dashboardLifecycleFlowHint' | t }}</p>
+    <div class="lifecycle-flow" aria-label="Partnership lifecycle">
+      <a class="flow-stage" routerLink="/partnerships/leads">
+        <span class="flow-label">{{ 'partnerships.dashboardLifecycleLeads' | t }}</span>
+        <strong>{{ data.totalLeads }}</strong>
+      </a>
+      <span class="flow-arrow" aria-hidden="true">↓</span>
+      <a class="flow-stage" routerLink="/partnerships/institutions">
+        <span class="flow-label">{{ 'partnerships.dashboardLifecycleInstitutions' | t }}</span>
+        <strong>{{ data.totalInstitutions }}</strong>
+      </a>
+      <span class="flow-arrow" aria-hidden="true">↓</span>
+      <a class="flow-stage" routerLink="/partnerships/proposals">
+        <span class="flow-label">{{ 'partnerships.dashboardLifecycleProposals' | t }}</span>
+        <strong>{{ data.proposalsTotal }}</strong>
+      </a>
+      <span class="flow-arrow" aria-hidden="true">↓</span>
+      <a class="flow-stage" routerLink="/partnerships/sows">
+        <span class="flow-label">{{ 'partnerships.dashboardLifecycleSowsActive' | t }}</span>
+        <strong>{{ data.sowsActive }}</strong>
+      </a>
+      <span class="flow-arrow" aria-hidden="true">↓</span>
+      <a class="flow-stage" routerLink="/partnerships/delivery">
+        <span class="flow-label">{{ 'partnerships.dashboardLifecycleDeliveriesActive' | t }}</span>
+        <strong>{{ data.deliveriesActive }}</strong>
+      </a>
+      <span class="flow-arrow" aria-hidden="true">↓</span>
+      <a class="flow-stage" routerLink="/partnerships/reports">
+        <span class="flow-label">{{ 'partnerships.dashboardLifecycleReportsPublished' | t }}</span>
+        <strong>{{ data.reportsPublished }}</strong>
+      </a>
+      <span class="flow-arrow" aria-hidden="true">↓</span>
+      <a class="flow-stage" routerLink="/partnerships/renewals">
+        <span class="flow-label">{{ 'partnerships.dashboardLifecycleRenewalsOpen' | t }}</span>
+        <strong>{{ data.renewalsOpen }}</strong>
+      </a>
+    </div>
+  </section>
+
+  <section class="ra-card block">
+    <app-section-header [title]="'partnerships.dashboardLifecycle' | t" />
+    <div class="lifecycle-strip">
+      <a class="lifecycle-link" routerLink="/partnerships/proposals">
+        <app-stat-card
+          [label]="'partnerships.dashboardLifecycleProposals' | t"
+          [value]="'' + data.proposalsTotal"
+        />
+      </a>
+      <a class="lifecycle-link" routerLink="/partnerships/proposals">
+        <app-stat-card
+          [label]="'partnerships.dashboardLifecycleProposalsAccepted' | t"
+          [value]="'' + data.proposalsAccepted"
+        />
+      </a>
+      <a class="lifecycle-link" routerLink="/partnerships/sows">
+        <app-stat-card
+          [label]="'partnerships.dashboardLifecycleSowsActive' | t"
+          [value]="'' + data.sowsActive"
+        />
+      </a>
+      <a class="lifecycle-link" routerLink="/partnerships/delivery">
+        <app-stat-card
+          [label]="'partnerships.dashboardLifecycleDeliveriesActive' | t"
+          [value]="'' + data.deliveriesActive"
+        />
+      </a>
+      <a class="lifecycle-link" routerLink="/partnerships/reports">
+        <app-stat-card
+          [label]="'partnerships.dashboardLifecycleReportsPublished' | t"
+          [value]="'' + data.reportsPublished"
+        />
+      </a>
+      <a class="lifecycle-link" routerLink="/partnerships/renewals">
+        <app-stat-card
+          [label]="'partnerships.dashboardLifecycleRenewalsOpen' | t"
+          [value]="'' + data.renewalsOpen"
+        />
+      </a>
+    </div>
+  </section>
+
+  <section class="ra-card block">
+    <app-section-header [title]="'partnerships.attentionNeeded' | t" />
+    <p class="hint">{{ 'partnerships.attentionNeededHint' | t }}</p>
+    @if (attentionTotal() === 0) {
+      <p class="hint">{{ 'partnerships.attentionNeededEmpty' | t }}</p>
+    } @else {
+      <div class="attention-grid">
+        @if (data.overdueFollowUps > 0) {
+          <a class="attention-item" routerLink="/partnerships/follow-ups">
+            <strong>{{ data.overdueFollowUps }}</strong>
+            <span>{{ 'partnerships.attentionOverdueFollowUps' | t }}</span>
+          </a>
+        }
+        @if (data.attentionProposalFollowUp > 0) {
+          <a class="attention-item" routerLink="/partnerships/proposals">
+            <strong>{{ data.attentionProposalFollowUp }}</strong>
+            <span>{{ 'partnerships.attentionProposalFollowUp' | t }}</span>
+          </a>
+        }
+        @if (data.attentionSowPendingSignature > 0) {
+          <a class="attention-item" routerLink="/partnerships/sows">
+            <strong>{{ data.attentionSowPendingSignature }}</strong>
+            <span>{{ 'partnerships.attentionSowPendingSignature' | t }}</span>
+          </a>
+        }
+        @if (data.attentionDeliveryPaused > 0) {
+          <a class="attention-item" routerLink="/partnerships/delivery">
+            <strong>{{ data.attentionDeliveryPaused }}</strong>
+            <span>{{ 'partnerships.attentionDeliveryPaused' | t }}</span>
+          </a>
+        }
+        @if (data.attentionReportInReview > 0) {
+          <a class="attention-item" routerLink="/partnerships/reports">
+            <strong>{{ data.attentionReportInReview }}</strong>
+            <span>{{ 'partnerships.attentionReportInReview' | t }}</span>
+          </a>
+        }
+        @if (data.attentionRenewalPlanning > 0) {
+          <a class="attention-item" routerLink="/partnerships/renewals">
+            <strong>{{ data.attentionRenewalPlanning }}</strong>
+            <span>{{ 'partnerships.attentionRenewalPlanning' | t }}</span>
+          </a>
+        }
+      </div>
+    }
   </section>
 
   <section class="ra-card block">
@@ -112,8 +290,9 @@
       <app-section-header [title]="'partnerships.recentActivity' | t" />
       @if (recent().length === 0) {
         <app-empty-state
-          [title]="'partnerships.activitiesEmptyTitle' | t"
-          [message]="'partnerships.activitiesEmptyMessage' | t"
+          [title]="'partnerships.noRecentActivity' | t"
+          [message]="'partnerships.institutionHubActivityEmptyMessage' | t"
+          icon="history"
         />
       } @else {
         <ul class="links">

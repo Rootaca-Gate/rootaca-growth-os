@@ -3,6 +3,7 @@ import { next } from '@vercel/functions';
 const ALLOWED_ORIGINS = [
   'http://localhost:4200',
   'https://rootaca-admin.web.app',
+  'https://admin.rootaca.com',
   'https://rootaca-admin.firebaseapp.com',
 ];
 
